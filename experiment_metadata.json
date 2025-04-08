@@ -1,9 +1,7 @@
 {
-    "1" : {
+    "1_ippo" : {
+        "desc" : "",
         "config" : {
-            "exp_id" : 1,
-            "seed" : 42,
-    
             "new_machines_after_mutation" : 50,
             "frames_per_batch" : 200,
             "n_iters" : 20,
@@ -24,8 +22,6 @@
             "policy_network_num_cells" : 64,
             "critic_network_depth": 3,
             "critic_network_num_cells" : 64,
-    
-            "network" : "saint_arnoult",
     
             "av_behavior" : "cooperative",
     
