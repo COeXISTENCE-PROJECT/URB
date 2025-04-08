@@ -177,3 +177,5 @@ cython_debug/
 summary.xml
 fcd.xml
 det.add.xml
+
+.DS_Store
