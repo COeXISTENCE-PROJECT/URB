@@ -2,15 +2,15 @@
     "1_ippo" : {
         "desc" : "",
         "config" : {
-            "new_machines_after_mutation" : 50,
-            "frames_per_batch" : 200,
-            "n_iters" : 20,
-            "human_learning_episodes" : 100,
-            "test_eps" : 50,
+            "new_machines_after_mutation" : 400,
+            "frames_per_batch" : 4000,
+            "n_iters" : 800,
+            "human_learning_episodes" : 500,
+            "test_eps" : 100,
     
             "num_epochs" : 1,
-            "minibatch_size" : 16,
-            "lr" : 3e-4,
+            "minibatch_size" : 32,
+            "lr" : 3e-3,
             "max_grad_norm" : 3.0,
     
             "clip_epsilon" : 0.2,
@@ -23,7 +23,7 @@
             "critic_network_depth": 3,
             "critic_network_num_cells" : 64,
     
-            "av_behavior" : "cooperative",
+            "av_behavior" : "selfish",
     
             "smooth_by" : 10,
             "plot_choices" : "basic",
@@ -48,6 +48,55 @@
             "path_gen_beta" : -5,
             "num_samples" : 10
         }
+    },
 
+    "1_iql" : {
+        "desc" : "",
+        "config" : {
+            "new_machines_after_mutation" : 400,
+            "frames_per_batch" : 4000,
+            "n_iters" : 800,
+            "human_learning_episodes" : 500,
+            "test_eps" : 100,
+    
+            "num_epochs" : 1,
+            "minibatch_size" : 32,
+            "lr" : 3e-3,
+            "max_grad_norm" : 3.0,
+            "gamma" : 0.99,
+            "memory_size" : 1000,
+            "mlp_depth" : 3,
+            "mlp_cells" : 64,
+            "tau" :  0.05,
+            "eps" : 0.95,
+            "eps_init" : 0.99,
+            "eps_end" : 0.05,
+            "exploration_fraction" : 0.33,
+    
+            "av_behavior" : "selfish",
+    
+            "smooth_by" : 10,
+            "plot_choices" : "basic",
+    
+            "human_model" : "gawron",
+            "noise_weight_agent" : 0,
+            "noise_weight_path" : 0.8,
+            "noise_weight_day" : 0.2,
+            "beta" : -1,
+            "beta_k_i_variability" : 0.1,
+            "epsilon_i_variability" : 0.1,
+            "epsilon_k_i_variability" : 0.1,
+            "epsilon_k_i_t_variability" : 0.1,
+            "greedy" : 0.1,
+            "gamma_c" : 0.0,
+            "gamma_u" : 0.0,
+            "remember" : 1,
+            "alpha_zero" : 0.8,
+            "alphas" : [0.2],
+    
+            "number_of_paths" : 4,
+            "path_gen_beta" : -5,
+            "num_samples" : 10
+        }
     }
 }
