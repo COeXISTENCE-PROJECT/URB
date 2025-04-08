@@ -1,0 +1,57 @@
+{
+    "1" : {
+        "config" : {
+            "exp_id" : 1,
+            "seed" : 42,
+    
+            "new_machines_after_mutation" : 50,
+            "frames_per_batch" : 200,
+            "n_iters" : 20,
+            "human_learning_episodes" : 100,
+            "test_eps" : 50,
+    
+            "num_epochs" : 1,
+            "minibatch_size" : 16,
+            "lr" : 3e-4,
+            "max_grad_norm" : 3.0,
+    
+            "clip_epsilon" : 0.2,
+            "gamma" : 0.99,
+            "lmbda" : 0.9,
+            "entropy_eps" : 1e-4,
+            "normalize_advantage" : false,
+            "policy_network_depth": 3,
+            "policy_network_num_cells" : 64,
+            "critic_network_depth": 3,
+            "critic_network_num_cells" : 64,
+    
+            "network" : "saint_arnoult",
+    
+            "av_behavior" : "cooperative",
+    
+            "smooth_by" : 10,
+            "plot_choices" : "basic",
+    
+            "human_model" : "gawron",
+            "noise_weight_agent" : 0,
+            "noise_weight_path" : 0.8,
+            "noise_weight_day" : 0.2,
+            "beta" : -1,
+            "beta_k_i_variability" : 0.1,
+            "epsilon_i_variability" : 0.1,
+            "epsilon_k_i_variability" : 0.1,
+            "epsilon_k_i_t_variability" : 0.1,
+            "greedy" : 0.1,
+            "gamma_c" : 0.0,
+            "gamma_u" : 0.0,
+            "remember" : 1,
+            "alpha_zero" : 0.8,
+            "alphas" : [0.2],
+    
+            "number_of_paths" : 4,
+            "path_gen_beta" : -5,
+            "num_samples" : 10
+        }
+
+    }
+}
