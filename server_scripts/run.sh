@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=urb_1
 #SBATCH --qos=big
-#SBATCH --mem=32G
+#SBATCH --mem=64G
 #SBATCH --cpus-per-task=4
 #SBATCH --gres=gpu:1
 #SBATCH --partition=dgx
