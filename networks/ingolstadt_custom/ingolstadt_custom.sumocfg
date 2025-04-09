@@ -1,6 +1,6 @@
 <configuration>
   <input>
-    <net-file value="ingolstadt.net.xml"/>
+    <net-file value="ingolstadt_custom.net.xml"/>
 	  <route-files value="route.rou.xml"/>
     <additional-files value="det.add.xml"/>
   </input>
