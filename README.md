@@ -11,6 +11,33 @@
 > iii) better understand impact of collective CAV routing for future cities (on congestion, emissions and sustainability) to equip policymakers with solid arguments for CAV regulations.
 ---
 
+
+## Tasks:
+
+#### Core (benchmarked with the results):
+
+Collaborative fleet minimizing group average travel time with 40\% market share with non-adaptive human routing behaviour.
+
+>In a French small town of _Gurgerville_ , where human routing decision were stable and close to the well-known User Equilibrium, 40\% of drivers decide to switch on the autonomous driving mode, delegating their routing decisions. Then, each machine will apply some kind of algorithm to select the route maximising the reward function: group average travel time.
+
+#### Illustrative (sample results only):
+
+1. Fully autonomous fleet
+2. Altruistic fleet (minimize time for humans)
+3. Malicious fleet (maximize time for humans)
+4. Modal shifts - humans join or leave the fleet according to its performance
+5. Human adaptations - drivers react to actions of the fleet and change their behaviour
+
+
+#### Possible (doable yet not implemented):
+
+6. Two competing fleets with various strategies
+7. Communication protocols (sharing information to collaborate).
+8. Heterogenous human populations - varying willingness to switch to CAV
+9. Different choice set than humans
+10. Adaptive traffic signals
+11. 
+
 # To be improved
 
 ## Setup:
