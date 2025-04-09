@@ -7,6 +7,7 @@ import os
 
 import routerl
 
+from routerl import Keychain as kc
 from routerl import TrafficEnvironment
 
 if __name__ == "__main__":
@@ -175,7 +176,7 @@ if __name__ == "__main__":
             observation, reward, termination, truncation, info = env.last()
 
             if termination or truncation:
-                obs = [{routerl.Keychain.AGENT_ID : int(agent), routerl.Keychain.TRAVEL_TIME : reward}]
+                obs = [{kc.AGENT_ID : int(agent), kc.TRAVEL_TIME : reward}]
                 last_action = mutated_humans[agent].last_action
                 mutated_humans[agent].learn(last_action, obs)
                 action = None
@@ -197,6 +198,7 @@ if __name__ == "__main__":
             env.step(action)
 
     # %%
+    os.makedirs(plots_folder, exist_ok=True)
     env.plot_results()
 
     # %%
