@@ -6,21 +6,23 @@ import logging
 import os
 import torch
 
-from tensordict.nn import TensorDictModule
+from torch import nn
+from tensordict.nn import TensorDictModule, TensorDictSequential
 from torchrl.collectors import SyncDataCollector
-from torch.distributions import Categorical
+from torchrl.data import TensorDictReplayBuffer
 from torchrl.envs.libs.pettingzoo import PettingZooWrapper
 from torchrl.envs.transforms import TransformedEnv, RewardSum
 from torchrl.envs.utils import check_env_specs
-from torchrl.data.replay_buffers import ReplayBuffer
 from torchrl.data.replay_buffers.samplers import SamplerWithoutReplacement
 from torchrl.data.replay_buffers.storages import LazyTensorStorage
-from torchrl.modules import MultiAgentMLP, ProbabilisticActor
+from torchrl.modules import EGreedyModule, QValueModule, SafeSequential
+from torchrl.modules.models.multiagent import MultiAgentMLP
 from torchrl.objectives.value import GAE
-from torchrl.objectives import ClipPPOLoss, ValueEstimators
+from torchrl.objectives import SoftUpdate, ValueEstimators, DQNLoss
 
 from routerl import TrafficEnvironment
 from tqdm import tqdm
+from routerl import TrafficEnvironment
 
 
 if __name__ == "__main__":
