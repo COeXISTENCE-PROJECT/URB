@@ -410,6 +410,7 @@ if __name__ == "__main__":
         env.rollout(len(env.machine_agents), policy=policy)
 
     # %%
+    os.makedirs(plots_folder, exist_ok=True)
     env.plot_results()
 
     # %%

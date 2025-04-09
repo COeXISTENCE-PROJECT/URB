@@ -346,10 +346,8 @@ if __name__ == "__main__":
         env.rollout(len(env.machine_agents), policy=qnet)
         
     # %%
+    os.makedirs(plots_folder, exist_ok=True)
     env.plot_results()
-
-    # %% [markdown]
-    # > Interrupt the connection with `SUMO`.
 
     # %%
     env.stop_simulation()
