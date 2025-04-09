@@ -80,6 +80,7 @@ if __name__ == "__main__":
     dump_config["network"] = network
     dump_config["seed"] = seed
     dump_config["config"] = exp_config
+    dump_config["baseline_model"] = baseline_model
     with open(exp_config_path, 'w', encoding='utf-8') as f:
         json.dump(dump_config, f, indent=4)
 
