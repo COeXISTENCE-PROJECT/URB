@@ -82,7 +82,7 @@ Records will be saved to ```records/<exp_id>```. Plots will be saved to ```plots
 python scipts/baselines.py --id <exp_id> --conf <configuration_id> --net <net_name> --seed <seed> --model <model_name>
 ```
 
-And `<model_name>` should be from `routerl.Keychain.HUMAN_MODELS` (see [here](https://github.com/COeXISTENCE-PROJECT/RouteRL/blob/91867e28dcd9eb167aa618ad5fcc1c1e5ccb3d7c/routerl/keychain.py#L125)). For example:
+And `<model_name>` should be from `routerl.Keychain.HUMAN_MODELS` (see [here](https://github.com/COeXISTENCE-PROJECT/RouteRL/blob/6af53cfb0174c72a75216c8fce256aac96b044ae/routerl/keychain.py#L124)). For example:
 
 ```
 python scipts/baselines.py --id exp_2 --conf baseline --net ingolstadt_custom --seed 42 --model gawron
