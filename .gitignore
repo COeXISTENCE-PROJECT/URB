@@ -179,3 +179,5 @@ fcd.xml
 det.add.xml
 
 .DS_Store
+detectors.csv
+route.rou.xml
