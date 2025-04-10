@@ -60,7 +60,7 @@ pip3 install -r requirements.txt
 
 ## Usage:
 ```
-python scipts/<script_name> --id <exp_id> --conf <configuration_id> --net <net_name> --seed <seed>
+python scripts/<script_name> --id <exp_id> --conf <configuration_id> --net <net_name> --seed <seed>
 ```
 
 - Replace `<scipt_name>` with the script you wish to run.
@@ -79,11 +79,11 @@ Records will be saved to ```records/<exp_id>```. Plots will be saved to ```plots
 > ⚠️ **Attention**: There is one additional flag `model` for `scripts/baselines.py`:
 
 ```
-python scipts/baselines.py --id <exp_id> --conf <configuration_id> --net <net_name> --seed <seed> --model <model_name>
+python scripts/baselines.py --id <exp_id> --conf <configuration_id> --net <net_name> --seed <seed> --model <model_name>
 ```
 
 And `<model_name>` should be from `routerl.Keychain.HUMAN_MODELS` (see [here](https://github.com/COeXISTENCE-PROJECT/RouteRL/blob/6af53cfb0174c72a75216c8fce256aac96b044ae/routerl/keychain.py#L124)). For example:
 
 ```
-python scipts/baselines.py --id exp_2 --conf baseline --net ingolstadt_custom --seed 42 --model gawron
+python scripts/baselines.py --id exp_2 --conf baseline --net ingolstadt_custom --seed 42 --model gawron
 ```
