@@ -139,7 +139,10 @@ if __name__ == "__main__":
             "network_name" : network,
             "custom_network_folder" : custom_network_folder,
             "sumo_type" : "sumo",
-        }, 
+        },  
+        environment_parameters = {
+            "save_every" : 5,
+        },
         plotter_parameters = {
             "phases" : phases,
             "phase_names" : phase_names,
