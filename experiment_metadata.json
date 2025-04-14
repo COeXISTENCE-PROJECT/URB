@@ -235,6 +235,242 @@
         }
     },
 
+    "1_ippo_small" : {
+        "desc" : "",
+        "config" : {
+            "new_machines_after_mutation" : 90,
+            "frames_per_batch" : 900,
+            "n_iters" : 800,
+            "human_learning_episodes" : 500,
+            "test_eps" : 100,
+    
+            "num_epochs" : 1,
+            "minibatch_size" : 32,
+            "lr" : 3e-3,
+            "max_grad_norm" : 3.0,
+    
+            "clip_epsilon" : 0.2,
+            "gamma" : 0.99,
+            "lmbda" : 0.9,
+            "entropy_eps" : 1e-4,
+            "normalize_advantage" : false,
+            "policy_network_depth": 3,
+            "policy_network_num_cells" : 64,
+            "critic_network_depth": 3,
+            "critic_network_num_cells" : 64,
+    
+            "av_behavior" : "selfish",
+    
+            "smooth_by" : 10,
+            "plot_choices" : "basic",
+    
+            "human_model" : "gawron",
+            "noise_weight_agent" : 0,
+            "noise_weight_path" : 0.8,
+            "noise_weight_day" : 0.2,
+            "beta" : -1,
+            "beta_k_i_variability" : 0.1,
+            "epsilon_i_variability" : 0.1,
+            "epsilon_k_i_variability" : 0.1,
+            "epsilon_k_i_t_variability" : 0.1,
+            "greedy" : 0.1,
+            "gamma_c" : 0.0,
+            "gamma_u" : 0.0,
+            "remember" : 1,
+            "alpha_zero" : 0.8,
+            "alphas" : [0.2],
+    
+            "number_of_paths" : 4,
+            "path_gen_beta" : -5,
+            "num_samples" : 10
+        }
+    },
+
+    "1_iql_small" : {
+        "desc" : "",
+        "config" : {
+            "new_machines_after_mutation" : 90,
+            "frames_per_batch" : 900,
+            "n_iters" : 800,
+            "human_learning_episodes" : 500,
+            "test_eps" : 100,
+    
+            "num_epochs" : 1,
+            "minibatch_size" : 32,
+            "lr" : 3e-3,
+            "max_grad_norm" : 3.0,
+            "gamma" : 0.99,
+            "memory_size" : 1000,
+            "mlp_depth" : 3,
+            "mlp_cells" : 64,
+            "tau" :  0.05,
+            "eps" : 0.95,
+            "eps_init" : 0.99,
+            "eps_end" : 0.05,
+            "exploration_fraction" : 0.33,
+    
+            "av_behavior" : "selfish",
+    
+            "smooth_by" : 10,
+            "plot_choices" : "basic",
+    
+            "human_model" : "gawron",
+            "noise_weight_agent" : 0,
+            "noise_weight_path" : 0.8,
+            "noise_weight_day" : 0.2,
+            "beta" : -1,
+            "beta_k_i_variability" : 0.1,
+            "epsilon_i_variability" : 0.1,
+            "epsilon_k_i_variability" : 0.1,
+            "epsilon_k_i_t_variability" : 0.1,
+            "greedy" : 0.1,
+            "gamma_c" : 0.0,
+            "gamma_u" : 0.0,
+            "remember" : 1,
+            "alpha_zero" : 0.8,
+            "alphas" : [0.2],
+    
+            "number_of_paths" : 4,
+            "path_gen_beta" : -5,
+            "num_samples" : 10
+        }
+    },
+
+    "1_qmix_small" : {
+        "desc" : "",
+        "config" : {
+            "new_machines_after_mutation" : 90,
+            "frames_per_batch" : 900,
+            "n_iters" : 800,
+            "human_learning_episodes" : 500,
+            "test_eps" : 100,
+
+            "num_epochs" : 1,
+            "minibatch_size" : 32,
+            "lr" : 3e-3,
+            "max_grad_norm" : 3.0,
+            "memory_size" : 1000,
+            "tau" : 0.005,
+            "gamma" : 0.99,
+            "mlp_depth" : 3,
+            "mlp_cells" : 64,
+            "eps_greedy_init" : 1.00,
+            "eps_greedy_end" : 0.05,
+            "mixing_embed_dim" : 64,
+    
+            "av_behavior" : "cooperative",
+    
+            "smooth_by" : 10,
+            "plot_choices" : "basic",
+    
+            "human_model" : "gawron",
+            "noise_weight_agent" : 0,
+            "noise_weight_path" : 0.8,
+            "noise_weight_day" : 0.2,
+            "beta" : -1,
+            "beta_k_i_variability" : 0.1,
+            "epsilon_i_variability" : 0.1,
+            "epsilon_k_i_variability" : 0.1,
+            "epsilon_k_i_t_variability" : 0.1,
+            "greedy" : 0.1,
+            "gamma_c" : 0.0,
+            "gamma_u" : 0.0,
+            "remember" : 1,
+            "alpha_zero" : 0.8,
+            "alphas" : [0.2],
+    
+            "number_of_paths" : 4,
+            "path_gen_beta" : -5,
+            "num_samples" : 10
+        }
+    },
+
+    "1_mappo_small" : {
+        "desc" : "",
+        "config" : {
+            "new_machines_after_mutation" : 90,
+            "frames_per_batch" : 900,
+            "n_iters" : 800,
+            "human_learning_episodes" : 500,
+            "test_eps" : 100,
+    
+            "num_epochs" : 1,
+            "minibatch_size" : 32,
+            "lr" : 3e-3,
+            "max_grad_norm" : 3.0,
+    
+            "clip_epsilon" : 0.2,
+            "gamma" : 0.99,
+            "lmbda" : 0.9,
+            "entropy_eps" : 1e-4,
+            "normalize_advantage" : false,
+            "policy_network_depth": 3,
+            "policy_network_num_cells" : 64,
+            "critic_network_depth": 3,
+            "critic_network_num_cells" : 64,
+    
+            "av_behavior" : "cooperative",
+    
+            "smooth_by" : 10,
+            "plot_choices" : "basic",
+    
+            "human_model" : "gawron",
+            "noise_weight_agent" : 0,
+            "noise_weight_path" : 0.8,
+            "noise_weight_day" : 0.2,
+            "beta" : -1,
+            "beta_k_i_variability" : 0.1,
+            "epsilon_i_variability" : 0.1,
+            "epsilon_k_i_variability" : 0.1,
+            "epsilon_k_i_t_variability" : 0.1,
+            "greedy" : 0.1,
+            "gamma_c" : 0.0,
+            "gamma_u" : 0.0,
+            "remember" : 1,
+            "alpha_zero" : 0.8,
+            "alphas" : [0.2],
+    
+            "number_of_paths" : 4,
+            "path_gen_beta" : -5,
+            "num_samples" : 10
+        }
+    },
+
+    "baseline_small" : {
+        "desc" : "",
+        "config" : {
+            "new_machines_after_mutation" : 90,
+            "human_learning_episodes" : 500,
+            "training_eps" : 1000,
+            "test_eps" : 100,
+    
+            "av_behavior" : "selfish",
+    
+            "smooth_by" : 10,
+            "plot_choices" : "basic",
+    
+            "human_model" : "gawron",
+            "noise_weight_agent" : 0,
+            "noise_weight_path" : 0.8,
+            "noise_weight_day" : 0.2,
+            "beta" : -1,
+            "beta_k_i_variability" : 0.1,
+            "epsilon_i_variability" : 0.1,
+            "epsilon_k_i_variability" : 0.1,
+            "epsilon_k_i_t_variability" : 0.1,
+            "greedy" : 0.1,
+            "gamma_c" : 0.0,
+            "gamma_u" : 0.0,
+            "remember" : 1,
+            "alpha_zero" : 0.8,
+            "alphas" : [0.2],
+    
+            "number_of_paths" : 4,
+            "path_gen_beta" : -5,
+            "num_samples" : 10
+        }
+    },
+
     "ippo_test" : {
         "desc" : "For a quick test using IPPO, 14 eps (5+4+5)",
         "config" : {
