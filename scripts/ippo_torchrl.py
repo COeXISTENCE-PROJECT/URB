@@ -155,11 +155,12 @@ if __name__ == "__main__":
         } 
     )
 
-    
-    print("Number of total agents is: ", len(env.all_agents), "\n")
-    print("Number of human agents is: ", len(env.human_agents), "\n")
-    print("Number of machine agents (autonomous vehicles) is: ", len(env.machine_agents), "\n")
-
+    print(f"""
+    Agent in the traffic:
+    • Total agents           : {len(env.all_agents)}
+    • Human agents           : {len(env.human_agents)}
+    • AV agents              : {len(env.machine_agents)}
+    """)
     
     env.start()
     res = env.reset()
@@ -167,20 +168,24 @@ if __name__ == "__main__":
      
     # #### Human learning
 
-    
+    pbar = tqdm(total=human_learning_episodes, desc="Human learning")
     for episode in range(human_learning_episodes):
         env.step()
+        pbar.update()
+    pbar.close()
 
      
     # #### Mutation
 
     
     env.mutation(mutation_start_percentile=-1)
-
     
-    print("Number of total agents is: ", len(env.all_agents), "\n")
-    print("Number of human agents is: ", len(env.human_agents), "\n")
-    print("Number of machine agents (autonomous vehicles) is: ", len(env.machine_agents), "\n")
+    print(f"""
+    Agent in the traffic:
+    • Total agents           : {len(env.all_agents)}
+    • Human agents           : {len(env.human_agents)}
+    • AV agents              : {len(env.machine_agents)}
+    """)
 
     
     group = {'agents': [str(machine.id) for machine in env.machine_agents]}
@@ -267,7 +272,6 @@ if __name__ == "__main__":
      
     # #### Collector
 
-    
     collector = SyncDataCollector(
         env,
         policy,
@@ -280,7 +284,6 @@ if __name__ == "__main__":
      
     # #### Replay buffer
 
-    
     replay_buffer = ReplayBuffer(
         storage=LazyTensorStorage(
             frames_per_batch, device=device
@@ -312,26 +315,19 @@ if __name__ == "__main__":
     loss_module.make_value_estimator(
         ValueEstimators.GAE, gamma=gamma, lmbda=lmbda
     ) 
-
     GAE = loss_module.value_estimator
-
     optim = torch.optim.Adam(loss_module.parameters(), lr)
 
      
     # #### Training loop
+    pbar = tqdm(total=n_iters, desc="Training")
 
-    
-    pbar = tqdm(total=n_iters, desc="episode_reward_mean = 0")
-
-    episode_reward_mean_list = []
     loss_values = []
     loss_entropy = []
     loss_objective = []
     loss_critic = []
 
-    for tensordict_data in collector: ##loops over frame_per_batch
-
-        ## Generate the rollouts
+    for tensordict_data in collector:
         tensordict_data.set(
             ("next", "agents", "done"),
             tensordict_data.get(("next", "done"))
@@ -356,6 +352,7 @@ if __name__ == "__main__":
         data_view = tensordict_data.reshape(-1)  
         replay_buffer.extend(data_view)
 
+        step_loss_values, step_loss_entropy, step_loss_objective, step_loss_critic = [], [], [], []
         ## Update the policies of the learning agents
         for _ in range(num_epochs):
             for _ in range(frames_per_batch // minibatch_size):
@@ -377,27 +374,31 @@ if __name__ == "__main__":
                 optim.step()
                 optim.zero_grad()
 
-                loss_values.append(loss_value.item())
-                loss_entropy.append(loss_vals["loss_entropy"].item())
-                loss_objective.append(loss_vals["loss_objective"].item())
-                loss_critic.append(loss_vals["loss_critic"].item())
+                step_loss_values.append(loss_value.item())
+                step_loss_entropy.append(loss_vals["loss_entropy"].item())
+                step_loss_objective.append(loss_vals["loss_objective"].item())
+                step_loss_critic.append(loss_vals["loss_critic"].item())
 
+        if step_loss_values:
+            loss_values.append(sum(step_loss_values) / len(step_loss_values))
+            loss_entropy.append(sum(step_loss_entropy) / len(step_loss_entropy))
+            loss_objective.append(sum(step_loss_objective) / len(step_loss_objective))
+            loss_critic.append(sum(step_loss_critic) / len(step_loss_critic))
         collector.update_policy_weights_()
-    
-        # Logging
-        done = tensordict_data.get(("next", "agents", "done"))  # Get done status for the group
-
-        episode_reward_mean = (
-            tensordict_data.get(("next", "agents", "episode_reward"))[done].mean().item()
-        )
-        episode_reward_mean_list.append(episode_reward_mean)
-
-        pbar.set_description(f"episode_reward_mean = {episode_reward_mean}", refresh=False)
         pbar.update()
     
     pbar.close()
+    collector.shutdown()
+    
+    # Testing phase
+    policy.eval() # set the policy into evaluation mode
+    for episode in range(test_eps):
+        env.rollout(len(env.machine_agents), policy=policy)
+
+    os.makedirs(plots_folder, exist_ok=True)
+    env.plot_results()
         
-    # Save loss values in a txt file
+    # Save and visualize loss values
     loss_values_path = os.path.join(records_folder, "losses/loss_values.txt")
     loss_entropy_path = os.path.join(records_folder, "losses/loss_entropy.txt")
     loss_objective_path = os.path.join(records_folder, "losses/loss_objective.txt")
@@ -415,28 +416,26 @@ if __name__ == "__main__":
     with open(loss_critic_path, 'w') as f:
         for item in loss_critic:
             f.write("%s\n" % item)
-
     
-    policy.eval() # set the policy into evaluation mode
-    for episode in range(test_eps):
-        env.rollout(len(env.machine_agents), policy=policy)
-
-    
-    os.makedirs(plots_folder, exist_ok=True)
-    env.plot_results()
-    
-    plt.figure()
-    plt.plot(loss_values, label='loss_values')
-    plt.plot(loss_entropy, label='loss_entropy')
-    plt.plot(loss_objective, label='loss_objective')
-    plt.plot(loss_critic, label='loss_critic')
-    plt.legend()
-    plt.xlabel('Iteration')
-    plt.ylabel('Loss')
-    plt.title('Losses')
-    plt.savefig(os.path.join(plots_folder, 'losses.png'))
+    colors = [
+        "firebrick", "teal", "peru", "navy", 
+        "salmon", "slategray", "darkviolet", 
+        "lightskyblue", "darkolivegreen", "black"]
+    plt.figure(figsize=(12, 6))
+    plt.plot(loss_values, label='loss_values', color=colors[0], linewidth=3)
+    plt.plot(loss_entropy, label='loss_entropy', color=colors[1], linewidth=3)
+    plt.plot(loss_objective, label='loss_objective', color=colors[2], linewidth=3)
+    plt.plot(loss_critic, label='loss_critic', color=colors[3], linewidth=3)
+    plt.legend(fontsize=12)
+    plt.xlabel('Iteration', fontsize=14)
+    plt.ylabel('Loss', fontsize=14)
+    plt.xticks(fontsize=14)
+    plt.yticks(fontsize=14)
+    plt.title('Losses', fontsize=18, fontweight='bold')
+    plt.grid(True, axis='y')
+    plt.tight_layout()
+    plt.savefig(os.path.join(plots_folder, 'losses.png'), dpi=300)
     plt.close()
-
     
     env.stop_simulation()
 

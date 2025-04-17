@@ -4,6 +4,7 @@ import ast
 import json
 import logging
 import os
+import matplotlib.pyplot as plt
 import pandas as pd
 import torch
 
@@ -157,25 +158,35 @@ if __name__ == "__main__":
         } 
     )
 
+    print(f"""
+    Agent in the traffic:
+    • Total agents           : {len(env.all_agents)}
+    • Human agents           : {len(env.human_agents)}
+    • AV agents              : {len(env.machine_agents)}
+    """)
     
     env.start()
     env.reset()
 
-     
     # #### Human learning
 
-    
+    pbar = tqdm(total=human_learning_episodes, desc="Human learning")
     for episode in range(human_learning_episodes):
         env.step()
-
-     
+        pbar.update()
+    pbar.close()
+    
     # #### Mutation
     
     
     env.mutation(mutation_start_percentile = -1)
-    print("Number of total agents is: ", len(env.all_agents), "\n")
-    print("Number of human agents is: ", len(env.human_agents), "\n")
-    print("Number of machine agents (autonomous vehicles) is: ", len(env.machine_agents), "\n")
+    
+    print(f"""
+    Agent in the traffic:
+    • Total agents           : {len(env.all_agents)}
+    • Human agents           : {len(env.human_agents)}
+    • AV agents              : {len(env.machine_agents)}
+    """)
     
     
     group = {'agents': [str(machine.id) for machine in env.machine_agents]}
@@ -311,12 +322,9 @@ if __name__ == "__main__":
 
      
     # #### Training loop
-
-    
-    training_frames_counter = 0
-    for i, tensordict_data in tqdm(enumerate(collector), total=n_iters, desc="Training"):
-
-        ## Generate the rollouts
+    pbar = tqdm(total=n_iters, desc="Training")
+    loss_values = []
+    for tensordict_data in collector:
         tensordict_data.set(
             ("next", "reward"), tensordict_data.get(("next", env.reward_key)).mean(-2)
         )
@@ -329,50 +337,69 @@ if __name__ == "__main__":
 
 
         current_frames = tensordict_data.numel()
-        training_frames_counter += current_frames
         data_view = tensordict_data.reshape(-1)
         replay_buffer.extend(data_view)
         
-
-        training_tds = []
+        step_loss_values = []
 
         ## Update the policies of the learning agents
         for _ in range(num_epochs):
             for _ in range(frames_per_batch // minibatch_size):
                 subdata = replay_buffer.sample()
                 loss_vals = loss_module(subdata)
-                training_tds.append(loss_vals.detach())
 
                 loss_value = loss_vals["loss"]
-
+                step_loss_values.append(loss_value.item())
                 loss_value.backward()
 
                 total_norm = torch.nn.utils.clip_grad_norm_(
                     loss_module.parameters(), max_grad_norm
                 )
-                training_tds[-1].set("grad_norm", total_norm.mean())
 
                 optim.step()
                 optim.zero_grad()
                 target_net_updater.step()
 
+        if step_loss_values:
+            loss_values.append(sum(step_loss_values) / len(step_loss_values))
         qnet_explore[1].step(frames=current_frames)  # Update exploration annealing
         collector.update_policy_weights_()
-
-        training_tds = torch.stack(training_tds) 
+        pbar.update()
     
-
-     
-    # > Testing phase
-
+    pbar.close()
+    collector.shutdown()
     
+    # Testing phase
     qnet.eval() # set the policy into evaluation mode
     for episode in range(test_eps):
         env.rollout(len(env.machine_agents), policy=qnet)
         
-    
+    # Visualize results
     os.makedirs(plots_folder, exist_ok=True)
     env.plot_results()
+    
+    # Save and visualize losses
+    loss_values_path = os.path.join(records_folder, "losses/loss_values.txt")
+    os.makedirs(os.path.dirname(loss_values_path), exist_ok=True)
+    with open(loss_values_path, 'w') as f:
+        for item in loss_values:
+            f.write("%s\n" % item)
+            
+    colors = [
+        "firebrick", "teal", "peru", "navy", 
+        "salmon", "slategray", "darkviolet", 
+        "lightskyblue", "darkolivegreen", "black"]
+    plt.figure(figsize=(12, 6))
+    plt.plot(loss_values, label='loss_values', color=colors[0], linewidth=3)
+    plt.xlabel('Iteration', fontsize=14)
+    plt.ylabel('Loss', fontsize=14)
+    plt.xticks(fontsize=14)
+    plt.yticks(fontsize=14)
+    plt.title('Loss', fontsize=18, fontweight='bold')
+    plt.grid(True, axis='y')
+    plt.tight_layout()
+    plt.savefig(os.path.join(plots_folder, 'losses.png'), dpi=300)
+    plt.close()
 
     
     env.stop_simulation()

@@ -177,11 +177,11 @@
             "ratio_machines" : 0.05,
             "agent_frames_per_batch" : 2,
             "n_iters" : 5,
-            "human_learning_episodes" : 20,
-            "test_eps" : 20,
+            "human_learning_episodes" : 10,
+            "test_eps" : 10,
     
             "num_epochs" : 1,
-            "minibatch_size" : 4,
+            "minibatch_size" : 2,
             "lr" : 3e-3,
             "max_grad_norm" : 3.0,
     
@@ -215,11 +215,11 @@
             "ratio_machines" : 0.05,
             "agent_frames_per_batch" : 2,
             "n_iters" : 5,
-            "human_learning_episodes" : 20,
-            "test_eps" : 20,
+            "human_learning_episodes" : 10,
+            "test_eps" : 10,
     
             "num_epochs" : 1,
-            "minibatch_size" : 32,
+            "minibatch_size" : 2,
             "lr" : 3e-3,
             "max_grad_norm" : 3.0,
             "gamma" : 0.99,
@@ -246,39 +246,17 @@
         }
     },
 
-    "baseline_test" : {
-        "desc" : "For a quick test using the baseline, 5 eps (5+5+5)",
-        "config" : {
-            "ratio_machines" : 0.05,
-            "agent_frames_per_batch" : 2,
-            "training_eps" : 10,
-            "test_eps" : 20,
-    
-            "av_behavior" : "selfish",
-    
-            "smooth_by" : 3,
-            "plot_choices" : "basic",
-            "save_every" : 1,
-    
-            "human_model" : "benchmark_human",
-    
-            "number_of_paths" : 4,
-            "path_gen_beta" : -5,
-            "num_samples" : 10
-        }
-    },
-
     "qmix_test" : {
         "desc" : "",
         "config" : {
             "ratio_machines" : 0.05,
             "agent_frames_per_batch" : 2,
             "n_iters" : 5,
-            "human_learning_episodes" : 20,
-            "test_eps" : 20,
+            "human_learning_episodes" : 10,
+            "test_eps" : 10,
 
             "num_epochs" : 1,
-            "minibatch_size" : 32,
+            "minibatch_size" : 2,
             "lr" : 3e-3,
             "max_grad_norm" : 3.0,
             "memory_size" : 1000,
@@ -309,11 +287,11 @@
             "ratio_machines" : 0.05,
             "agent_frames_per_batch" : 2,
             "n_iters" : 5,
-            "human_learning_episodes" : 20,
-            "test_eps" : 20,
+            "human_learning_episodes" : 10,
+            "test_eps" : 10,
     
             "num_epochs" : 1,
-            "minibatch_size" : 32,
+            "minibatch_size" : 2,
             "lr" : 3e-3,
             "max_grad_norm" : 3.0,
     
@@ -329,6 +307,28 @@
             "av_behavior" : "cooperative",
     
             "smooth_by" : 10,
+            "plot_choices" : "basic",
+            "save_every" : 1,
+    
+            "human_model" : "benchmark_human",
+    
+            "number_of_paths" : 4,
+            "path_gen_beta" : -5,
+            "num_samples" : 10
+        }
+    },
+
+    "baseline_test" : {
+        "desc" : "For a quick test using the baseline, 5 eps (5+5+5)",
+        "config" : {
+            "ratio_machines" : 0.05,
+            "agent_frames_per_batch" : 2,
+            "training_eps" : 10,
+            "test_eps" : 20,
+    
+            "av_behavior" : "selfish",
+    
+            "smooth_by" : 3,
             "plot_choices" : "basic",
             "save_every" : 1,
     
