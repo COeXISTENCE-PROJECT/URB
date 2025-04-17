@@ -10,6 +10,7 @@ import routerl
 
 from routerl import Keychain as kc
 from routerl import TrafficEnvironment
+from tqdm import tqdm
 
 if __name__ == "__main__":
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -76,6 +77,7 @@ if __name__ == "__main__":
             f.write(content)
             
     num_machines = int(num_agents * ratio_machines)
+    total_episodes = human_learning_episodes + training_eps + test_eps
             
     # Dump exp config to records
     exp_config_path = os.path.join(records_folder, "exp_config.json")
@@ -130,10 +132,12 @@ if __name__ == "__main__":
         } 
     )
 
-    
-    print("Number of total agents is: ", len(env.all_agents), "\n")
-    print("Number of human agents is: ", len(env.human_agents), "\n")
-    print("Number of machine agents (autonomous vehicles) is: ", len(env.machine_agents), "\n")
+    print(f"""
+    Agent in the traffic:
+    • Total agents           : {len(env.all_agents)}
+    • Human agents           : {len(env.human_agents)}
+    • AV agents              : {len(env.machine_agents)}
+    """)
 
     
     env.start()
@@ -142,8 +146,10 @@ if __name__ == "__main__":
      
     # #### Human learning
     
+    pbar = tqdm(total=total_episodes, desc="Human learning")
     for episode in range(human_learning_episodes):
         env.step()
+        pbar.update()
 
     # #### Mutation
 
@@ -151,10 +157,12 @@ if __name__ == "__main__":
     pre_mutation_agents = env.all_agents.copy()
     env.mutation(mutation_start_percentile = -1)
 
-    
-    print("Number of total agents is: ", len(env.all_agents), "\n")
-    print("Number of human agents is: ", len(env.human_agents), "\n")
-    print("Number of machine agents (autonomous vehicles) is: ", len(env.machine_agents), "\n")
+    print(f"""
+    Agent in the traffic:
+    • Total agents           : {len(env.all_agents)}
+    • Human agents           : {len(env.human_agents)}
+    • AV agents              : {len(env.machine_agents)}
+    """)
 
     
     machines = env.machine_agents.copy()
@@ -173,7 +181,7 @@ if __name__ == "__main__":
         initial_knowledge = free_flows[(human.origin, human.destination)]
         mutated_humans[h_id].model = routerl.get_learning_model(human_learning_params, initial_knowledge)
        
-    
+    pbar.set_description("AV learning")
     for episode in range(training_eps):
         env.reset()
         for agent in env.agent_iter():
@@ -189,8 +197,9 @@ if __name__ == "__main__":
                 mutated_humans[agent].last_action = action
 
             env.step(action)
+        pbar.update()
     
-    
+    pbar.set_description("Testing")
     for episode in range(test_eps):
         env.reset()
         for agent in env.agent_iter():
@@ -200,10 +209,10 @@ if __name__ == "__main__":
             else:
                 action = mutated_humans[agent].act(0)
             env.step(action)
+        pbar.update()
 
-    
+    pbar.close()
     os.makedirs(plots_folder, exist_ok=True)
     env.plot_results()
 
-    
     env.stop_simulation()

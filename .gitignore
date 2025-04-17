@@ -173,11 +173,4 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
-
-summary.xml
-fcd.xml
-det.add.xml
-
 .DS_Store
-detectors.csv
-route.rou.xml

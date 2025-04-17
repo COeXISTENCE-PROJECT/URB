@@ -345,9 +345,12 @@ if __name__ == "__main__":
     collector.shutdown()
     
     # Testing phase
+    pbar = tqdm(total=test_eps, desc="Test phase")
     qnet.eval() # set the policy into evaluation mode
     for episode in range(test_eps):
         env.rollout(len(env.machine_agents), policy=qnet)
+        pbar.update()
+    pbar.close()
         
     os.makedirs(plots_folder, exist_ok=True)
     env.plot_results()
