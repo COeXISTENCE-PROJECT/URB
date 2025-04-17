@@ -13,7 +13,7 @@
 
 #### Workflow
 
-`urb` runs a script with a RL algorithm (possibly `torchRL` implementation) which opens a config file (stored in `experiment_metadata.json`) loads the network and demand from `networks` which then executes a typical `RouteRL` routine of first learning of human drivers, which then 'mutate` to CAVs, trained to opmize routing policies with the implemented algorithm. When the training is finished, it uses raw results to compute a wide-set of KPIs.
+`urb` runs a `RouteRl` script with a RL algorithm (possibly `torchRL` implementation) which opens a config file (stored in `experiment_metadata.json`) loads the network and demand from `networks` which then executes a typical `RouteRL` routine of first learning of human drivers, which then 'mutate` to CAVs, trained to opmize routing policies with the implemented algorithm. When the training is finished, it uses raw results to compute a wide-set of KPIs.
 
 
 ## Tasks:
