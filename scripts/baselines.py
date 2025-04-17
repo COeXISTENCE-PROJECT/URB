@@ -1,9 +1,10 @@
-# %%
+
 import argparse
 import ast
 import json
 import logging
 import os
+import pandas as pd
 
 import routerl
 
@@ -35,24 +36,24 @@ if __name__ == "__main__":
     
     logging.getLogger("matplotlib").setLevel(logging.ERROR)
 
-    # %% [markdown]
+     
     # #### Hyperparameters setting
 
-    # %%
+    
     params = json.load(open("../experiment_metadata.json"))
     params = params[exp_config]["config"]
 
-    # %%
+    
     # set params as variables in this notebook
     for key, value in params.items():
         globals()[key] = value
 
-    # %%
+    
     custom_network_folder = f"../networks/{network}"
-    phases = [0, human_learning_episodes, int(training_eps) + human_learning_episodes]
-    phase_names = ["Human learning", "Mutation - Machine learning", "Testing phase"]
-    records_folder = f"../records/{exp_id}"
-    plots_folder = f"../plots/{exp_id}"
+    phases = [1, human_learning_episodes, int(training_eps) + human_learning_episodes]
+    phase_names = ["Human stabilization", "Mutation and AV learning", "Testing phase"]
+    records_folder = f"../results/{exp_id}"
+    plots_folder = f"../results/{exp_id}/plots"
 
     # Read origin-destinations
     od_file_path = os.path.join(custom_network_folder, f"od_{network}.txt")
@@ -62,9 +63,10 @@ if __name__ == "__main__":
     origins = data['origins']
     destinations = data['destinations']
 
-    # %%
+    
     # Copy agents.csv from custom_network_folder to records_folder
     agents_csv_path = os.path.join(custom_network_folder, "agents.csv")
+    num_agents = len(pd.read_csv(agents_csv_path))
     if os.path.exists(agents_csv_path):
         os.makedirs(records_folder, exist_ok=True)
         new_agents_csv_path = os.path.join(records_folder, "agents.csv")
@@ -73,7 +75,8 @@ if __name__ == "__main__":
         with open(new_agents_csv_path, 'w', encoding='utf-8') as f:
             f.write(content)
             
-    # %%
+    num_machines = int(num_agents * ratio_machines)
+            
     # Dump exp config to records
     exp_config_path = os.path.join(records_folder, "exp_config.json")
     dump_config = params.copy()
@@ -81,17 +84,19 @@ if __name__ == "__main__":
     dump_config["seed"] = seed
     dump_config["config"] = exp_config
     dump_config["baseline_model"] = baseline_model
+    dump_config["num_agents"] = num_agents
+    dump_config["num_machines"] = num_machines
     with open(exp_config_path, 'w', encoding='utf-8') as f:
         json.dump(dump_config, f, indent=4)
 
-    # %%
+    
     env = TrafficEnvironment(
         seed = seed,
         create_agents = False,
         create_paths = True,
         save_detectors_info = False,
         agent_parameters = {
-            "new_machines_after_mutation": new_machines_after_mutation, 
+            "new_machines_after_mutation": num_machines, 
             "human_parameters" : {
                 "model" : human_model
             },
@@ -125,35 +130,33 @@ if __name__ == "__main__":
         } 
     )
 
-    # %%
+    
     print("Number of total agents is: ", len(env.all_agents), "\n")
     print("Number of human agents is: ", len(env.human_agents), "\n")
     print("Number of machine agents (autonomous vehicles) is: ", len(env.machine_agents), "\n")
 
-    # %%
+    
     env.start()
     res = env.reset()
 
-    # %% [markdown]
+     
     # #### Human learning
-
-    # %%
+    
     for episode in range(human_learning_episodes):
         env.step()
 
-    # %% [markdown]
     # #### Mutation
 
-    # %%
+    
     pre_mutation_agents = env.all_agents.copy()
-    env.mutation()
+    env.mutation(mutation_start_percentile = -1)
 
-    # %%
+    
     print("Number of total agents is: ", len(env.all_agents), "\n")
     print("Number of human agents is: ", len(env.human_agents), "\n")
     print("Number of machine agents (autonomous vehicles) is: ", len(env.machine_agents), "\n")
 
-    # %%
+    
     machines = env.machine_agents.copy()
     mutated_humans = dict()
 
@@ -170,7 +173,7 @@ if __name__ == "__main__":
         initial_knowledge = free_flows[(human.origin, human.destination)]
         mutated_humans[h_id].model = routerl.get_learning_model(human_learning_params, initial_knowledge)
        
-    # %%
+    
     for episode in range(training_eps):
         env.reset()
         for agent in env.agent_iter():
@@ -187,7 +190,7 @@ if __name__ == "__main__":
 
             env.step(action)
     
-    # %%
+    
     for episode in range(test_eps):
         env.reset()
         for agent in env.agent_iter():
@@ -198,9 +201,9 @@ if __name__ == "__main__":
                 action = mutated_humans[agent].act(0)
             env.step(action)
 
-    # %%
+    
     os.makedirs(plots_folder, exist_ok=True)
     env.plot_results()
 
-    # %%
+    
     env.stop_simulation()

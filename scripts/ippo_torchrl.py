@@ -1,9 +1,11 @@
-# %%
+
 import argparse
 import ast
 import json
 import logging
 import os
+import matplotlib.pyplot as plt
+import pandas as pd
 import torch
 
 from tensordict.nn import TensorDictModule
@@ -48,7 +50,7 @@ if __name__ == "__main__":
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
-    # %%
+    
     device = (
         torch.device(0)
         if torch.cuda.is_available()
@@ -56,26 +58,22 @@ if __name__ == "__main__":
     )
     print("device is: ", device)
 
-    # %% [markdown]
+     
     # #### Hyperparameters setting
 
-    # %%
+    
     params = json.load(open("../experiment_metadata.json"))
     params = params[exp_config]["config"]
 
-    # %%
+    
     # set params as variables in this notebook
     for key, value in params.items():
         globals()[key] = value
 
-    # %%
+    
     custom_network_folder = f"../networks/{network}"
-    training_episodes = (frames_per_batch / new_machines_after_mutation) * n_iters
-    total_frames = frames_per_batch * n_iters
-    phases = [1, human_learning_episodes, int(training_episodes) + human_learning_episodes]
-    phase_names = ["Human learning", "Mutation - Machine learning", "Testing phase"]
-    records_folder = f"../records/{exp_id}"
-    plots_folder = f"../plots/{exp_id}"
+    records_folder = f"../results/{exp_id}"
+    plots_folder = f"../results/{exp_id}/plots"
 
     # Read origin-destinations
     od_file_path = os.path.join(custom_network_folder, f"od_{network}.txt")
@@ -85,9 +83,10 @@ if __name__ == "__main__":
     origins = data['origins']
     destinations = data['destinations']
 
-    # %%
+    
     # Copy agents.csv from custom_network_folder to records_folder
     agents_csv_path = os.path.join(custom_network_folder, "agents.csv")
+    num_agents = len(pd.read_csv(agents_csv_path))
     if os.path.exists(agents_csv_path):
         os.makedirs(records_folder, exist_ok=True)
         new_agents_csv_path = os.path.join(records_folder, "agents.csv")
@@ -96,24 +95,33 @@ if __name__ == "__main__":
         with open(new_agents_csv_path, 'w', encoding='utf-8') as f:
             f.write(content)
             
-    # %%
+            
+    num_machines = int(num_agents * ratio_machines)
+    training_episodes = agent_frames_per_batch * n_iters
+    frames_per_batch = num_machines * agent_frames_per_batch
+    total_frames = frames_per_batch * n_iters
+    phases = [1, human_learning_episodes, int(training_episodes) + human_learning_episodes]
+    phase_names = ["Human stabilization", "Mutation and AV learning", "Testing phase"]
+    
     # Dump exp config to records
     exp_config_path = os.path.join(records_folder, "exp_config.json")
     dump_config = params.copy()
     dump_config["network"] = network
     dump_config["seed"] = seed
     dump_config["config"] = exp_config
+    dump_config["num_agents"] = num_agents
+    dump_config["num_machines"] = num_machines
     with open(exp_config_path, 'w', encoding='utf-8') as f:
         json.dump(dump_config, f, indent=4)
 
-    # %%
+    
     env = TrafficEnvironment(
         seed = seed,
         create_agents = False,
         create_paths = True,
         save_detectors_info = False,
         agent_parameters = {
-            "new_machines_after_mutation": new_machines_after_mutation, 
+            "new_machines_after_mutation": num_machines, 
             "human_parameters" : {
                 "model" : human_model
             },
@@ -147,34 +155,34 @@ if __name__ == "__main__":
         } 
     )
 
-    # %%
+    
     print("Number of total agents is: ", len(env.all_agents), "\n")
     print("Number of human agents is: ", len(env.human_agents), "\n")
     print("Number of machine agents (autonomous vehicles) is: ", len(env.machine_agents), "\n")
 
-    # %%
+    
     env.start()
     res = env.reset()
 
-    # %% [markdown]
+     
     # #### Human learning
 
-    # %%
+    
     for episode in range(human_learning_episodes):
         env.step()
 
-    # %% [markdown]
+     
     # #### Mutation
 
-    # %%
+    
     env.mutation(mutation_start_percentile=-1)
 
-    # %%
+    
     print("Number of total agents is: ", len(env.all_agents), "\n")
     print("Number of human agents is: ", len(env.human_agents), "\n")
     print("Number of machine agents (autonomous vehicles) is: ", len(env.machine_agents), "\n")
 
-    # %%
+    
     group = {'agents': [str(machine.id) for machine in env.machine_agents]}
 
     env = PettingZooWrapper(
@@ -186,20 +194,20 @@ if __name__ == "__main__":
         device=device
     )
 
-    # %%
+    
     env = TransformedEnv(
         env,
         RewardSum(in_keys=[env.reward_key], out_keys=[("agents", "episode_reward")]),
     )
 
-    # %%
+    
     check_env_specs(env)
 
 
-    # %%
+    
     reset_td = env.reset()
 
-    # %%
+    
     share_parameters_policy = False 
 
     policy_net = torch.nn.Sequential(
@@ -216,14 +224,14 @@ if __name__ == "__main__":
         ),
     )
 
-    # %%
+    
     policy_module = TensorDictModule(
         policy_net,
         in_keys=[("agents", "observation")],
         out_keys=[("agents", "logits")],
     ) 
 
-    # %%
+    
     policy = ProbabilisticActor(
         module=policy_module,
         spec=env.action_spec,
@@ -234,7 +242,7 @@ if __name__ == "__main__":
         log_prob_key=("agents", "sample_log_prob"),
     )
 
-    # %%
+    
     share_parameters_critic = True
     mappo = False  # IPPO if False
 
@@ -256,10 +264,10 @@ if __name__ == "__main__":
         out_keys=[("agents", "state_value")],
     )
 
-    # %% [markdown]
+     
     # #### Collector
 
-    # %%
+    
     collector = SyncDataCollector(
         env,
         policy,
@@ -269,10 +277,10 @@ if __name__ == "__main__":
         total_frames=total_frames,
     ) 
 
-    # %% [markdown]
+     
     # #### Replay buffer
 
-    # %%
+    
     replay_buffer = ReplayBuffer(
         storage=LazyTensorStorage(
             frames_per_batch, device=device
@@ -281,10 +289,10 @@ if __name__ == "__main__":
         batch_size=minibatch_size,
     )
 
-    # %% [markdown]
+     
     # #### PPO loss function
 
-    # %%
+    
     loss_module = ClipPPOLoss(
         actor_network=policy,
         critic_network=critic,
@@ -309,10 +317,10 @@ if __name__ == "__main__":
 
     optim = torch.optim.Adam(loss_module.parameters(), lr)
 
-    # %% [markdown]
+     
     # #### Training loop
 
-    # %%
+    
     pbar = tqdm(total=n_iters, desc="episode_reward_mean = 0")
 
     episode_reward_mean_list = []
@@ -359,7 +367,7 @@ if __name__ == "__main__":
                     + loss_vals["loss_critic"]
                     + loss_vals["loss_entropy"]
                 )
-
+                
                 loss_value.backward()
 
                 torch.nn.utils.clip_grad_norm_(
@@ -370,15 +378,10 @@ if __name__ == "__main__":
                 optim.zero_grad()
 
                 loss_values.append(loss_value.item())
-
                 loss_entropy.append(loss_vals["loss_entropy"].item())
-
                 loss_objective.append(loss_vals["loss_objective"].item())
-
                 loss_critic.append(loss_vals["loss_critic"].item())
 
-
-    
         collector.update_policy_weights_()
     
         # Logging
@@ -389,20 +392,52 @@ if __name__ == "__main__":
         )
         episode_reward_mean_list.append(episode_reward_mean)
 
-
         pbar.set_description(f"episode_reward_mean = {episode_reward_mean}", refresh=False)
         pbar.update()
+    
+    pbar.close()
+        
+    # Save loss values in a txt file
+    loss_values_path = os.path.join(records_folder, "losses/loss_values.txt")
+    loss_entropy_path = os.path.join(records_folder, "losses/loss_entropy.txt")
+    loss_objective_path = os.path.join(records_folder, "losses/loss_objective.txt")
+    loss_critic_path = os.path.join(records_folder, "losses/loss_critic.txt")
+    os.makedirs(os.path.dirname(loss_values_path), exist_ok=True)
+    with open(loss_values_path, 'w') as f:
+        for item in loss_values:
+            f.write("%s\n" % item)
+    with open(loss_entropy_path, 'w') as f:
+        for item in loss_entropy:
+            f.write("%s\n" % item)
+    with open(loss_objective_path, 'w') as f:
+        for item in loss_objective:
+            f.write("%s\n" % item)
+    with open(loss_critic_path, 'w') as f:
+        for item in loss_critic:
+            f.write("%s\n" % item)
 
-    # %%
+    
     policy.eval() # set the policy into evaluation mode
     for episode in range(test_eps):
         env.rollout(len(env.machine_agents), policy=policy)
 
-    # %%
+    
     os.makedirs(plots_folder, exist_ok=True)
     env.plot_results()
+    
+    plt.figure()
+    plt.plot(loss_values, label='loss_values')
+    plt.plot(loss_entropy, label='loss_entropy')
+    plt.plot(loss_objective, label='loss_objective')
+    plt.plot(loss_critic, label='loss_critic')
+    plt.legend()
+    plt.xlabel('Iteration')
+    plt.ylabel('Loss')
+    plt.title('Losses')
+    plt.savefig(os.path.join(plots_folder, 'losses.png'))
+    plt.close()
 
-    # %%
+    
     env.stop_simulation()
 
 

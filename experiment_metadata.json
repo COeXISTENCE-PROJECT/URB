@@ -2,7 +2,8 @@
     "1_ippo" : {
         "desc" : "",
         "config" : {
-            "new_machines_after_mutation" : 400,
+            "ratio_machines" : 0.4,
+            "agent_frames_per_batch" : 2,
             "frames_per_batch" : 4000,
             "n_iters" : 800,
             "human_learning_episodes" : 500,
@@ -40,8 +41,8 @@
     "1_iql" : {
         "desc" : "",
         "config" : {
-            "new_machines_after_mutation" : 400,
-            "frames_per_batch" : 4000,
+            "ratio_machines" : 0.4,
+            "agent_frames_per_batch" : 2,
             "n_iters" : 800,
             "human_learning_episodes" : 500,
             "test_eps" : 100,
@@ -77,8 +78,8 @@
     "1_qmix" : {
         "desc" : "",
         "config" : {
-            "new_machines_after_mutation" : 400,
-            "frames_per_batch" : 4000,
+            "ratio_machines" : 0.4,
+            "agent_frames_per_batch" : 2,
             "n_iters" : 800,
             "human_learning_episodes" : 500,
             "test_eps" : 100,
@@ -113,8 +114,8 @@
     "1_mappo" : {
         "desc" : "",
         "config" : {
-            "new_machines_after_mutation" : 400,
-            "frames_per_batch" : 4000,
+            "ratio_machines" : 0.4,
+            "agent_frames_per_batch" : 2,
             "n_iters" : 800,
             "human_learning_episodes" : 500,
             "test_eps" : 100,
@@ -151,178 +152,7 @@
     "baseline" : {
         "desc" : "",
         "config" : {
-            "new_machines_after_mutation" : 400,
-            "human_learning_episodes" : 500,
-            "training_eps" : 1000,
-            "test_eps" : 100,
-    
-            "av_behavior" : "selfish",
-    
-            "smooth_by" : 10,
-            "plot_choices" : "basic",
-            "save_every" : 1,
-    
-            "human_model" : "benchmark_human",
-    
-            "number_of_paths" : 4,
-            "path_gen_beta" : -5,
-            "num_samples" : 10
-        }
-    },
-
-    "1_ippo_small" : {
-        "desc" : "",
-        "config" : {
-            "new_machines_after_mutation" : 90,
-            "frames_per_batch" : 900,
-            "n_iters" : 800,
-            "human_learning_episodes" : 500,
-            "test_eps" : 100,
-    
-            "num_epochs" : 1,
-            "minibatch_size" : 32,
-            "lr" : 3e-3,
-            "max_grad_norm" : 3.0,
-    
-            "clip_epsilon" : 0.2,
-            "gamma" : 0.99,
-            "lmbda" : 0.9,
-            "entropy_eps" : 1e-4,
-            "normalize_advantage" : false,
-            "policy_network_depth": 3,
-            "policy_network_num_cells" : 64,
-            "critic_network_depth": 3,
-            "critic_network_num_cells" : 64,
-    
-            "av_behavior" : "selfish",
-    
-            "smooth_by" : 10,
-            "plot_choices" : "basic",
-            "save_every" : 1,
-    
-            "human_model" : "benchmark_human",
-    
-            "number_of_paths" : 4,
-            "path_gen_beta" : -5,
-            "num_samples" : 10
-        }
-    },
-
-    "1_iql_small" : {
-        "desc" : "",
-        "config" : {
-            "new_machines_after_mutation" : 90,
-            "frames_per_batch" : 900,
-            "n_iters" : 800,
-            "human_learning_episodes" : 500,
-            "test_eps" : 100,
-    
-            "num_epochs" : 1,
-            "minibatch_size" : 32,
-            "lr" : 3e-3,
-            "max_grad_norm" : 3.0,
-            "gamma" : 0.99,
-            "memory_size" : 1000,
-            "mlp_depth" : 3,
-            "mlp_cells" : 64,
-            "tau" :  0.05,
-            "eps" : 0.95,
-            "eps_init" : 0.99,
-            "eps_end" : 0.05,
-            "exploration_fraction" : 0.33,
-    
-            "av_behavior" : "selfish",
-    
-            "smooth_by" : 10,
-            "plot_choices" : "basic",
-            "save_every" : 1,
-    
-            "human_model" : "benchmark_human",
-    
-            "number_of_paths" : 4,
-            "path_gen_beta" : -5,
-            "num_samples" : 10
-        }
-    },
-
-    "1_qmix_small" : {
-        "desc" : "",
-        "config" : {
-            "new_machines_after_mutation" : 90,
-            "frames_per_batch" : 900,
-            "n_iters" : 800,
-            "human_learning_episodes" : 500,
-            "test_eps" : 100,
-
-            "num_epochs" : 1,
-            "minibatch_size" : 32,
-            "lr" : 3e-3,
-            "max_grad_norm" : 3.0,
-            "memory_size" : 1000,
-            "tau" : 0.005,
-            "gamma" : 0.99,
-            "mlp_depth" : 3,
-            "mlp_cells" : 64,
-            "eps_greedy_init" : 1.00,
-            "eps_greedy_end" : 0.05,
-            "mixing_embed_dim" : 64,
-    
-            "av_behavior" : "cooperative",
-    
-            "smooth_by" : 10,
-            "plot_choices" : "basic",
-            "save_every" : 1,
-    
-            "human_model" : "benchmark_human",
-    
-            "number_of_paths" : 4,
-            "path_gen_beta" : -5,
-            "num_samples" : 10
-        }
-    },
-
-    "1_mappo_small" : {
-        "desc" : "",
-        "config" : {
-            "new_machines_after_mutation" : 90,
-            "frames_per_batch" : 900,
-            "n_iters" : 800,
-            "human_learning_episodes" : 500,
-            "test_eps" : 100,
-    
-            "num_epochs" : 1,
-            "minibatch_size" : 32,
-            "lr" : 3e-3,
-            "max_grad_norm" : 3.0,
-    
-            "clip_epsilon" : 0.2,
-            "gamma" : 0.99,
-            "lmbda" : 0.9,
-            "entropy_eps" : 1e-4,
-            "normalize_advantage" : false,
-            "policy_network_depth": 3,
-            "policy_network_num_cells" : 64,
-            "critic_network_depth": 3,
-            "critic_network_num_cells" : 64,
-    
-            "av_behavior" : "cooperative",
-    
-            "smooth_by" : 10,
-            "plot_choices" : "basic",
-            "save_every" : 1,
-    
-            "human_model" : "benchmark_human",
-    
-            "number_of_paths" : 4,
-            "path_gen_beta" : -5,
-            "num_samples" : 10
-        }
-    },
-
-    "baseline_small" : {
-        "desc" : "",
-        "config" : {
-            "new_machines_after_mutation" : 90,
+            "ratio_machines" : 0.4,
             "human_learning_episodes" : 500,
             "training_eps" : 1000,
             "test_eps" : 100,
@@ -344,8 +174,8 @@
     "ippo_test" : {
         "desc" : "For a quick test using IPPO, 14 eps (5+4+5)",
         "config" : {
-            "new_machines_after_mutation" : 50,
-            "frames_per_batch" : 100,
+            "ratio_machines" : 0.05,
+            "agent_frames_per_batch" : 2,
             "n_iters" : 5,
             "human_learning_episodes" : 20,
             "test_eps" : 20,
@@ -382,8 +212,8 @@
     "iql_test" : {
         "desc" : "For a quick test using IQL, 14 eps (5+4+5)",
         "config" : {
-            "new_machines_after_mutation" : 50,
-            "frames_per_batch" : 100,
+            "ratio_machines" : 0.05,
+            "agent_frames_per_batch" : 2,
             "n_iters" : 5,
             "human_learning_episodes" : 20,
             "test_eps" : 20,
@@ -419,8 +249,8 @@
     "baseline_test" : {
         "desc" : "For a quick test using the baseline, 5 eps (5+5+5)",
         "config" : {
-            "new_machines_after_mutation" : 50,
-            "human_learning_episodes" : 20,
+            "ratio_machines" : 0.05,
+            "agent_frames_per_batch" : 2,
             "training_eps" : 10,
             "test_eps" : 20,
     
@@ -441,8 +271,8 @@
     "qmix_test" : {
         "desc" : "",
         "config" : {
-            "new_machines_after_mutation" : 50,
-            "frames_per_batch" : 100,
+            "ratio_machines" : 0.05,
+            "agent_frames_per_batch" : 2,
             "n_iters" : 5,
             "human_learning_episodes" : 20,
             "test_eps" : 20,
@@ -476,8 +306,8 @@
     "mappo_test" : {
         "desc" : "",
         "config" : {
-            "new_machines_after_mutation" : 50,
-            "frames_per_batch" : 100,
+            "ratio_machines" : 0.05,
+            "agent_frames_per_batch" : 2,
             "n_iters" : 5,
             "human_learning_episodes" : 20,
             "test_eps" : 20,

@@ -74,7 +74,7 @@ For example:
 python scripts/ippo_torchrl.py --id exp_1 --conf 1_ippo --net gargenville --seed 42
 ```
 
-Records will be saved to ```records/<exp_id>```. Plots will be saved to ```plots/<exp_id>```.
+Records and plots will be saved in ```results/<exp_id>```.
 
 > ⚠️ **Attention**: There is one additional flag `model` for `scripts/baselines.py`:
 

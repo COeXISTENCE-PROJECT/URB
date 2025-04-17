@@ -1,9 +1,10 @@
-# %%
+
 import argparse
 import ast
 import json
 import logging
 import os
+import pandas as pd
 import torch
 
 from torch import nn
@@ -52,7 +53,7 @@ if __name__ == "__main__":
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
-    # %%
+    
     device = (
         torch.device(0)
         if torch.cuda.is_available()
@@ -60,26 +61,22 @@ if __name__ == "__main__":
     )
     print("device is: ", device)
 
-    # %% [markdown]
+     
     # #### Hyperparameters setting
 
-    # %%
+    
     params = json.load(open("../experiment_metadata.json"))
     params = params[exp_config]["config"]
 
-    # %%
+    
     # set params as variables in this notebook
     for key, value in params.items():
         globals()[key] = value
 
-    # %%
+    
     custom_network_folder = f"../networks/{network}"
-    training_episodes = (frames_per_batch / new_machines_after_mutation) * n_iters
-    total_frames = frames_per_batch * n_iters
-    phases = [0, human_learning_episodes, int(training_episodes) + human_learning_episodes]
-    phase_names = ["Human learning", "Mutation - Machine learning", "Testing phase"]
-    records_folder = f"../records/{exp_id}"
-    plots_folder = f"../plots/{exp_id}"
+    records_folder = f"../results/{exp_id}"
+    plots_folder = f"../results/{exp_id}/plots"
 
     # Read origin-destinations
     od_file_path = os.path.join(custom_network_folder, f"od_{network}.txt")
@@ -89,9 +86,10 @@ if __name__ == "__main__":
     origins = data['origins']
     destinations = data['destinations']
 
-    # %%
+    
     # Copy agents.csv from custom_network_folder to records_folder
     agents_csv_path = os.path.join(custom_network_folder, "agents.csv")
+    num_agents = len(pd.read_csv(agents_csv_path))
     if os.path.exists(agents_csv_path):
         os.makedirs(records_folder, exist_ok=True)
         new_agents_csv_path = os.path.join(records_folder, "agents.csv")
@@ -100,24 +98,32 @@ if __name__ == "__main__":
         with open(new_agents_csv_path, 'w', encoding='utf-8') as f:
             f.write(content)
             
-    # %%
+    num_machines = int(num_agents * ratio_machines)
+    training_episodes = agent_frames_per_batch * n_iters
+    frames_per_batch = num_machines * agent_frames_per_batch
+    total_frames = frames_per_batch * n_iters
+    phases = [1, human_learning_episodes, int(training_episodes) + human_learning_episodes]
+    phase_names = ["Human stabilization", "Mutation and AV learning", "Testing phase"]
+    
     # Dump exp config to records
     exp_config_path = os.path.join(records_folder, "exp_config.json")
     dump_config = params.copy()
     dump_config["network"] = network
     dump_config["seed"] = seed
     dump_config["config"] = exp_config
+    dump_config["num_agents"] = num_agents
+    dump_config["num_machines"] = num_machines
     with open(exp_config_path, 'w', encoding='utf-8') as f:
         json.dump(dump_config, f, indent=4)
 
-    # %%
+    
     env = TrafficEnvironment(
         seed = seed,
         create_agents = False,
         create_paths = True,
         save_detectors_info = False,
         agent_parameters = {
-            "new_machines_after_mutation": new_machines_after_mutation, 
+            "new_machines_after_mutation": num_machines, 
             "human_parameters" : {
                 "model" : human_model
             },
@@ -131,8 +137,8 @@ if __name__ == "__main__":
             "sumo_type" : "sumo",
         }, 
         environment_parameters = {
-            "save_every" : 5,
-        }, 
+            "save_every" : save_every,
+        },
         plotter_parameters = {
             "phases" : phases,
             "phase_names" : phase_names,
@@ -151,27 +157,27 @@ if __name__ == "__main__":
         } 
     )
 
-    # %%
+    
     env.start()
     env.reset()
 
-    # %% [markdown]
+     
     # #### Human learning
 
-    # %%
+    
     for episode in range(human_learning_episodes):
         env.step()
 
-    # %% [markdown]
+     
     # #### Mutation
     
-    # %%
-    env.mutation()
+    
+    env.mutation(mutation_start_percentile = -1)
     print("Number of total agents is: ", len(env.all_agents), "\n")
     print("Number of human agents is: ", len(env.human_agents), "\n")
     print("Number of machine agents (autonomous vehicles) is: ", len(env.machine_agents), "\n")
     
-    # %%
+    
     group = {'agents': [str(machine.id) for machine in env.machine_agents]}
 
     env = PettingZooWrapper(
@@ -183,29 +189,29 @@ if __name__ == "__main__":
         device=device
     )
 
-    # %% [markdown]
+     
     # #### Transforms
 
-    # %%
+    
     env = TransformedEnv(
         env,
         RewardSum(in_keys=[env.reward_key], out_keys=[("agents", "episode_reward")]),
     )
 
-    # %% [markdown]
+     
     # The <code style="color:white">check_env_specs()</code> function runs a small rollout and compared it output against the environment specs. It will raise an error if the specs aren't properly defined.
 
-    # %%
+    
     check_env_specs(env)
     env.reset()
 
-    # %% [markdown]
+     
     # #### Policy network
 
-    # %% [markdown]
+     
     # > Instantiate an `MPL` that can be used in multi-agent contexts.
 
-    # %%
+    
     net = MultiAgentMLP(
             n_agent_inputs=env.observation_spec["agents", "observation"].shape[-1],
             n_agent_outputs=env.action_spec.space.n,
@@ -218,12 +224,12 @@ if __name__ == "__main__":
             activation_class=nn.Tanh,
         )
 
-    # %%
+    
     module = TensorDictModule(
             net, in_keys=[("agents", "observation")], out_keys=[("agents", "action_value")]
     )
 
-    # %%
+    
     value_module = QValueModule(
         action_value_key=("agents", "action_value"),
         out_keys=[
@@ -237,7 +243,7 @@ if __name__ == "__main__":
 
     qnet = SafeSequential(module, value_module)
 
-    # %%
+    
     qnet_explore = TensorDictSequential(
         qnet,
         EGreedyModule(
@@ -262,10 +268,10 @@ if __name__ == "__main__":
         out_keys=["chosen_action_value"],
     )
 
-    # %% [markdown]
+     
     # #### Collector
 
-    # %%
+    
     collector = SyncDataCollector(
             env,
             qnet_explore,
@@ -275,20 +281,20 @@ if __name__ == "__main__":
             total_frames=total_frames,
         )
 
-    # %% [markdown]
+     
     # #### Replay buffer
 
-    # %%
+    
     replay_buffer = TensorDictReplayBuffer(
             storage=LazyTensorStorage(memory_size, device=device),
             sampler=SamplerWithoutReplacement(),
             batch_size=minibatch_size,
         )
 
-    # %% [markdown]
+     
     # #### DQN loss function
 
-    # %%
+    
     loss_module = QMixerLoss(qnet, mixer, delay_value=True)
 
     loss_module.set_keys(
@@ -303,10 +309,10 @@ if __name__ == "__main__":
 
     optim = torch.optim.Adam(loss_module.parameters(), lr)
 
-    # %% [markdown]
+     
     # #### Training loop
 
-    # %%
+    
     training_frames_counter = 0
     for i, tensordict_data in tqdm(enumerate(collector), total=n_iters, desc="Training"):
 
@@ -356,19 +362,19 @@ if __name__ == "__main__":
         training_tds = torch.stack(training_tds) 
     
 
-    # %% [markdown]
+     
     # > Testing phase
 
-    # %%
+    
     qnet.eval() # set the policy into evaluation mode
     for episode in range(test_eps):
         env.rollout(len(env.machine_agents), policy=qnet)
         
-    # %%
+    
     os.makedirs(plots_folder, exist_ok=True)
     env.plot_results()
 
-    # %%
+    
     env.stop_simulation()
 
 
