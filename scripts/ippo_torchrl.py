@@ -72,7 +72,7 @@ if __name__ == "__main__":
     custom_network_folder = f"../networks/{network}"
     training_episodes = (frames_per_batch / new_machines_after_mutation) * n_iters
     total_frames = frames_per_batch * n_iters
-    phases = [0, human_learning_episodes, int(training_episodes) + human_learning_episodes]
+    phases = [1, human_learning_episodes, int(training_episodes) + human_learning_episodes]
     phase_names = ["Human learning", "Mutation - Machine learning", "Testing phase"]
     records_folder = f"../records/{exp_id}"
     plots_folder = f"../plots/{exp_id}"
@@ -115,33 +115,19 @@ if __name__ == "__main__":
         agent_parameters = {
             "new_machines_after_mutation": new_machines_after_mutation, 
             "human_parameters" : {
-                "model" : human_model, 
-                "noise_weight_agent" : noise_weight_agent,
-                "noise_weight_path" : noise_weight_path,
-                "noise_weight_day" : noise_weight_day,
-                "beta" : beta,
-                "beta_k_i_variability" : beta_k_i_variability,
-                "epsilon_i_variability" : epsilon_i_variability,
-                "epsilon_k_i_variability" : epsilon_k_i_variability,
-                "epsilon_k_i_t_variability" : epsilon_k_i_t_variability,
-                "greedy" : greedy,
-                "gamma_c" : gamma_c,
-                "gamma_u" : gamma_u,
-                "remember" : remember,
-                "alpha_zero" : alpha_zero,
-                "alphas" : alphas
-                },
+                "model" : human_model
+            },
             "machine_parameters" :{
                 "behavior" : av_behavior,
-                }
-            },
+            }
+        },
         simulator_parameters = {
             "network_name" : network,
             "custom_network_folder" : custom_network_folder,
             "sumo_type" : "sumo",
         }, 
         environment_parameters = {
-            "save_every" : 5,
+            "save_every" : save_every,
         },
         plotter_parameters = {
             "phases" : phases,
@@ -181,7 +167,7 @@ if __name__ == "__main__":
     # #### Mutation
 
     # %%
-    env.mutation()
+    env.mutation(mutation_start_percentile=-1)
 
     # %%
     print("Number of total agents is: ", len(env.all_agents), "\n")

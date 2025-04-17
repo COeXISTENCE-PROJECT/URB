@@ -118,26 +118,12 @@ if __name__ == "__main__":
         agent_parameters = {
             "new_machines_after_mutation": new_machines_after_mutation, 
             "human_parameters" : {
-                "model" : human_model, 
-                "noise_weight_agent" : noise_weight_agent,
-                "noise_weight_path" : noise_weight_path,
-                "noise_weight_day" : noise_weight_day,
-                "beta" : beta,
-                "beta_k_i_variability" : beta_k_i_variability,
-                "epsilon_i_variability" : epsilon_i_variability,
-                "epsilon_k_i_variability" : epsilon_k_i_variability,
-                "epsilon_k_i_t_variability" : epsilon_k_i_t_variability,
-                "greedy" : greedy,
-                "gamma_c" : gamma_c,
-                "gamma_u" : gamma_u,
-                "remember" : remember,
-                "alpha_zero" : alpha_zero,
-                "alphas" : alphas
-                },
+                "model" : human_model
+            },
             "machine_parameters" :{
                 "behavior" : av_behavior,
-                }
-            },
+            }
+        },
         simulator_parameters = {
             "network_name" : network,
             "custom_network_folder" : custom_network_folder,
