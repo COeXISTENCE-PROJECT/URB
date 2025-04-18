@@ -260,7 +260,7 @@ if __name__ == "__main__":
         EGreedyModule(
             eps_init=eps_greedy_init,
             eps_end=eps_greedy_end,
-            annealing_num_steps=int(total_frames * (1 / 2)), # Number of steps it will take for epsilon to reach the eps_end value
+            annealing_num_steps=int(total_frames * exploration_fraction),
             action_key=env.action_key, # The key where the action can be found in the input tensordict.
             spec=env.action_spec,
         ),

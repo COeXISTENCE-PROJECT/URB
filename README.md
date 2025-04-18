@@ -71,7 +71,7 @@ python scripts/<script_name> --id <exp_id> --conf <configuration_id> --net <net_
 
 For example:
 ```
-python scripts/ippo_torchrl.py --id exp_1 --conf 1_ippo --net gargenville --seed 42
+python scripts/ippo_torchrl.py --id gar_ippo_42 --conf 1_ippo --net gargenville --seed 42
 ```
 
 Records and plots will be saved in ```results/<exp_id>```.
@@ -85,5 +85,5 @@ python scripts/baselines.py --id <exp_id> --conf <configuration_id> --net <net_n
 And `<model_name>` should be from `routerl.Keychain.HUMAN_MODELS` (see [here](https://github.com/COeXISTENCE-PROJECT/RouteRL/blob/6af53cfb0174c72a75216c8fce256aac96b044ae/routerl/keychain.py#L124)). For example:
 
 ```
-python scripts/baselines.py --id exp_2 --conf baseline --net ingolstadt_custom --seed 42 --model gawron
+python scripts/baselines.py --id ing_aon_42 --conf 1_baseline --net ingolstadt_custom --seed 42 --model aon
 ```
