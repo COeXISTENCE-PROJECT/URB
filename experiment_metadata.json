@@ -254,7 +254,7 @@
             "test_eps" : 10,
 
             "num_epochs" : 1,
-            "minibatch_size" : 2,
+            "minibatch_size" : 32,
             "lr" : 3e-3,
             "max_grad_norm" : 3.0,
             "memory_size" : 1000,
@@ -265,6 +265,8 @@
             "eps_greedy_init" : 1.00,
             "eps_greedy_end" : 0.05,
             "mixing_embed_dim" : 64,
+            "exploration_fraction" : 0.4,
+    
             "av_behavior" : "cooperative",
     
             "smooth_by" : 3,
