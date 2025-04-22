@@ -55,35 +55,40 @@ git clone https://github.com/COeXISTENCE-PROJECT/URB.git
 cd URB
 pip3 install -r requirements.txt
 ```
+- If cached installations are outdated, you can also use the following:
+```
+pip3 install --force-reinstall --no-cache-dir -r requirements.txt
+```
 
 ---
 
 ## Usage:
 ```
-python scripts/<script_name> --id <exp_id> --conf <configuration_id> --net <net_name> --seed <seed>
+python scripts/<script_name> --id <exp_id> --conf <configuration_id> --net <net_name> --env-seed <env_seed> --torch-seed <torch_seed>
 ```
 
 - Replace `<scipt_name>` with the script you wish to run.
 - Replace `<exp_id>` with the experiment identifier. 
 - Replace `<configuration_id>` with the configuration identifier. Must be compatible with the script and a key from `experiment_metadata.json`.
 - Replace `<net_name>` with the name of the network you wish to use. Must be one of the folder names in `networks/`.
-- Replace `<seed>` with your reproducibility random seed. For consistency with others, set to 42. 
+- Replace `<env_seed>` with your reproducibility random seed for the traffic environment. (default=42)
+- Replace `<torch_seed>` with your reproducibility random seed for PyTorch. (default=42)
 
 For example:
 ```
-python scripts/ippo_torchrl.py --id gar_ippo_42 --conf 1_ippo --net gargenville --seed 42
+python scripts/ippo_torchrl.py --id gar_ippo_0 --conf 1_ippo --net gargenville --env-seed 42 --torch-seed 0
 ```
 
 Records and plots will be saved in ```results/<exp_id>```.
 
-> ⚠️ **Attention**: There is one additional flag `model` for `scripts/baselines.py`:
+> ⚠️ **Attention**: There is one additional flag `model` for `scripts/baselines.py`, instead of `torch-seed`:
 
 ```
-python scripts/baselines.py --id <exp_id> --conf <configuration_id> --net <net_name> --seed <seed> --model <model_name>
+python scripts/baselines.py --id <exp_id> --conf <configuration_id> --net <net_name> --env-seed <env_seed> --model <model_name>
 ```
 
 And `<model_name>` should be from `routerl.Keychain.HUMAN_MODELS` (see [here](https://github.com/COeXISTENCE-PROJECT/RouteRL/blob/6af53cfb0174c72a75216c8fce256aac96b044ae/routerl/keychain.py#L124)). For example:
 
 ```
-python scripts/baselines.py --id ing_aon_42 --conf 1_baseline --net ingolstadt_custom --seed 42 --model aon
+python scripts/baselines.py --id ing_aon --conf 1_baseline --net ingolstadt_custom --env-seed 42 --model aon
 ```

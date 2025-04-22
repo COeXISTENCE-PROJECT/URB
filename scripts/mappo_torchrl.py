@@ -1,13 +1,14 @@
-
 import argparse
 import ast
 import json
 import logging
 import os
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import torch
 
+from routerl import TrafficEnvironment
 from tensordict.nn import TensorDictModule
 from torchrl.collectors import SyncDataCollector
 from torch.distributions import Categorical
@@ -20,8 +21,6 @@ from torchrl.data.replay_buffers.storages import LazyTensorStorage
 from torchrl.modules import MultiAgentMLP, ProbabilisticActor
 from torchrl.objectives.value import GAE
 from torchrl.objectives import ClipPPOLoss, ValueEstimators
-
-from routerl import TrafficEnvironment
 from tqdm import tqdm
 
 if __name__ == "__main__":
@@ -30,23 +29,27 @@ if __name__ == "__main__":
     parser.add_argument('--id', type=str, required=True)
     parser.add_argument('--conf', type=str, required=True)
     parser.add_argument('--net', type=str, required=True)
-    parser.add_argument('--seed', type=int, default=42)
+    parser.add_argument('--env-seed', type=int, default=42)
+    parser.add_argument('--torch-seed', type=int, default=42)
     args = parser.parse_args()
     exp_id = args.id
     exp_config = args.conf
     network = args.net
-    seed = args.seed
+    env_seed = args.env_seed
+    torch_seed = args.torch_seed
     print("### STARTING EXPERIMENT ###")
     print(f"Experiment ID: {exp_id}")
     print(f"Network: {network}")
-    print(f"Seed: {seed}")
+    print(f"Environment seed: {env_seed}")
+    print(f"PyTorch seed: {torch_seed}")
+    print(f"Experiment config: {exp_config}")
 
     os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
     
     logging.getLogger("matplotlib").setLevel(logging.ERROR)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
+    torch.manual_seed(torch_seed)
+    torch.cuda.manual_seed(torch_seed)
+    torch.cuda.manual_seed_all(torch_seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
@@ -66,7 +69,7 @@ if __name__ == "__main__":
     params = params[exp_config]["config"]
 
     
-    # set params as variables in this notebook
+    # set params as variables in this script
     for key, value in params.items():
         globals()[key] = value
 
@@ -106,7 +109,8 @@ if __name__ == "__main__":
     exp_config_path = os.path.join(records_folder, "exp_config.json")
     dump_config = params.copy()
     dump_config["network"] = network
-    dump_config["seed"] = seed
+    dump_config["env_seed"] = env_seed
+    dump_config["torch_seed"] = torch_seed
     dump_config["config"] = exp_config
     dump_config["num_agents"] = num_agents
     dump_config["num_machines"] = num_machines
@@ -115,7 +119,7 @@ if __name__ == "__main__":
 
     
     env = TrafficEnvironment(
-        seed = seed,
+        seed = env_seed,
         create_agents = False,
         create_paths = True,
         save_detectors_info = False,
@@ -155,7 +159,7 @@ if __name__ == "__main__":
     )
 
     print(f"""
-    Agent in the traffic:
+    Agents in the traffic:
     • Total agents           : {len(env.all_agents)}
     • Human agents           : {len(env.human_agents)}
     • AV agents              : {len(env.machine_agents)}
@@ -178,7 +182,7 @@ if __name__ == "__main__":
     env.mutation(mutation_start_percentile = -1)
 
     print(f"""
-    Agent in the traffic:
+    Agents in the traffic:
     • Total agents           : {len(env.all_agents)}
     • Human agents           : {len(env.human_agents)}
     • AV agents              : {len(env.machine_agents)}
