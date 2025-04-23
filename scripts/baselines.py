@@ -179,6 +179,7 @@ if __name__ == "__main__":
     free_flows = env.get_free_flow_times()
     for h_id, human in mutated_humans.items():
         initial_knowledge = free_flows[(human.origin, human.destination)]
+        initial_knowledge = [-1 * item for item in initial_knowledge]
         mutated_humans[h_id].model = routerl.get_learning_model(human_learning_params, initial_knowledge)
        
     pbar.set_description("AV learning")
