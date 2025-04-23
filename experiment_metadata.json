@@ -254,7 +254,7 @@
             "test_eps" : 10,
 
             "num_epochs" : 1,
-            "minibatch_size" : 32,
+            "minibatch_size" : 2,
             "lr" : 3e-3,
             "max_grad_norm" : 3.0,
             "memory_size" : 1000,
