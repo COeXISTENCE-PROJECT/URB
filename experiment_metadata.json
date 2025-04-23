@@ -28,7 +28,7 @@
             "plot_choices" : "basic",
             "save_every" : 5,
     
-            "human_model" : "benchmark_human",
+            "human_model" : "gawron",
     
             "number_of_paths" : 4,
             "path_gen_beta" : -5,
@@ -65,7 +65,7 @@
             "plot_choices" : "basic",
             "save_every" : 5,
     
-            "human_model" : "benchmark_human",
+            "human_model" : "gawron",
     
             "number_of_paths" : 4,
             "path_gen_beta" : -5,
@@ -102,7 +102,7 @@
             "plot_choices" : "basic",
             "save_every" : 5,
     
-            "human_model" : "benchmark_human",
+            "human_model" : "gawron",
     
             "number_of_paths" : 4,
             "path_gen_beta" : -5,
@@ -139,7 +139,7 @@
             "plot_choices" : "basic",
             "save_every" : 5,
     
-            "human_model" : "benchmark_human",
+            "human_model" : "gawron",
     
             "number_of_paths" : 4,
             "path_gen_beta" : -5,
@@ -161,7 +161,7 @@
             "plot_choices" : "basic",
             "save_every" : 5,
     
-            "human_model" : "benchmark_human",
+            "human_model" : "gawron",
     
             "number_of_paths" : 4,
             "path_gen_beta" : -5,
@@ -199,7 +199,7 @@
             "plot_choices" : "basic",
             "save_every" : 1,
     
-            "human_model" : "benchmark_human",
+            "human_model" : "gawron",
     
             "number_of_paths" : 4,
             "path_gen_beta" : -5,
@@ -236,7 +236,7 @@
             "plot_choices" : "basic",
             "save_every" : 1,
     
-            "human_model" : "benchmark_human",
+            "human_model" : "gawron",
     
             "number_of_paths" : 4,
             "path_gen_beta" : -5,
@@ -273,7 +273,7 @@
             "plot_choices" : "basic",
             "save_every" : 1,
     
-            "human_model" : "benchmark_human",
+            "human_model" : "gawron",
     
             "number_of_paths" : 4,
             "path_gen_beta" : -5,
@@ -310,7 +310,7 @@
             "plot_choices" : "basic",
             "save_every" : 1,
     
-            "human_model" : "benchmark_human",
+            "human_model" : "gawron",
     
             "number_of_paths" : 4,
             "path_gen_beta" : -5,
@@ -332,7 +332,7 @@
             "plot_choices" : "basic",
             "save_every" : 1,
     
-            "human_model" : "benchmark_human",
+            "human_model" : "gawron",
     
             "number_of_paths" : 4,
             "path_gen_beta" : -5,
