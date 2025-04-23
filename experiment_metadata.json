@@ -5,7 +5,7 @@
             "ratio_machines" : 0.4,
             "agent_frames_per_batch" : 10,
             "n_iters" : 600,
-            "human_learning_episodes" : 500,
+            "human_learning_episodes" : 200,
             "test_eps" : 100,
     
             "num_epochs" : 1,
@@ -42,7 +42,7 @@
             "ratio_machines" : 0.4,
             "agent_frames_per_batch" : 10,
             "n_iters" : 600,
-            "human_learning_episodes" : 500,
+            "human_learning_episodes" : 200,
             "test_eps" : 100,
     
             "num_epochs" : 1,
@@ -79,7 +79,7 @@
             "ratio_machines" : 0.4,
             "agent_frames_per_batch" : 10,
             "n_iters" : 600,
-            "human_learning_episodes" : 500,
+            "human_learning_episodes" : 200,
             "test_eps" : 100,
 
             "num_epochs" : 1,
@@ -116,7 +116,7 @@
             "ratio_machines" : 0.4,
             "agent_frames_per_batch" : 10,
             "n_iters" : 600,
-            "human_learning_episodes" : 500,
+            "human_learning_episodes" : 200,
             "test_eps" : 100,
     
             "num_epochs" : 5,
@@ -151,7 +151,7 @@
         "desc" : "",
         "config" : {
             "ratio_machines" : 0.4,
-            "human_learning_episodes" : 500,
+            "human_learning_episodes" : 200,
             "training_eps" : 200,
             "test_eps" : 100,
     
