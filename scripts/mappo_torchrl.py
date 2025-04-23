@@ -325,13 +325,17 @@ if __name__ == "__main__":
 
      
     # #### Training loop
+    loss_values_path = os.path.join(records_folder, "losses/loss_values.txt")
+    loss_entropy_path = os.path.join(records_folder, "losses/loss_entropy.txt")
+    loss_objective_path = os.path.join(records_folder, "losses/loss_objective.txt")
+    loss_critic_path = os.path.join(records_folder, "losses/loss_critic.txt")
+    os.makedirs(os.path.dirname(loss_values_path), exist_ok=True)
+    open(loss_values_path, 'w').close()
+    open(loss_entropy_path, 'w').close()
+    open(loss_objective_path, 'w').close()
+    open(loss_critic_path, 'w').close()
+    
     pbar = tqdm(total=n_iters, desc="Training")
-
-    loss_values = []
-    loss_entropy = []
-    loss_objective = []
-    loss_critic = []
-
     for tensordict_data in collector:
         tensordict_data.set(
             ("next", "agents", "done"),
@@ -385,10 +389,14 @@ if __name__ == "__main__":
                 step_loss_critic.append(loss_vals["loss_critic"].item())
 
         if step_loss_values:
-            loss_values.append(sum(step_loss_values) / len(step_loss_values))
-            loss_entropy.append(sum(step_loss_entropy) / len(step_loss_entropy))
-            loss_objective.append(sum(step_loss_objective) / len(step_loss_objective))
-            loss_critic.append(sum(step_loss_critic) / len(step_loss_critic))
+            with open(loss_values_path, 'a') as f:
+                f.write(f"{sum(step_loss_values) / len(step_loss_values)}\n")
+            with open(loss_entropy_path, 'a') as f:
+                f.write(f"{sum(step_loss_entropy) / len(step_loss_entropy)}\n")
+            with open(loss_objective_path, 'a') as f:
+                f.write(f"{sum(step_loss_objective) / len(step_loss_objective)}\n")
+            with open(loss_critic_path, 'a') as f:
+                f.write(f"{sum(step_loss_critic) / len(step_loss_critic)}\n")
         collector.update_policy_weights_()
         pbar.update()
     
@@ -406,25 +414,23 @@ if __name__ == "__main__":
     os.makedirs(plots_folder, exist_ok=True)
     env.plot_results()
         
-    # Save and visualize loss values
-    loss_values_path = os.path.join(records_folder, "losses/loss_values.txt")
-    loss_entropy_path = os.path.join(records_folder, "losses/loss_entropy.txt")
-    loss_objective_path = os.path.join(records_folder, "losses/loss_objective.txt")
-    loss_critic_path = os.path.join(records_folder, "losses/loss_critic.txt")
-    os.makedirs(os.path.dirname(loss_values_path), exist_ok=True)
-    with open(loss_values_path, 'w') as f:
-        for item in loss_values:
-            f.write("%s\n" % item)
-    with open(loss_entropy_path, 'w') as f:
-        for item in loss_entropy:
-            f.write("%s\n" % item)
-    with open(loss_objective_path, 'w') as f:
-        for item in loss_objective:
-            f.write("%s\n" % item)
-    with open(loss_critic_path, 'w') as f:
-        for item in loss_critic:
-            f.write("%s\n" % item)
-    
+    # Visualize losses
+    loss_values = list()
+    with open(loss_values_path, 'r') as f:
+        for line in f:
+            loss_values.append(float(line.strip()))  
+    loss_entropy = list()
+    with open(loss_entropy_path, 'r') as f:
+        for line in f:
+            loss_entropy.append(float(line.strip()))
+    loss_objective = list()
+    with open(loss_objective_path, 'r') as f:
+        for line in f:
+            loss_objective.append(float(line.strip()))
+    loss_critic = list()
+    with open(loss_critic_path, 'r') as f:
+        for line in f:
+            loss_critic.append(float(line.strip()))
     colors = [
         "firebrick", "teal", "peru", "navy", 
         "salmon", "slategray", "darkviolet", 

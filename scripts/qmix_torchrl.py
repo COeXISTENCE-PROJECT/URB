@@ -324,8 +324,11 @@ if __name__ == "__main__":
 
      
     # #### Training loop
+    loss_values_path = os.path.join(records_folder, "losses/loss_values.txt")
+    os.makedirs(os.path.dirname(loss_values_path), exist_ok=True)
+    open(loss_values_path, 'w').close()
+    
     pbar = tqdm(total=n_iters, desc="Training")
-    loss_values = []
     for tensordict_data in collector:
         tensordict_data.set(
             ("next", "reward"), tensordict_data.get(("next", env.reward_key)).mean(-2)
@@ -363,7 +366,9 @@ if __name__ == "__main__":
                 target_net_updater.step()
 
         if step_loss_values:
-            loss_values.append(sum(step_loss_values) / len(step_loss_values))
+            loss = sum(step_loss_values) / len(step_loss_values)
+            with open(loss_values_path, 'a') as f:
+                f.write("%s\n" % loss)
         qnet_explore[1].step(frames=current_frames)  # Update exploration annealing
         collector.update_policy_weights_()
         pbar.update()
@@ -383,13 +388,11 @@ if __name__ == "__main__":
     os.makedirs(plots_folder, exist_ok=True)
     env.plot_results()
     
-    # Save and visualize losses
-    loss_values_path = os.path.join(records_folder, "losses/loss_values.txt")
-    os.makedirs(os.path.dirname(loss_values_path), exist_ok=True)
-    with open(loss_values_path, 'w') as f:
-        for item in loss_values:
-            f.write("%s\n" % item)
-            
+    # Visualize losses
+    loss_values = list()
+    with open(loss_values_path, 'r') as f:
+        for line in f:
+            loss_values.append(float(line.strip()))
     colors = [
         "firebrick", "teal", "peru", "navy", 
         "salmon", "slategray", "darkviolet", 
