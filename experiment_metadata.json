@@ -110,6 +110,43 @@
         }
     },
 
+    "2_iql" : {
+        "desc" : "",
+        "config" : {
+            "ratio_machines" : 1,
+            "agent_frames_per_batch" : 10,
+            "n_iters" : 600,
+            "human_learning_episodes" : 0,
+            "test_eps" : 100,
+
+            "num_epochs" : 1,
+            "minibatch_size" : 32,
+            "lr" : 3e-3,
+            "max_grad_norm" : 3.0,
+            "gamma" : 0.99,
+            "memory_size" : 1000,
+            "mlp_depth" : 3,
+            "mlp_cells" : 64,
+            "tau" :  0.05,
+            "eps" : 0.95,
+            "eps_init" : 0.99,
+            "eps_end" : 0.05,
+            "exploration_fraction" : 0.4,
+
+            "av_behavior" : "selfish",
+
+            "smooth_by" : 10,
+            "plot_choices" : "basic",
+            "save_every" : 5,
+
+            "human_model" : "gawron",
+
+            "number_of_paths" : 4,
+            "path_gen_beta" : -5,
+            "num_samples" : 10
+        }
+    },
+
     "1_qmix" : {
         "desc" : "",
         "config" : {
@@ -147,6 +184,43 @@
         }
     },
 
+    "2_qmix" : {
+        "desc" : "",
+        "config" : {
+            "ratio_machines" : 1,
+            "agent_frames_per_batch" : 10,
+            "n_iters" : 600,
+            "human_learning_episodes" : 0,
+            "test_eps" : 100,
+
+            "num_epochs" : 1,
+            "minibatch_size" : 32,
+            "lr" : 3e-3,
+            "max_grad_norm" : 3.0,
+            "memory_size" : 1000,
+            "tau" : 0.005,
+            "gamma" : 0.99,
+            "mlp_depth" : 3,
+            "mlp_cells" : 64,
+            "eps_greedy_init" : 1.00,
+            "eps_greedy_end" : 0.05,
+            "mixing_embed_dim" : 64,
+            "exploration_fraction" : 0.4,
+
+            "av_behavior" : "cooperative",
+
+            "smooth_by" : 10,
+            "plot_choices" : "basic",
+            "save_every" : 5,
+
+            "human_model" : "gawron",
+
+            "number_of_paths" : 4,
+            "path_gen_beta" : -5,
+            "num_samples" : 10
+        }
+    },
+
     "1_mappo" : {
         "desc" : "",
         "config" : {
@@ -178,6 +252,43 @@
     
             "human_model" : "gawron",
     
+            "number_of_paths" : 4,
+            "path_gen_beta" : -5,
+            "num_samples" : 10
+        }
+    },
+
+    "2_mappo" : {
+        "desc" : "",
+        "config" : {
+            "ratio_machines" : 1,
+            "agent_frames_per_batch" : 10,
+            "n_iters" : 600,
+            "human_learning_episodes" : 0,
+            "test_eps" : 100,
+
+            "num_epochs" : 5,
+            "minibatch_size" : 64,
+            "lr" : 3e-4,
+            "max_grad_norm" : 3.0,
+            "clip_epsilon" : 0.2,
+            "gamma" : 0.99,
+            "lmbda" : 0.9,
+            "entropy_eps" : 1e-2,
+            "normalize_advantage" : true,
+            "policy_network_depth": 3,
+            "policy_network_num_cells" : 64,
+            "critic_network_depth": 3,
+            "critic_network_num_cells" : 128,
+
+            "av_behavior" : "cooperative",
+
+            "smooth_by" : 10,
+            "plot_choices" : "basic",
+            "save_every" : 5,
+
+            "human_model" : "gawron",
+
             "number_of_paths" : 4,
             "path_gen_beta" : -5,
             "num_samples" : 10
