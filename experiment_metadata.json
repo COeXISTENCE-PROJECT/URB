@@ -39,7 +39,7 @@
     "2_ippo" : {
         "desc" : "",
         "config" : {
-            "ratio_machines" : 1,
+            "ratio_machines" : 1.0,
             "agent_frames_per_batch" : 10,
             "n_iters" : 600,
             "human_learning_episodes" : 0,
@@ -113,7 +113,7 @@
     "2_iql" : {
         "desc" : "",
         "config" : {
-            "ratio_machines" : 1,
+            "ratio_machines" : 1.0,
             "agent_frames_per_batch" : 10,
             "n_iters" : 600,
             "human_learning_episodes" : 0,
@@ -187,7 +187,7 @@
     "2_qmix" : {
         "desc" : "",
         "config" : {
-            "ratio_machines" : 1,
+            "ratio_machines" : 1.0,
             "agent_frames_per_batch" : 10,
             "n_iters" : 600,
             "human_learning_episodes" : 0,
@@ -261,7 +261,7 @@
     "2_mappo" : {
         "desc" : "",
         "config" : {
-            "ratio_machines" : 1,
+            "ratio_machines" : 1.0,
             "agent_frames_per_batch" : 10,
             "n_iters" : 600,
             "human_learning_episodes" : 0,
@@ -300,6 +300,28 @@
         "config" : {
             "ratio_machines" : 0.4,
             "human_learning_episodes" : 200,
+            "training_eps" : 200,
+            "test_eps" : 100,
+    
+            "av_behavior" : "selfish",
+    
+            "smooth_by" : 10,
+            "plot_choices" : "basic",
+            "save_every" : 5,
+    
+            "human_model" : "gawron",
+    
+            "number_of_paths" : 4,
+            "path_gen_beta" : -5,
+            "num_samples" : 10
+        }
+    },
+
+    "2_baseline" : {
+        "desc" : "",
+        "config" : {
+            "ratio_machines" : 1.0,
+            "human_learning_episodes" : 0,
             "training_eps" : 200,
             "test_eps" : 100,
     
