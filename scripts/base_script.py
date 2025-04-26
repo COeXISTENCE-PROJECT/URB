@@ -1,0 +1,170 @@
+import argparse
+import ast
+import json
+import logging
+import os
+import random
+
+import numpy as np
+import pandas as pd
+import routerl
+
+from routerl import Keychain as kc
+from routerl import TrafficEnvironment
+from tqdm import tqdm
+
+if __name__ == "__main__":
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--id', type=str, required=True)
+    parser.add_argument('--conf', type=str, required=True)
+    parser.add_argument('--net', type=str, required=True)
+    parser.add_argument('--env-seed', type=int, default=42)
+    # Any additional arguments can be added here
+    
+    args = parser.parse_args()
+    exp_id = args.id
+    exp_config = args.conf
+    network = args.net
+    env_seed = args.env_seed
+    # ... and should be passed to the script
+    
+    print("### STARTING EXPERIMENT ###")
+    print(f"Experiment ID: {exp_id}")
+    print(f"Network: {network}")
+    print(f"Environment seed: {env_seed}")
+    print(f"Experiment config: {exp_config}")
+
+
+    os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
+    logging.getLogger("matplotlib").setLevel(logging.ERROR)
+    random.seed(env_seed)
+    np.random.seed(env_seed)
+        
+    # #### Hyperparameters setting
+    params = json.load(open("../experiment_metadata.json"))
+    params = params[exp_config]["config"]
+    
+    # set params as variables in this script
+    for key, value in params.items():
+        globals()[key] = value
+
+    custom_network_folder = f"../networks/{network}"
+    phases = [1, human_learning_episodes, int(training_eps) + human_learning_episodes]
+    phase_names = ["Human stabilization", "Mutation and AV learning", "Testing phase"]
+    records_folder = f"../results/{exp_id}"
+    plots_folder = f"../results/{exp_id}/plots"
+
+    # Read origin-destinations
+    od_file_path = os.path.join(custom_network_folder, f"od_{network}.txt")
+    with open(od_file_path, 'r', encoding='utf-8') as f:
+        content = f.read()
+    data = ast.literal_eval(content)
+    origins = data['origins']
+    destinations = data['destinations']
+
+    
+    # Copy agents.csv from custom_network_folder to records_folder
+    agents_csv_path = os.path.join(custom_network_folder, "agents.csv")
+    num_agents = len(pd.read_csv(agents_csv_path))
+    if os.path.exists(agents_csv_path):
+        os.makedirs(records_folder, exist_ok=True)
+        new_agents_csv_path = os.path.join(records_folder, "agents.csv")
+        with open(agents_csv_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        with open(new_agents_csv_path, 'w', encoding='utf-8') as f:
+            f.write(content)
+            
+    num_machines = int(num_agents * ratio_machines)
+    total_episodes = human_learning_episodes + training_eps + test_eps
+            
+    # Dump exp config to records
+    exp_config_path = os.path.join(records_folder, "exp_config.json")
+    dump_config = params.copy()
+    dump_config["network"] = network
+    dump_config["env_seed"] = env_seed
+    dump_config["config"] = exp_config
+    dump_config["num_agents"] = num_agents
+    dump_config["num_machines"] = num_machines
+    # Any other parameters you want to save in `exp_config.json` can be added here
+    with open(exp_config_path, 'w', encoding='utf-8') as f:
+        json.dump(dump_config, f, indent=4)
+
+    
+    env = TrafficEnvironment(
+        seed = env_seed,
+        create_agents = False,
+        create_paths = True,
+        save_detectors_info = False,
+        agent_parameters = {
+            "new_machines_after_mutation": num_machines, 
+            "human_parameters" : {
+                "model" : human_model
+            },
+            "machine_parameters" :{
+                "behavior" : av_behavior,
+            }
+        },
+        environment_parameters = {
+            "save_every" : save_every,
+        },
+        simulator_parameters = {
+            "network_name" : network,
+            "custom_network_folder" : custom_network_folder,
+            "sumo_type" : "sumo",
+        }, 
+        plotter_parameters = {
+            "phases" : phases,
+            "phase_names" : phase_names,
+            "smooth_by" : smooth_by,
+            "plot_choices" : plot_choices,
+            "records_folder" : records_folder,
+            "plots_folder" : plots_folder
+        },
+        path_generation_parameters = {
+            "origins" : origins,
+            "destinations" : destinations,
+            "number_of_paths" : number_of_paths,
+            "beta" : path_gen_beta,
+            "num_samples" : num_samples,
+            "visualize_paths" : False
+        } 
+    )
+
+    print(f"""
+    Agents in the traffic:
+    • Total agents           : {len(env.all_agents)}
+    • Human agents           : {len(env.human_agents)}
+    • AV agents              : {len(env.machine_agents)}
+    """)
+
+    
+    env.start()
+    res = env.reset()
+
+     
+    # #### Human learning
+    
+    pbar = tqdm(total=total_episodes, desc="Human learning")
+    for episode in range(human_learning_episodes):
+        env.step()
+        pbar.update()
+
+    # #### Mutation
+    env.mutation(mutation_start_percentile = -1)
+
+    print(f"""
+    Agents in the traffic:
+    • Total agents           : {len(env.all_agents)}
+    • Human agents           : {len(env.human_agents)}
+    • AV agents              : {len(env.machine_agents)}
+    """)
+
+    """
+     User defined AV learning pipeline
+    """
+    
+    os.makedirs(plots_folder, exist_ok=True)
+    env.plot_results()
+
+    env.stop_simulation()
