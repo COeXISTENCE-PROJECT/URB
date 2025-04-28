@@ -4,12 +4,12 @@
 #SBATCH --mem=64G
 #SBATCH --cpus-per-task=4
 #SBATCH --gres=gpu:1
-#SBATCH --partition=dgx
+#SBATCH --partition=rtx2080
 
 FOLDER_NAME="URB"
 PATH_PROGRAM="/home/$USER/$FOLDER_NAME"
 PUT_PROGRAM_TO="/app"
-PATH_SUMO_CONTAINER="/shared/sets/singularity/sumo.sif"
+PATH_SUMO_CONTAINER="/shared/sets/singularity/sumo2.sif"
 CMD_PATH="$PATH_PROGRAM/server_scripts/cmd_container.sh"
 PRINTS_SAVE_PATH="$PATH_PROGRAM/server_scripts/container_printouts/output_$SLURM_JOB_ID.txt"
 
