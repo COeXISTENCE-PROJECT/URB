@@ -182,7 +182,7 @@ if __name__ == "__main__":
     # #### Mutation
 
     
-    env.mutation(mutation_start_percentile=-1)
+    env.mutation(disable_human_learning = not should_humans_adapt, mutation_start_percentile=-1)
     
     print(f"""
     Agents in the traffic:

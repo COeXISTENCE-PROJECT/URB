@@ -155,7 +155,7 @@ if __name__ == "__main__":
 
     
     pre_mutation_agents = env.all_agents.copy()
-    env.mutation(mutation_start_percentile = -1)
+    env.mutation(disable_human_learning = not should_humans_adapt, mutation_start_percentile = -1)
 
     print(f"""
     Agents in the traffic:

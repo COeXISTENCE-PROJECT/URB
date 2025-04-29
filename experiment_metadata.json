@@ -7,6 +7,7 @@
             "n_iters" : 600,
             "human_learning_episodes" : 200,
             "test_eps" : 100,
+            "should_humans_adapt": false,
     
             "num_epochs" : 1,
             "minibatch_size" : 32,
@@ -44,6 +45,7 @@
             "n_iters" : 600,
             "human_learning_episodes" : 0,
             "test_eps" : 100,
+            "should_humans_adapt": false,
 
             "num_epochs" : 1,
             "minibatch_size" : 32,
@@ -81,6 +83,7 @@
             "n_iters" : 600,
             "human_learning_episodes" : 200,
             "test_eps" : 100,
+            "should_humans_adapt": false,
     
             "num_epochs" : 1,
             "minibatch_size" : 32,
@@ -118,6 +121,7 @@
             "n_iters" : 600,
             "human_learning_episodes" : 0,
             "test_eps" : 100,
+            "should_humans_adapt": false,
 
             "num_epochs" : 1,
             "minibatch_size" : 32,
@@ -155,6 +159,7 @@
             "n_iters" : 600,
             "human_learning_episodes" : 200,
             "test_eps" : 100,
+            "should_humans_adapt": false,
 
             "num_epochs" : 1,
             "minibatch_size" : 32,
@@ -192,6 +197,7 @@
             "n_iters" : 600,
             "human_learning_episodes" : 0,
             "test_eps" : 100,
+            "should_humans_adapt": false,
 
             "num_epochs" : 1,
             "minibatch_size" : 32,
@@ -229,6 +235,7 @@
             "n_iters" : 600,
             "human_learning_episodes" : 200,
             "test_eps" : 100,
+            "should_humans_adapt": false,
     
             "num_epochs" : 5,
             "minibatch_size" : 64,
@@ -266,6 +273,7 @@
             "n_iters" : 600,
             "human_learning_episodes" : 0,
             "test_eps" : 100,
+            "should_humans_adapt": false,
 
             "num_epochs" : 5,
             "minibatch_size" : 64,
@@ -302,6 +310,7 @@
             "human_learning_episodes" : 200,
             "training_eps" : 200,
             "test_eps" : 100,
+            "should_humans_adapt": false,
     
             "av_behavior" : "selfish",
     
@@ -324,6 +333,7 @@
             "human_learning_episodes" : 0,
             "training_eps" : 200,
             "test_eps" : 100,
+            "should_humans_adapt": false,
     
             "av_behavior" : "selfish",
     
@@ -347,6 +357,7 @@
             "n_iters" : 5,
             "human_learning_episodes" : 10,
             "test_eps" : 10,
+            "should_humans_adapt": false,
     
             "num_epochs" : 1,
             "minibatch_size" : 2,
@@ -385,6 +396,7 @@
             "n_iters" : 5,
             "human_learning_episodes" : 10,
             "test_eps" : 10,
+            "should_humans_adapt": false,
     
             "num_epochs" : 1,
             "minibatch_size" : 2,
@@ -422,6 +434,7 @@
             "n_iters" : 5,
             "human_learning_episodes" : 10,
             "test_eps" : 10,
+            "should_humans_adapt": false,
 
             "num_epochs" : 1,
             "minibatch_size" : 2,
@@ -459,6 +472,7 @@
             "n_iters" : 5,
             "human_learning_episodes" : 10,
             "test_eps" : 10,
+            "should_humans_adapt": false,
     
             "num_epochs" : 1,
             "minibatch_size" : 2,
@@ -495,6 +509,7 @@
             "human_learning_episodes" : 10,
             "training_eps" : 10,
             "test_eps" : 10,
+            "should_humans_adapt": false,
     
             "av_behavior" : "selfish",
     
@@ -518,6 +533,7 @@
             "n_iters" : 2000,
             "human_learning_episodes" : 200,
             "test_eps" : 100,
+            "should_humans_adapt": false,
 
             "num_epochs" : 1,
             "minibatch_size" : 32,
@@ -555,6 +571,7 @@
             "n_iters" : 2000,
             "human_learning_episodes" : 200,
             "test_eps" : 100,
+            "should_humans_adapt": false,
 
             "num_epochs" : 1,
             "minibatch_size" : 32,
