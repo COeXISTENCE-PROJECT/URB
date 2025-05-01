@@ -21,7 +21,7 @@
 * executes a typical `RouteRL` routine of
    * first learning of human drivers,
    * which then 'mutate` to CAVs,
-   * are trained to opmize routing policies with the implemented algorithm.
+   * are trained to optimize routing policies with the implemented algorithm.
 * When the training is finished, it uses raw results to compute a wide-set of KPIs.
 
 
