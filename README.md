@@ -58,22 +58,47 @@ Collaborative fleet minimizing group average travel time with 40\% market share 
 # To be improved
 
 ## Setup:
-- Clone the repository:
+
+### Prerequisites 
+
+Make sure you have SUMO installed in your system. This procedure should be carried out separately, by following the instructions provided [here](https://sumo.dlr.de/docs/Installing/index.html).
+
+### Cloning repository
+
+Clone the **URB** repository from github by
+
 ```
 git clone https://github.com/COeXISTENCE-PROJECT/URB.git
 ```
-- (Recommended) Create a virtual environment.
-- Run: 
-```
-cd URB
-pip3 install -r requirements.txt
-```
-- If cached installations are outdated, you can also use the following:
-```
-pip3 install --force-reinstall --no-cache-dir -r requirements.txt
+
+### Creating enviroment for URB
+
+- **Option 1** (Recommended): Create a virtual enviroment with `venv`:
+
+```bash
+$ python3.13.1 -m venv .venv
 ```
 
----
+and then install dependencies by:
+
+```
+$ cd URB
+$ pip install --force-reinstall --no-cache-dir -r requirements.txt
+```
+
+- **Option2** (Alternative): Use conda environment with `conda`:
+
+```bash
+$ conda create -n URB python=3.13.1
+```
+
+and then install dependencies by: 
+
+```bash
+$ cd URB
+$ conda activate URB
+$ pip install --force-reinstall --no-cache-dir -r requirements.txt
+```
 
 ## Usage:
 ```
