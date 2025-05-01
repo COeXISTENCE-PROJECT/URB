@@ -101,16 +101,22 @@ $ pip install --force-reinstall --no-cache-dir -r requirements.txt
 ```
 
 ## Usage:
+
+### Usage of **URB** for Reinforcement Learning algorithms
+
+To use **URB** while using RL algorithm, you have to provide in the command line the following command:
+
 ```
 python scripts/<script_name> --id <exp_id> --conf <configuration_id> --net <net_name> --env-seed <env_seed> --torch-seed <torch_seed>
 ```
+and 
 
-- Replace `<scipt_name>` with the script you wish to run.
-- Replace `<exp_id>` with the experiment identifier. 
-- Replace `<configuration_id>` with the configuration identifier. Must be compatible with the script and a key from `experiment_metadata.json`.
-- Replace `<net_name>` with the name of the network you wish to use. Must be one of the folder names in `networks/`.
-- Replace `<env_seed>` with your reproducibility random seed for the traffic environment. (default=42)
-- Replace `<torch_seed>` with your reproducibility random seed for PyTorch. (default=42)
+- Replace `<scipt_name>` with the script you wish to run, available scripts are `ippo_torchrl`, `iql_torchrl`, `mappo_torchrl` and `qmix_torchrl`.
+- Replace `<exp_id>` with your own experiment identifier as string. 
+- Replace `<configuration_id>` with the configuration identifier. Must be compatible with the script and a key from `experiment_metadata.json` i.e. '1_baseline' or '2_baseline' for `baselines.py`, `1_ippo` or `2_ippo` for `ippo_torchrl`, '1_iql' or '2_iql' for `iql_torchrl`, '1_mappo' or '2_mappo' for `mappo_torchrl` and `1_qmix` or `2_qmix` for `qmix_torchrl`.
+- Replace `<net_name>` with the name of the network you wish to use. Must be one of the folder names in `networks/` i.e. `ingolstadt_custom`, `nangis`, `nemours`, `provins` or `saint_arnoult`.
+- Replace `<env_seed>` with your reproducibility random seed for the traffic environment, default seed is set to be 42.
+- Replace `<torch_seed>` with your reproducibility random seed for PyTorch, default seed is set to be 42.
 
 For example:
 ```
@@ -119,13 +125,17 @@ python scripts/ippo_torchrl.py --id gar_ippo_0 --conf 1_ippo --net gargenville -
 
 Records and plots will be saved in ```results/<exp_id>```.
 
-> ⚠️ **Attention**: There is one additional flag `model` for `scripts/baselines.py`, instead of `torch-seed`:
+###  Usage **URB** for baselines
+
+Similarly as for RL algorithms, you have to provide command, but there is one additional flag `model` for `scripts/baselines.py`, instead of `torch-seed`, then you have command of form
 
 ```
 python scripts/baselines.py --id <exp_id> --conf <configuration_id> --net <net_name> --env-seed <env_seed> --model <model_name>
 ```
 
-And `<model_name>` should be from `routerl.Keychain.HUMAN_MODELS` (see [here](https://github.com/COeXISTENCE-PROJECT/RouteRL/blob/6af53cfb0174c72a75216c8fce256aac96b044ae/routerl/keychain.py#L124)). For example:
+And `<model_name>` should be from `routerl.Keychain.HUMAN_MODELS` (see [here](https://github.com/COeXISTENCE-PROJECT/RouteRL/blob/6af53cfb0174c72a75216c8fce256aac96b044ae/routerl/keychain.py#L124)). 
+
+For example:
 
 ```
 python scripts/baselines.py --id ing_aon --conf 1_baseline --net ingolstadt_custom --env-seed 42 --model aon
