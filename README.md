@@ -130,7 +130,7 @@ Similarly as for RL algorithms, you have to provide command, but there is one ad
 python scripts/baselines.py --id <exp_id> --conf <configuration_id> --net <net_name> --env-seed <env_seed> --model <model_name>
 ```
 
-And ```<model_name>``` should be one of ```gawron```, ```weighted```, ```random```, ```aon``` (the same as ```routerl.Keychain.HUMAN_MODELS``` in [RouteRL](https://github.com/COeXISTENCE-PROJECT/RouteRL/blob/6af53cfb0174c72a75216c8fce256aac96b044ae/routerl/keychain.py#L124). 
+And ```<model_name>``` should be one of ```gawron```, ```weighted```, ```random```, ```aon``` (the same as ```routerl.Keychain.HUMAN_MODELS``` in [RouteRL](https://github.com/COeXISTENCE-PROJECT/RouteRL/blob/6af53cfb0174c72a75216c8fce256aac96b044ae/routerl/keychain.py#L124)). 
 
 For example:
 
