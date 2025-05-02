@@ -107,12 +107,12 @@ python scripts/<script_name> --id <exp_id> --conf <configuration_id> --net <net_
 
 where
 
-- ```<scipt_name>``` is the script you wish to run, available scripts are ```ippo_torchrl```, ```iql_torchrl```, ```mappo_torchrl``` and ```qmix_torchrl```,
+- ```<scipt_name>``` is the script you wish to run, available scripts are ```ippo_torchrl```, ```iql_torchrl```, ```mappo_torchrl```, ```vdn_torchrl``` and ```qmix_torchrl```,
 - ```<exp_id>``` is your own experiment identifier, for instance ```random_ing```, 
-- ```<configuration_id>``` with the configuration identifier. Must be compatible with the script and a key from ```experiment_metadata.json``` i.e. ```1_baseline``` or ```2_baseline``` for ```baselines.py```, ```1_ippo``` or ```2_ippo``` for ```ippo_torchrl```, ```1_iql``` or ```2_iql``` for ```iql_torchrl```, ```1_mappo``` or ```2_mappo``` for ```mappo_torchrl``` and ```1_qmix``` or ```2_qmix``` for ```qmix_torchrl```.
-- Replace ```<net_name>``` with the name of the network you wish to use. Must be one of the folder names in ```networks/``` i.e. ```ingolstadt_custom```, ```nangis```, ```nemours```, ```provins``` or ```saint_arnoult```.
-- Replace ```<env_seed>``` with your reproducibility random seed for the traffic environment, default seed is set to be 42.
-- Replace ```<torch_seed>``` with your reproducibility random seed for PyTorch, default seed is set to be 42.
+- ```<configuration_id>``` is the configuration identifier, it must be compatible with the script and a key from ```experiment_metadata.json``` i.e.  ```1_ippo``` for ```ippo_torchrl```,
+- ```<net_name>``` is the name of the network you wish to use. Must be one of the folder names in ```networks/``` i.e. ```ingolstadt_custom```, ```nangis```, ```nemours```, ```provins``` or ```saint_arnoult```,
+- ```<env_seed>``` is reproducibility random seed for the traffic environment, default seed is set to be 42,
+- ```<torch_seed>``` is reproducibility random seed for PyTorch, default seed is set to be 42.
 
 For example:
 
