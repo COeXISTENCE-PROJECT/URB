@@ -2,7 +2,7 @@
   <img src="docs/urb.png" align="center" width="30%"/>
 </p>
 
-# Urban Routing Benchmark - Benchmarking MARL algorithms on the fleet routing tasks
+# Urban Routing Benchmark: Benchmarking MARL algorithms on the fleet routing tasks
 
 <p align="center">
   <img src="docs/urb_overview.png" align="center" width="90%"/>
@@ -18,7 +18,7 @@
 
 ---
 
-#### Workflow
+## 🔗 Workflow
 
 `URB`:
 * runs a `RouteRL` script
@@ -31,7 +31,7 @@
    * are trained to optimize routing policies with the implemented algorithm.
 * When the training is finished, it uses raw results to compute a wide-set of KPIs.
 
-## Tasks:
+## 📝 Tasks
 
 #### Core (benchmarked with the results):
 
@@ -56,7 +56,7 @@ Collaborative fleet minimizing group average travel time with 40\% market share 
 9. Different choice set than humans
 10. Adaptive traffic signals
 
-## Setup:
+## 📦 Setup
 
 #### Prerequisites 
 
@@ -85,7 +85,7 @@ cd URB
 pip install --force-reinstall --no-cache-dir -r requirements.txt
 ```
 
-- **Option2** (Alternative): Use conda environment with `conda`:
+- **Option 2** (Alternative): Use conda environment with `conda`:
 
 ```bash
 conda create -n URB python=3.13.1
@@ -99,7 +99,7 @@ conda activate URB
 pip install --force-reinstall --no-cache-dir -r requirements.txt
 ```
 
-## Usage:
+## 📌 Usage
 
 #### Usage of **URB** for Reinforcement Learning algorithms
 
@@ -142,7 +142,7 @@ For example:
 python scripts/baselines.py --id ing_aon --conf 1_baseline --net ingolstadt_custom --env-seed 42 --model aon
 ```
 
-## Extending URB
+## 💎 Extending URB
 
 We provide templates for extending the possible experiments that can be conducted using `URB`.
 
