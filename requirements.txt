@@ -1,1 +1,8 @@
 git+https://github.com/COeXISTENCE-PROJECT/RouteRL.git@urb
+matplotlib>=3.9.3
+numpy>=2.0.2
+pandas>=2.2.3
+tensordict==0.7.0
+torch>=2.6.0
+torchrl==0.7.0
+tqdm>=4.67.1
