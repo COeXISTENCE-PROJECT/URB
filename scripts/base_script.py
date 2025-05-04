@@ -1,26 +1,27 @@
+import os
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    
 import argparse
 import ast
 import json
 import logging
-import os
 import random
 
 import numpy as np
 import pandas as pd
-import routerl
 
-from routerl import Keychain as kc
 from routerl import TrafficEnvironment
 from tqdm import tqdm
 
 if __name__ == "__main__":
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))
     parser = argparse.ArgumentParser()
     parser.add_argument('--id', type=str, required=True)
     parser.add_argument('--conf', type=str, required=True)
     parser.add_argument('--net', type=str, required=True)
     parser.add_argument('--env-seed', type=int, default=42)
     # Any additional arguments can be added here
+    
+    PLACEHOLDER = None # Delete this line and add your own arguments in the following
     
     args = parser.parse_args()
     exp_id = args.id
@@ -50,7 +51,7 @@ if __name__ == "__main__":
         globals()[key] = value
 
     custom_network_folder = f"../networks/{network}"
-    phases = [1, human_learning_episodes, int(training_eps) + human_learning_episodes]
+    phases = [1, PLACEHOLDER, PLACEHOLDER] # Define the phases as per your requirement
     phase_names = ["Human stabilization", "Mutation and AV learning", "Testing phase"]
     records_folder = f"../results/{exp_id}"
     plots_folder = f"../results/{exp_id}/plots"
@@ -75,8 +76,10 @@ if __name__ == "__main__":
         with open(new_agents_csv_path, 'w', encoding='utf-8') as f:
             f.write(content)
             
-    num_machines = int(num_agents * ratio_machines)
-    total_episodes = human_learning_episodes + training_eps + test_eps
+    should_humans_adapt = PLACEHOLDER # Define whether humans should adapt or not while AVs are learning
+    human_learning_episodes = PLACEHOLDER # Define the number of human learning episodes as per your requirement
+    num_machines = PLACEHOLDER # Define the number of machines as per your requirement
+    total_episodes = PLACEHOLDER # Define the total number of episodes as per your requirement
             
     # Dump exp config to records
     exp_config_path = os.path.join(records_folder, "exp_config.json")
@@ -99,14 +102,14 @@ if __name__ == "__main__":
         agent_parameters = {
             "new_machines_after_mutation": num_machines, 
             "human_parameters" : {
-                "model" : human_model
+                "model" : PLACEHOLDER, # Select the human model as per your requirement
             },
             "machine_parameters" :{
-                "behavior" : av_behavior,
+                "behavior" : PLACEHOLDER, # Select the machine behavior as per your requirement
             }
         },
         environment_parameters = {
-            "save_every" : save_every,
+            "save_every" : PLACEHOLDER, # Define the disk save frequency as per your requirement
         },
         simulator_parameters = {
             "network_name" : network,
@@ -116,17 +119,17 @@ if __name__ == "__main__":
         plotter_parameters = {
             "phases" : phases,
             "phase_names" : phase_names,
-            "smooth_by" : smooth_by,
-            "plot_choices" : plot_choices,
+            "smooth_by" : PLACEHOLDER, # Define the smoothing factor as per your requirement
+            "plot_choices" : PLACEHOLDER, # Define the plot choices as per your requirement,
             "records_folder" : records_folder,
             "plots_folder" : plots_folder
         },
         path_generation_parameters = {
             "origins" : origins,
             "destinations" : destinations,
-            "number_of_paths" : number_of_paths,
-            "beta" : path_gen_beta,
-            "num_samples" : num_samples,
+            "number_of_paths" : PLACEHOLDER, # Define the number of paths per OD as per your requirement
+            "beta" : PLACEHOLDER,
+            "num_samples" : PLACEHOLDER,
             "visualize_paths" : False
         } 
     )
@@ -161,9 +164,14 @@ if __name__ == "__main__":
     """)
 
     """
-     User defined AV learning pipeline
+    ^
+    |
+    User defined AV learning pipeline!
+    |
+    v
     """
     
+    # Save results
     os.makedirs(plots_folder, exist_ok=True)
     env.plot_results()
 
