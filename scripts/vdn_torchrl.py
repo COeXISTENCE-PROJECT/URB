@@ -1,9 +1,10 @@
-
+import os
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    
 import argparse
 import ast
 import json
 import logging
-import os
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -28,7 +29,6 @@ from tqdm import tqdm
 
 
 if __name__ == "__main__":
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))
     parser = argparse.ArgumentParser()
     parser.add_argument('--id', type=str, required=True)
     parser.add_argument('--conf', type=str, required=True)
