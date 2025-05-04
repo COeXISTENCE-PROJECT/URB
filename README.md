@@ -1,6 +1,11 @@
+<img src="docs/urb.png" align="right" width="30%"/>
 # URB
 
 #### Urban Routing Benchmark - benchmarking MARL algorithms on the fleet routing tasks. 
+
+<p align="center">
+  <img src="docs/urb_overview.png" align="center" width="90%"/>
+</p>
 
 > Autonomous Vehicles promise better performance to our congested urban networks in the future. One of potential improvements lays in routing decisions which, unlike for humans, can be collective, data-driven and come from deep-learning algorithms. To foster this unexploited opportunity, we propose the `urb` - Urban Mobility Benchmark for RL-equipped Connected Autonomous Vehicles (CAVs). `urb`, for a selection of real-world urban networks with realistic demand patterns simulates the future system state, with CAVs. It explores state-of-the-art MARL algorithms from torchRL, for various reward formulations (from selfish, via social to malicious), collaborations, observations,  market shares and compositions (monopolies vs oligopolies) and human adaptations. It reports variety of performance indicators not only on the RL algorithms performance, but also for the system (like impact on human drivers or on total travel times). Via the broad experimental scheme, it aims to:
 >
@@ -14,9 +19,9 @@
 
 #### Workflow
 
-`urb`:
-* runs a `RouteRl` script
-* with a RL algorithm (possibly `torchRL` implementation)
+`URB`:
+* runs a `RouteRL` script
+* with a RL algorithm (possibly `TorchRL` implementation)
 * opens a config file (stored in `experiment_metadata.json`)
 * loads the network and demand from `networks`
 * executes a typical `RouteRL` routine of
@@ -130,10 +135,23 @@ Similarly as for RL algorithms, you have to provide command, but there is one ad
 python scripts/baselines.py --id <exp_id> --conf <configuration_id> --net <net_name> --env-seed <env_seed> --model <model_name>
 ```
 
-And ```<model_name>``` should be one of ```gawron```, ```weighted```, ```random```, ```aon``` (the same as ```routerl.Keychain.HUMAN_MODELS``` in [RouteRL](https://github.com/COeXISTENCE-PROJECT/RouteRL/blob/6af53cfb0174c72a75216c8fce256aac96b044ae/routerl/keychain.py#L124)). 
+And ```<model_name>``` should be one of ```random```, ```aon``` (included in [baseline_models](baseline_models/)) or ```gawron``` (from [RouteRL](https://github.com/COeXISTENCE-PROJECT/RouteRL/blob/993423d101f39ea67a1f7373e6856af95a0602d4/routerl/human_learning/learning_model.py#L42)). 
 
 For example:
 
 ```console
 python scripts/baselines.py --id ing_aon --conf 1_baseline --net ingolstadt_custom --env-seed 42 --model aon
 ```
+
+## Extending URB
+
+We provide templates for extending the possible experiments that can be conducted using `URB`.
+
+### Adding new baselines
+Users can define and use their own baseline methods by creating a new model by extending [`baseline_models/BaseLearningModel`](baseline_models/base.py).
+
+### Adding new scripts
+Users can add new experiment scripts for testing different algorithms, different implementations and different training pipelines. The recommended script structure is provided in [`scripts/base_script.py`](scripts/base_script.py).
+
+### New scenarios and hyperparameterizations
+Users can extend possible experiment configurations by adding their custom experiment configuration in [`experiment_metadata.json`](/experiment_metadata.json).
