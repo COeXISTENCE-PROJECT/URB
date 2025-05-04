@@ -1,7 +1,8 @@
-<img src="docs/urb.png" align="right" width="30%"/>
-# URB
+<p align="center">
+  <img src="docs/urb.png" align="center" width="30%"/>
+</p>
 
-#### Urban Routing Benchmark - benchmarking MARL algorithms on the fleet routing tasks. 
+# Urban Routing Benchmark - Benchmarking MARL algorithms on the fleet routing tasks
 
 <p align="center">
   <img src="docs/urb_overview.png" align="center" width="90%"/>
@@ -30,15 +31,13 @@
    * are trained to optimize routing policies with the implemented algorithm.
 * When the training is finished, it uses raw results to compute a wide-set of KPIs.
 
-![image](https://github.com/user-attachments/assets/1a2858e7-c1a7-4e4f-bb4a-c7289e366ceb)
-
 ## Tasks:
 
 #### Core (benchmarked with the results):
 
 Collaborative fleet minimizing group average travel time with 40\% market share with non-adaptive human routing behaviour.
 
->In a French small town of _Gurgerville_ , where human routing decision were stable and close to the well-known User Equilibrium, 40\% of drivers decide to switch on the autonomous driving mode, delegating their routing decisions. Then, each machine will apply some kind of algorithm to select the route maximising the reward function: group average travel time.
+>In a French small town of _Saint Arnoult_ , where human routing decision were stable and close to the well-known User Equilibrium, 40\% of drivers decide to switch on the autonomous driving mode, delegating their routing decisions. Then, each machine will apply some kind of algorithm to select the route maximising the reward function: group average travel time.
 
 #### Illustrative (sample results only):
 
@@ -114,7 +113,7 @@ where
 
 - ```<scipt_name>``` is the script you wish to run, available scripts are ```ippo_torchrl```, ```iql_torchrl```, ```mappo_torchrl```, ```vdn_torchrl``` and ```qmix_torchrl```,
 - ```<exp_id>``` is your own experiment identifier, for instance ```random_ing```, 
-- ```<configuration_id>``` is the configuration identifier, it must be compatible with the script and a key from ```experiment_metadata.json``` i.e.  ```1_ippo``` for ```ippo_torchrl```,
+- ```<configuration_id>``` is the configuration identifier, it must be compatible with the script and a key from [```experiment_metadata.json```](/experiment_metadata.json) i.e.  ```1_ippo``` for ```ippo_torchrl```,
 - ```<net_name>``` is the name of the network you wish to use. Must be one of the folder names in ```networks/``` i.e. ```ingolstadt_custom```, ```nangis```, ```nemours```, ```provins``` or ```saint_arnoult```,
 - ```<env_seed>``` is reproducibility random seed for the traffic environment, default seed is set to be 42,
 - ```<torch_seed>``` is reproducibility random seed for PyTorch, default seed is set to be 42.
