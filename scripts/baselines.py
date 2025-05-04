@@ -1,20 +1,27 @@
+import os
+import sys
+
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if repo_root not in sys.path:
+    sys.path.insert(0, repo_root)
+
 import argparse
 import ast
 import json
 import logging
-import os
 import random
 
 import numpy as np
 import pandas as pd
-import routerl
 
 from routerl import Keychain as kc
 from routerl import TrafficEnvironment
 from tqdm import tqdm
 
+from baseline_models import get_baseline
+
 if __name__ == "__main__":
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))
     parser = argparse.ArgumentParser()
     parser.add_argument('--id', type=str, required=True)
     parser.add_argument('--conf', type=str, required=True)
@@ -175,12 +182,12 @@ if __name__ == "__main__":
                 break
             
     human_learning_params = env.agent_params[kc.HUMAN_PARAMETERS]
-    human_learning_params[kc.MODEL] = baseline_model
+    human_learning_params["model"] = baseline_model
     free_flows = env.get_free_flow_times()
     for h_id, human in mutated_humans.items():
         initial_knowledge = free_flows[(human.origin, human.destination)]
         initial_knowledge = [-1 * item for item in initial_knowledge]
-        mutated_humans[h_id].model = routerl.get_learning_model(human_learning_params, initial_knowledge)
+        mutated_humans[h_id].model = get_baseline(human_learning_params, initial_knowledge)
        
     pbar.set_description("AV learning")
     for episode in range(training_eps):
@@ -189,7 +196,7 @@ if __name__ == "__main__":
             observation, reward, termination, truncation, info = env.last()
 
             if termination or truncation:
-                obs = [{kc.AGENT_ID : int(agent), kc.TRAVEL_TIME : reward}]
+                obs = [{kc.AGENT_ID : int(agent), kc.TRAVEL_TIME : -reward}]
                 last_action = mutated_humans[agent].last_action
                 mutated_humans[agent].learn(last_action, obs)
                 action = None
