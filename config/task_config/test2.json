@@ -1,0 +1,19 @@
+{
+    "desc" : 
+    [
+        "0.5% AVs",
+        "10 days of human learning",
+        "10 test episodes",
+        "Humans do not adapt during AV learning",
+        "AVs are cooperative",
+        "Human model is gawron",
+        "Gawron parameters are default values in RouteRL"
+    ],
+
+    "ratio_machines" : 0.05,
+    "human_learning_episodes" : 10,
+    "test_eps" : 10,
+    "should_humans_adapt": false,
+    "av_behavior" : "cooperative",
+    "human_model" : "gawron"
+}

@@ -31,22 +31,30 @@ from tqdm import tqdm
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--id', type=str, required=True)
-    parser.add_argument('--conf', type=str, required=True)
+    parser.add_argument('--alg-conf', type=str, required=True)
+    parser.add_argument('--env-conf', type=str, default="config1")
+    parser.add_argument('--task-conf', type=str, required=True)
     parser.add_argument('--net', type=str, required=True)
     parser.add_argument('--env-seed', type=int, default=42)
     parser.add_argument('--torch-seed', type=int, default=42)
     args = parser.parse_args()
+    ALGORITHM = "vdn"
     exp_id = args.id
-    exp_config = args.conf
+    alg_config = args.alg_conf
+    env_config = args.env_conf
+    task_config = args.task_conf
     network = args.net
     env_seed = args.env_seed
     torch_seed = args.torch_seed
     print("### STARTING EXPERIMENT ###")
+    print(f"Algorithm: {ALGORITHM.upper()}")
     print(f"Experiment ID: {exp_id}")
     print(f"Network: {network}")
     print(f"Environment seed: {env_seed}")
     print(f"PyTorch seed: {torch_seed}")
-    print(f"Experiment config: {exp_config}")
+    print(f"Algorithm config: {alg_config}")
+    print(f"Environment config: {env_config}")
+    print(f"Task config: {task_config}")
 
     os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
     
@@ -66,9 +74,15 @@ if __name__ == "__main__":
     print("device is: ", device)
 
      
-    # #### Hyperparameters setting
-    params = json.load(open("../experiment_metadata.json"))
-    params = params[exp_config]["config"]
+    # Parameter setting
+    params = dict()
+    alg_params = json.load(open(f"../config/algo_config/{ALGORITHM}/{alg_config}.json"))
+    env_params = json.load(open(f"../config/env_config/{env_config}.json"))
+    task_params = json.load(open(f"../config/task_config/{task_config}.json"))
+    params.update(alg_params)
+    params.update(env_params)
+    params.update(task_params)
+    del params["desc"], alg_params, env_params, task_params
 
     
     # set params as variables in this script
@@ -113,9 +127,12 @@ if __name__ == "__main__":
     dump_config["network"] = network
     dump_config["env_seed"] = env_seed
     dump_config["torch_seed"] = torch_seed
-    dump_config["config"] = exp_config
+    dump_config["env_config"] = env_config
+    dump_config["task_config"] = task_config
+    dump_config["alg_config"] = alg_config
     dump_config["num_agents"] = num_agents
     dump_config["num_machines"] = num_machines
+    dump_config["algorithm"] = ALGORITHM
     with open(exp_config_path, 'w', encoding='utf-8') as f:
         json.dump(dump_config, f, indent=4)
 
