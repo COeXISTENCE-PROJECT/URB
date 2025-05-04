@@ -66,7 +66,7 @@ Make sure you have SUMO installed in your system. This procedure should be carri
 
 Clone the **URB** repository from github by
 
-```console
+```bash
 git clone https://github.com/COeXISTENCE-PROJECT/URB.git
 ```
 
@@ -74,26 +74,26 @@ git clone https://github.com/COeXISTENCE-PROJECT/URB.git
 
 - **Option 1** (Recommended): Create a virtual enviroment with `venv`:
 
-```console
+```bash
 python3.13.1 -m venv .venv
 ```
 
 and then install dependencies by:
 
-```console
+```bash
 cd URB
 pip install --force-reinstall --no-cache-dir -r requirements.txt
 ```
 
 - **Option2** (Alternative): Use conda environment with `conda`:
 
-```console
+```bash
 conda create -n URB python=3.13.1
 ```
 
 and then install dependencies by: 
 
-```console
+```bash
 cd URB
 conda activate URB
 pip install --force-reinstall --no-cache-dir -r requirements.txt
@@ -105,7 +105,7 @@ pip install --force-reinstall --no-cache-dir -r requirements.txt
 
 To use **URB** while using RL algorithm, you have to provide in the command line the following command:
 
-```console
+```bash
 python scripts/<script_name> --id <exp_id> --conf <configuration_id> --net <net_name> --env-seed <env_seed> --torch-seed <torch_seed>
 ```
 
@@ -120,7 +120,7 @@ where
 
 For example:
 
-```console
+```bash
 python scripts/ippo_torchrl.py --id gar_ippo_0 --conf 1_ippo --net gargenville --env-seed 42 --torch-seed 0
 ```
 
@@ -130,7 +130,7 @@ Records and plots will be saved in ```results/<exp_id>```.
 
 Similarly as for RL algorithms, you have to provide command, but there is one additional flag ```model``` for ```scripts/baselines.py```, instead of ```torch-seed```, then you have command of form
 
-```console
+```bash
 python scripts/baselines.py --id <exp_id> --conf <configuration_id> --net <net_name> --env-seed <env_seed> --model <model_name>
 ```
 
@@ -138,7 +138,7 @@ And ```<model_name>``` should be one of ```random```, ```aon``` (included in [ba
 
 For example:
 
-```console
+```bash
 python scripts/baselines.py --id ing_aon --conf 1_baseline --net ingolstadt_custom --env-seed 42 --model aon
 ```
 
