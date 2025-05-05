@@ -1,0 +1,9 @@
+{
+    "smooth_by" : 3,
+    "plot_choices" : "basic",
+    "save_every" : 1,
+
+    "number_of_paths" : 4,
+    "path_gen_beta" : -5,
+    "num_samples" : 10
+}

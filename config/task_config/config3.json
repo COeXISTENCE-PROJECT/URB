@@ -1,0 +1,16 @@
+{
+    "desc" : 
+    [
+        "All humans mutate to AVs",
+        "200 days of human learning",
+        "100 test episodes",
+        "AVs are selfish"
+    ],
+
+    "ratio_machines" : 1.0,
+    "human_learning_episodes" : 0,
+    "test_eps" : 100,
+    "should_humans_adapt": false,
+    "av_behavior" : "selfish",
+    "human_model" : "gawron"
+}

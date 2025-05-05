@@ -8,24 +8,22 @@
   <img src="docs/urb_overview.png" align="center" width="90%"/>
 </p>
 
-> Autonomous Vehicles promise better performance to our congested urban networks in the future. One of potential improvements lays in routing decisions which, unlike for humans, can be collective, data-driven and come from deep-learning algorithms. To foster this unexploited opportunity, we propose the `urb` - Urban Mobility Benchmark for RL-equipped Connected Autonomous Vehicles (CAVs). `urb`, for a selection of real-world urban networks with realistic demand patterns simulates the future system state, with CAVs. It explores state-of-the-art MARL algorithms from torchRL, for various reward formulations (from selfish, via social to malicious), collaborations, observations,  market shares and compositions (monopolies vs oligopolies) and human adaptations. It reports variety of performance indicators not only on the RL algorithms performance, but also for the system (like impact on human drivers or on total travel times). Via the broad experimental scheme, it aims to:
->
-> i) understand which state-of-the-art algorithms outperform others in this class of tasks,
->
-> ii) open competition for future algorithmic improvements,
->
-> iii) better understand impact of collective CAV routing for future cities (on congestion, emissions and sustainability) to equip policymakers with solid arguments for CAV regulations.
+Autonomous Vehicles promise better performance to our congested urban networks in the future. One of potential improvements lays in routing decisions which, unlike for humans, can be collective, data-driven and come from deep-learning algorithms. To foster this unexploited opportunity, we propose the `URB` - Urban Mobility Benchmark for RL-equipped Connected Autonomous Vehicles (CAVs). `URB`, for a selection of real-world urban networks with realistic demand patterns simulates the future system state, with CAVs. It explores state-of-the-art MARL algorithms from TorchRL, for various reward formulations (from selfish, via social to malicious), collaborations, observations,  market shares and compositions (monopolies vs oligopolies) and human adaptations. It reports variety of performance indicators not only on the RL algorithms performance, but also for the system (like impact on human drivers or on total travel times). Via the broad experimental scheme, it aims to:
+
+1) understand which state-of-the-art algorithms outperform others in this class of tasks,
+2) open competition for future algorithmic improvements,
+3) better understand impact of collective CAV routing for future cities (on congestion, emissions and sustainability) to equip policymakers with solid arguments for CAV regulations.
 
 ---
 
 ## 🔗 Workflow
 
-`URB`:
-* runs a `RouteRL` script
-* with a RL algorithm (possibly `TorchRL` implementation)
-* opens a config file (stored in `experiment_metadata.json`)
-* loads the network and demand from `networks`
-* executes a typical `RouteRL` routine of
+`URB` (as depicted in the above figure):
+* Runs an experiment script using the `TrafficEnvironment` from `RouteRL`,
+* With a RL algorithm (possibly `TorchRL` implementation) or a baseline method (from `baseline_models/`),
+* Opens algorithm, environment and task configuration files from `config/`,
+* Loads the network and demand from `networks`
+* Executes a typical `RouteRL` routine of
    * first learning of human drivers,
    * which then 'mutate` to CAVs,
    * are trained to optimize routing policies with the implemented algorithm.
@@ -37,7 +35,7 @@
 
 Collaborative fleet minimizing group average travel time with 40\% market share with non-adaptive human routing behaviour.
 
->In a French small town of _Saint Arnoult_ , where human routing decision were stable and close to the well-known User Equilibrium, 40\% of drivers decide to switch on the autonomous driving mode, delegating their routing decisions. Then, each machine will apply some kind of algorithm to select the route maximising the reward function: group average travel time.
+>In a French small town of _Saint Arnoult_, where human routing decision were stable and close to the well-known User Equilibrium, 40\% of drivers decide to switch on the autonomous driving mode, delegating their routing decisions. Then, each machine will apply some kind of algorithm to select the route maximising the reward function: group average travel time.
 
 #### Illustrative (sample results only):
 
@@ -106,32 +104,38 @@ pip install --force-reinstall --no-cache-dir -r requirements.txt
 To use **URB** while using RL algorithm, you have to provide in the command line the following command:
 
 ```bash
-python scripts/<script_name> --id <exp_id> --conf <configuration_id> --net <net_name> --env-seed <env_seed> --torch-seed <torch_seed>
+python scripts/<script_name> --id <exp_id> --alg-conf <hyperparam_id> --env-conf <configuration_id> --task-conf <task_id> --net <net_name> --env-seed <env_seed> --torch-seed <torch_seed>
 ```
 
 where
 
 - ```<scipt_name>``` is the script you wish to run, available scripts are ```ippo_torchrl```, ```iql_torchrl```, ```mappo_torchrl```, ```vdn_torchrl``` and ```qmix_torchrl```,
 - ```<exp_id>``` is your own experiment identifier, for instance ```random_ing```, 
-- ```<configuration_id>``` is the configuration identifier, it must be compatible with the script and a key from [```experiment_metadata.json```](/experiment_metadata.json) i.e.  ```1_ippo``` for ```ippo_torchrl```,
+- ```<hyperparam_id>``` is the hyperparameterization identifier, it must correspond to a `.json` filename (without extension) in [`config/algo_config`](config/algo_config/). Provided scripts automatically select the algorithm-specific subfolder in this directory.
+- ```<env-conf>``` is the environment configuration identifier. It must correspond to a `.json` filename (without extension) in [`config/env_config`](config/env_config/). It is used to parameterize environment-specific processes, such as path generation, disk operations, etc. It is **optional** and by default is set to `config1`.
+- ```<task_id>``` is the task configuration identifier. It must correspond to a `.json` filename (without extension) in [`config/task_config`](config/task_config/). It is used to parameterize the simulated scenario, such as portion of AVs, duration of human learning, AV behavior, etc.
 - ```<net_name>``` is the name of the network you wish to use. Must be one of the folder names in ```networks/``` i.e. ```ingolstadt_custom```, ```nangis```, ```nemours```, ```provins``` or ```saint_arnoult```,
 - ```<env_seed>``` is reproducibility random seed for the traffic environment, default seed is set to be 42,
-- ```<torch_seed>``` is reproducibility random seed for PyTorch, default seed is set to be 42.
+- ```<torch_seed>``` is reproducibility random seed for PyTorch, it is **optional** and by default is set to 42.
 
-For example:
+For example, the following command runs an experiment using:
+- QMIX algorithm, hyperparameterized by `config/algo_config/qmix/config3.json`, 
+- The task specified in `config/task_config/config4.json`,
+- The environment parameterization specified in `config/env_config/config1.json` (by default),
+- Experiment identifier `sai_qmix_0`, which will be used as the folder name in `results/` to save the experiment data,
+- Saint Arnoult network and demand, from `networks/saint_arnoult`,
+- Environment (also used for `random` and `numpy`) and PyTorch seeds 42 and 0, respectively.
 
 ```bash
-python scripts/ippo_torchrl.py --id gar_ippo_0 --conf 1_ippo --net gargenville --env-seed 42 --torch-seed 0
+python scripts/qmix_torchrl.py --id sai_qmix_0 --alg-conf config3 --task-conf config4 --net saint_arnoult --env-seed 42 --torch-seed 0
 ```
-
-Records and plots will be saved in ```results/<exp_id>```.
 
 ####  Usage **URB** for baselines
 
-Similarly as for RL algorithms, you have to provide command, but there is one additional flag ```model``` for ```scripts/baselines.py```, instead of ```torch-seed```, then you have command of form
+Similarly as for RL algorithms, you have to provide command, but there is one additional flag ```model``` for ```scripts/baselines.py```, instead of ```torch-seed```, then you have command of form:
 
 ```bash
-python scripts/baselines.py --id <exp_id> --conf <configuration_id> --net <net_name> --env-seed <env_seed> --model <model_name>
+python scripts/baselines.py --id <exp_id> --alg-conf <hyperparam_id> --env-conf <configuration_id> --task-conf <task_id> --net <net_name> --env-seed <env_seed> --model <model_name>
 ```
 
 And ```<model_name>``` should be one of ```random```, ```aon``` (included in [baseline_models](baseline_models/)) or ```gawron``` (from [RouteRL](https://github.com/COeXISTENCE-PROJECT/RouteRL/blob/993423d101f39ea67a1f7373e6856af95a0602d4/routerl/human_learning/learning_model.py#L42)). 
@@ -139,7 +143,7 @@ And ```<model_name>``` should be one of ```random```, ```aon``` (included in [ba
 For example:
 
 ```bash
-python scripts/baselines.py --id ing_aon --conf 1_baseline --net ingolstadt_custom --env-seed 42 --model aon
+python scripts/baselines.py --id ing_aon --alg-conf config1 --task-conf config2 --net ingolstadt_custom --model aon
 ```
 
 ## 💎 Extending URB
@@ -153,4 +157,8 @@ Users can define and use their own baseline methods by creating a new model by e
 Users can add new experiment scripts for testing different algorithms, different implementations and different training pipelines. The recommended script structure is provided in [`scripts/base_script.py`](scripts/base_script.py).
 
 ### New scenarios and hyperparameterizations
-Users can extend possible experiment configurations by adding their custom experiment configuration in [`experiment_metadata.json`](/experiment_metadata.json).
+Users can extend possible experiment configurations by adding:
+
+* Algorithm hyperparameterization in [`config/algo_config`](config/algo_config/),
+* Experiment setting in [`config/env_config`](config/env_config/), and
+* New tasks in [`config/task_config`](config/task_config/).
