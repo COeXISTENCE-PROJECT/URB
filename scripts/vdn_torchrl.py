@@ -242,7 +242,7 @@ if __name__ == "__main__":
             n_agent_outputs=env.action_spec.space.n,
             n_agents=env.n_agents,
             centralised=False,
-            share_params=True,
+            share_params=share_params,
             device=device,
             depth=mlp_depth,
             num_cells=mlp_cells,
