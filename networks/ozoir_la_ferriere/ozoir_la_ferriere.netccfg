@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2025-04-29 15:50:15 by Eclipse SUMO netconvert Version 1.22.0
+-->
+
+<netconvertConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
+
+    <input>
+        <node-files value="ozoir_la_ferriere/ozoir_la_ferriere.nod.xml"/>
+        <edge-files value="ozoir_la_ferriere/ozoir_la_ferriere.edg.xml"/>
+        <connection-files value="ozoir_la_ferriere/ozoir_la_ferriere.con.xml"/>
+        <tllogic-files value="ozoir_la_ferriere/ozoir_la_ferriere.tll.xml"/>
+        <type-files value="ozoir_la_ferriere/ozoir_la_ferriere.typ.xml"/>
+    </input>
+
+    <processing>
+        <geometry.min-radius.fix.railways value="false"/>
+        <geometry.max-grade.fix value="false"/>
+        <offset.disable-normalization value="true"/>
+        <lefthand value="0"/>
+    </processing>
+
+    <tls_building>
+        <tls.ignore-internal-junction-jam value="1"/>
+    </tls_building>
+
+    <junctions>
+        <no-turnarounds value="true"/>
+        <junctions.corner-detail value="5"/>
+        <junctions.limit-turn-speed value="5.50"/>
+        <rectangular-lane-cut value="0"/>
+    </junctions>
+
+    <pedestrian>
+        <walkingareas value="0"/>
+    </pedestrian>
+
+</netconvertConfiguration>
