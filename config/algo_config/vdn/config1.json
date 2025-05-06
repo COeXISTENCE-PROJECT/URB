@@ -6,7 +6,7 @@
     "minibatch_size" : 32,
     "lr" : 3e-3,
     "max_grad_norm" : 3.0,
-    "memory_size" : 1000,
+    "memory_size" : 3000,
     "tau" : 0.005,
     "gamma" : 0.99,
     "mlp_depth" : 3,
