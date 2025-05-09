@@ -1,38 +1,17 @@
-#### Measures and indicators  
+#### 📊 Measures and indicators  
 
-Each experiment outputs set of raw records, which are then processed with the scripts in this folder for a set of indicators which we report and (some) identify as meaningful to track the quality of the solution and its impact to the system.
+Each experiment outputs set of raw records, which are then processed with the script in this folder for a set of performance indicators which we report and several additional metrics that track the quality of the solution and its impact to the system.
 
 ---
 
-The metrics we use to assess the quality of a solution are generally divided into three groups:
+The core metric is the travel time $t$, which is both the core term of the utility for human drivers (rational utility maximizers) and of the CAVs reward.
+We report the average travel time for the system $\hat{t}$, human drivers $\hat{t}_{\text{HDV}}$, and autonomous vehicles $\hat{t}_{\text{CAV}}$. We record each during the training, testing phase and for 50 days before CAVs are introduced to the system ( $\hat{t}^{train}, \hat{t}^{test}$, $\hat{t}^{pre}$). Using these values, we introduce: 
 
-1. Individual metrics  
-2. Group metrics  
-3. System-wide metrics  
+-  CAV advantage as ${\hat{t}_{\text{HDV}}^{post}}/\hat{t}_{\text{CAV}}$, 
+-  Effect of changing to CAV as ${\hat{t}_{\text{HDV}}^{pre}}/{\hat{t}_{\text{CAV}}}$, and
+-  Effect of remaining HDV as ${\hat{t}_{\text{HDV}}^{pre}}/{\hat{t}_{\text{HDV}}^{test}}$), which reflect the relative performance of HDVs and the CAV fleet from the point of view of individual agents.
 
-### Individual Metrics
+To better understand the causes of the changes in travel time, we track the _Average speed_ and _Average mileage_ (directly extracted from SUMO). 
 
-- **User travel time** (from RouteRL) – average over the last 100 days of the simulation  
-- **Delays** (from SUMO)  
-
-### Group Metrics
-
-- **Group travel time** (average)  
-- **CAV Advantage**, effect of changing, effect of not changing fleet (as in the *Scientific Reports* paper)  
-- **Cost of #** – how CAV advantage grows/decreases with increasing fleet size  
-- **COeXISTENCE metric** (*dominance*) – how bad CAVs are for humans (the name is good, that’s most important)  
-
-### System-Wide Metrics
-
-- **Total travel time** (`totalTravelTime`)  
-- **# of stops, teleports, sum of delays** – `agent_<id>_waitingCount`, `teleports_total`, `totalDepartDelay`  
-  - The question is: do we count this as a delay?  
-  - Another possibility: `timeLoss * count`  
-- **Speed of convergence** – day where the algorithm beats Baseline  
-  - (Does it have to be smoothed heavily?)  
-- **Cost of training** – area under the curve (integral)  
-- **Convergence stability** – entropy of human actions  
-- **Human preference shifts**  
-- **Winrate** – all good RL papers have some form of this to encapsulate how good the solution is  
-  - If our objective is to beat naive solutions, we can define **winrate** as the probability (percentage) of achieving a better result than Baseline  
-  - Another possibility: count the number of days where the effect of change is positive (if we aim to maximize fleet size)  
+We measure the _Cost of training_, expressed as the average of: $\sum_{\tau \in train}(t^\tau_a - \hat{t}^{pre}_a)$ over all agents $a$, i.e. the cumulated disturbance that CAV cause during the training period.
+We call an episode _won_ by CAVs if on average they were faster than human drivers. A final _winrate_ is percentage of such days during training, which additionally describes how quickly the fleet improvement was.
