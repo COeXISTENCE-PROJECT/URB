@@ -146,7 +146,7 @@ For example:
 python scripts/baselines.py --id ing_aon --alg-conf config1 --task-conf config2 --net ingolstadt_custom --model aon
 ```
 
-#### 📊 Measures and indicators  
+## 📊 Measures and indicators  
 
 Each experiment outputs set of raw records, which are then processed with the script in this folder for a set of performance indicators which we report and several additional metrics that track the quality of the solution and its impact to the system.
 
