@@ -1,4 +1,5 @@
 import os
+
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
     
 import argparse
@@ -10,6 +11,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import torch
 
+from utils import clear_SUMO_files
 from routerl import TrafficEnvironment
 from torch import nn
 from tensordict.nn import TensorDictModule, TensorDictSequential
@@ -400,5 +402,7 @@ if __name__ == "__main__":
     plt.close()
     
     env.stop_simulation()
+
+    clear_SUMO_files(os.path.join(records_folder, "SUMO_output"), os.path.join(records_folder, "episodes"), remove_additional_files=True)
 
 

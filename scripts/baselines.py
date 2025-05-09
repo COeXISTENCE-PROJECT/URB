@@ -1,6 +1,7 @@
 import os
 import sys
 
+
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if repo_root not in sys.path:
@@ -15,6 +16,7 @@ import random
 import numpy as np
 import pandas as pd
 
+from utils import clear_SUMO_files
 from routerl import Keychain as kc
 from routerl import TrafficEnvironment
 from tqdm import tqdm
@@ -239,3 +241,5 @@ if __name__ == "__main__":
     env.plot_results()
 
     env.stop_simulation()
+
+    clear_SUMO_files(os.path.join(records_folder, "SUMO_output"), os.path.join(records_folder, "episodes"), remove_additional_files=True)

@@ -24,7 +24,6 @@ def get_episodes(ep_path: str) -> list[int]:
     else:
         raise FileNotFoundError(f"Episodes folder does not exist!")
 
-    eps = [ep for ep in eps if ep % 5 == 0]  # faster
 
     return sorted(eps)
 

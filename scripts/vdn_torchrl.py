@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import torch
 
+from scripts.utils import clear_SUMO_files
 from routerl import TrafficEnvironment
 from tensordict.nn import TensorDictModule, TensorDictSequential
 from torch import nn
@@ -418,3 +419,5 @@ if __name__ == "__main__":
     plt.close()
 
     env.stop_simulation()
+
+    clear_SUMO_files(os.path.join(records_folder, "SUMO_output"), os.path.join(records_folder, "episodes"), remove_additional_files=True)
