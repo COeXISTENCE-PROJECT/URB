@@ -4,8 +4,8 @@
         "40% AVs, 60% humans.",
         "200 days of human learning",
         "100 test episodes",
-        "Humans do not adapt during AV learning",
-        "AVs are selfish",
+        "Humans adapt during AV learning",
+        "AVs are altruistic",
         "Human model is gawron",
         "Gawron parameters are default values in RouteRL"
     ],
