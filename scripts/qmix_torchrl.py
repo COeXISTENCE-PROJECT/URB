@@ -345,9 +345,6 @@ if __name__ == "__main__":
     loss_values_path = os.path.join(records_folder, "losses/loss_values.txt")
     os.makedirs(os.path.dirname(loss_values_path), exist_ok=True)
     open(loss_values_path, 'w').close()
-
-    counter = 0
-    os.makedirs(plots_folder, exist_ok=True)
     
     pbar = tqdm(total=n_iters, desc="Training")
     for tensordict_data in collector:
@@ -393,9 +390,6 @@ if __name__ == "__main__":
         qnet_explore[1].step(frames=current_frames)  # Update exploration annealing
         collector.update_policy_weights_()
         pbar.update()
-        counter += 1
-        if counter % 100 == 0:
-            env.plot_results()
     
     pbar.close()
     collector.shutdown()
