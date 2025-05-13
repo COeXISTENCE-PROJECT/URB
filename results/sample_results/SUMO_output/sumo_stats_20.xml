@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2025-05-13 13:51:15 by Eclipse SUMO sumo Version 1.22.0
+<sumoConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
+
+    <input>
+        <net-file value="../networks/saint_arnoult/saint_arnoult.net.xml"/>
+        <additional-files value="../results/sample_results/det.add.xml,../results/sample_results/route.rou.xml"/>
+    </input>
+
+    <output>
+        <tripinfo-output value="../results/sample_results/SUMO_output/detailed_sumo_stats_32.xml"/>
+        <statistic-output value="../results/sample_results/SUMO_output/sumo_stats_32.xml"/>
+    </output>
+
+    <processing>
+        <time-to-teleport value="-1"/>
+    </processing>
+
+    <report>
+        <no-step-log value="true"/>
+    </report>
+
+    <random_number>
+        <seed value="42"/>
+    </random_number>
+
+</sumoConfiguration>
+-->
+
+<statistics xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/statistic_file.xsd">
+    <performance clockBegin="1747137075.08" clockEnd="1747137076.50" clockDuration="1.42" traciDuration="1.27" realTimeFactor="1498.95" vehicleUpdatesPerSecond="31018.97" personUpdatesPerSecond="0.00" begin="0.00" end="2133.00" duration="2133.00"/>
+    <vehicles loaded="222" inserted="222" running="0" waiting="0"/>
+    <teleports total="0" jam="0" yield="0" wrongLane="0"/>
+    <safety collisions="0" emergencyStops="0" emergencyBraking="0"/>
+    <persons loaded="0" running="0" jammed="0"/>
+    <personTeleports total="0" abortWait="0" wrongDest="0"/>
+    <vehicleTripStatistics count="222" routeLength="1602.07" speed="8.24" duration="198.83" waitingTime="0.24" timeLoss="25.59" departDelay="0.08" departDelayWaiting="-1.00" totalTravelTime="44140.00" totalDepartDelay="18.00"/>
+    <pedestrianStatistics number="0" routeLength="0.00" duration="0.00" timeLoss="0.00"/>
+    <rideStatistics number="0"/>
+    <transportStatistics number="0"/>
+</statistics>
