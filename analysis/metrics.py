@@ -1,12 +1,13 @@
+import os
+import sys
 import argparse
 import json
 import xml.etree.ElementTree as ET
-import numpy as np
-from tqdm import tqdm
-import pandas as pd
-import sys
-import os
+
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from tqdm import tqdm
 
 def get_episodes(ep_path: str) -> list[int]:
     """Get the episodes data
@@ -447,7 +448,7 @@ def extract_metrics(path: str, config: dict, verbose: bool = False) -> tuple[pd.
     if verbose and AV_only:
         print("AV only experiment, no human learning period found.")
 
-    periods = slice_episodes(df, config, verbose)
+    periods = slice_episodes(df, config)
     testing_frames = periods["testing_frames"]
     before_mutation = periods["before_mutation"]
     after_mutation = periods["after_mutation"]

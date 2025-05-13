@@ -14,12 +14,17 @@ Autonomous vehicles promise better performance to our congested urban networks i
 2) open competition for future algorithmic improvements,
 3) better understand impact of collective CAV routing for future cities (on congestion, emissions and sustainability) to equip policymakers with solid arguments for CAV regulations.
 
-Some of the networks included `URB`:
+---
+
+## 🏙️ Traffic network and demand data
+
+With this repository, `URB` comes with 6 traffic networks and associated demand data to experiment with. Some of the networks:
 
 | ![Gretz Armainvilliers](networks/gretz_armainvilliers/gretz_armainvilliers_network.png) | ![Nangis](networks/nangis/nangis_network.png) |
 |------------------------|-----------------------|
 | ![Nemours](networks/nemours/nemours_network.png) | ![Provins](networks/provins/provins_network.png) |
 
+> More networks and demand data are available [here](https://www.kaggle.com/datasets/ukaszgorczyca/urb-networks). User can download the network folder of their choice, place the folder in `networks/`, and use it as described below.
 
 ---
 
@@ -95,7 +100,7 @@ conda activate URB
 pip install --force-reinstall --no-cache-dir -r requirements.txt
 ```
 
-## 📌 Usage
+## 🔬 Running experiments
 
 #### Usage of **URB** for Reinforcement Learning algorithms
 
@@ -144,7 +149,7 @@ For example:
 python scripts/baselines.py --id ing_aon --alg-conf config1 --task-conf config2 --net ingolstadt_custom --model aon
 ```
 
-## 📊 Measures and indicators  
+## 📊 Calculating measures and indicators  
 
 Each experiment outputs set of raw records, which are then processed with the script in this folder for a set of performance indicators which we report and several additional metrics that track the quality of the solution and its impact to the system.
 
@@ -153,7 +158,7 @@ Each experiment outputs set of raw records, which are then processed with the sc
 To use the analysis script, you have to provide in the command line the following command:
 
 ```bash
-python metrics.py --id <exp_id> --verbose <verbose> 
+python analysis/metrics.py --id <exp_id> --verbose <verbose> 
 ```
 
 that will collect the results from the experiment with identifier ```<exp_id>``` and save them in the folder ```results/<exp_id>/metrics/```. The ```--verbose``` flag is optional and if set to ```True``` will print additional information about the analysis process.
