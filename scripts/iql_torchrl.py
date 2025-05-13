@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import torch
 
-from utils import clear_SUMO_files
 from routerl import TrafficEnvironment
 from torch import nn
 from tensordict.nn import TensorDictModule, TensorDictSequential
@@ -27,6 +26,8 @@ from torchrl.modules.models.multiagent import MultiAgentMLP
 from torchrl.objectives.value import GAE
 from torchrl.objectives import SoftUpdate, ValueEstimators, DQNLoss
 from tqdm import tqdm
+
+from utils import clear_SUMO_files
 
 
 if __name__ == "__main__":

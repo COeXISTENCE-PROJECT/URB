@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import torch
 
-from scripts.utils import clear_SUMO_files
 from routerl import TrafficEnvironment
 from torch import nn
 from tensordict.nn import TensorDictModule, TensorDictSequential
@@ -27,6 +26,8 @@ from torchrl.modules.models.multiagent import MultiAgentMLP, QMixer
 from torchrl.objectives import SoftUpdate, ValueEstimators
 from torchrl.objectives.multiagent.qmixer import QMixerLoss
 from tqdm import tqdm
+
+from utils import clear_SUMO_files
 
 
 if __name__ == "__main__":

@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import torch
 
-from utils import clear_SUMO_files
 from routerl import TrafficEnvironment
 from tensordict.nn import TensorDictModule
 from torchrl.collectors import SyncDataCollector
@@ -25,6 +24,8 @@ from torchrl.modules import MultiAgentMLP, ProbabilisticActor
 from torchrl.objectives.value import GAE
 from torchrl.objectives import ClipPPOLoss, ValueEstimators
 from tqdm import tqdm
+
+from utils import clear_SUMO_files
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

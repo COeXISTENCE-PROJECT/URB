@@ -16,11 +16,11 @@ import random
 import numpy as np
 import pandas as pd
 
-from utils import clear_SUMO_files
 from routerl import Keychain as kc
 from routerl import TrafficEnvironment
 from tqdm import tqdm
 
+from utils import clear_SUMO_files
 from baseline_models import get_baseline
 
 if __name__ == "__main__":

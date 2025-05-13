@@ -1,11 +1,5 @@
-import argparse
-import json
 import xml.etree.ElementTree as ET
-import numpy as np
-import pandas as pd
-import sys
 import os
-import matplotlib.pyplot as plt
 
 def get_episodes(ep_path: str) -> list[int]:
     """Get the episodes data
