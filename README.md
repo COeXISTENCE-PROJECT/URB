@@ -18,15 +18,9 @@ Via the broad experimental scheme, `URB` aims to:
 
 ---
 
-## 🏙️ Traffic network and demand data
+## 🔎 Results
 
-With this repository, `URB` comes with 6 traffic networks and associated demand data to experiment with. Some of the networks:
-
-| ![Gretz Armainvilliers](networks/gretz_armainvilliers/gretz_armainvilliers_network.png) | ![Nangis](networks/nangis/nangis_network.png) |
-|------------------------|-----------------------|
-| ![Nemours](networks/nemours/nemours_network.png) | ![Provins](networks/provins/provins_network.png) |
-
-> More networks and demand data are available [here](https://www.kaggle.com/datasets/ukaszgorczyca/urb-networks). User can download the network folder of their choice, place the folder in `networks/`, and use it as described below.
+ADD FIGURE AND TABLE
 
 ---
 
@@ -59,7 +53,21 @@ Collaborative fleet minimizing group average travel time with 40\% market share 
 4. Modal shifts - humans join or leave the fleet according to its performance
 5. Human adaptations - drivers react to actions of the fleet and change their behaviour
 
+
+## 🏙️ Traffic network and demand data
+
+With this repository, `URB` comes with 6 traffic networks and associated demand data to experiment with. Some of the networks:
+
+| ![Gretz Armainvilliers](networks/gretz_armainvilliers/gretz_armainvilliers_network.png) | ![Nangis](networks/nangis/nangis_network.png) |
+|------------------------|-----------------------|
+| ![Nemours](networks/nemours/nemours_network.png) | ![Provins](networks/provins/provins_network.png) |
+
+> More networks and demand data are available [here](https://www.kaggle.com/datasets/ukaszgorczyca/urb-networks). User can download the network folder of their choice, place the folder in `networks/`, and use it as described below.
+
+---
+
 ## 📦 Setup
+
 
 #### Prerequisites 
 
