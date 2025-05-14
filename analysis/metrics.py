@@ -28,8 +28,6 @@ def get_episodes(ep_path: str) -> list[int]:
     else:
         raise FileNotFoundError(f"Episodes folder does not exist!")
 
-    eps = [ep for ep in eps if ep % 5 == 0]  # faster
-
     return sorted(eps)
 
 
@@ -98,7 +96,7 @@ def load_general_SUMO(file) -> pd.DataFrame:
     # Convert to a single-row DataFrame
     df = pd.DataFrame([flat_data])
 
-    # remove the columns that are not needed
+    # keep only the columns that are needed
     cols = [
         "teleports_total",
         "teleports_jam",
@@ -153,7 +151,7 @@ def load_detailed_SUMO(file) -> pd.DataFrame:
     # Convert to DataFrame
     df = pd.DataFrame(data)
 
-    # filter out the columns that are not needed
+    # keep only the columns that are needed
     cols = [
         "id",
         "depart",
@@ -177,8 +175,6 @@ def load_detailed_SUMO(file) -> pd.DataFrame:
     df = flatten_by_id(df)
 
     # print(df.shape)
-
-    # keep only the columns that contain words from the cols
 
     return df
 
@@ -209,8 +205,6 @@ def load_routeRL(file) -> pd.DataFrame:
         pass
 
     df = flatten_by_id(df)
-
-    # print(df.shape)
 
     return df
 
@@ -293,7 +287,7 @@ def collect_to_single_CSV(path: str, save_path: str ="metrics.csv", verbose: boo
     Collect results of the experiment to the single CSV file.
 
     Args:
-        path (str): The path to the results folder.
+        path (str): The path to the results folder, 'episodes' and 'SUMO_output' should be a subdirectories.
         save_path (str): The path to the output file.
         verbose (bool): If True, print the loading progress.
     Returns:
@@ -302,13 +296,14 @@ def collect_to_single_CSV(path: str, save_path: str ="metrics.csv", verbose: boo
 
     df = pd.DataFrame()
 
+    # get the episodes ids from the episodes folder
     episodes = get_episodes(os.path.join(path, "episodes"))
 
     dfs = []
     if verbose:
         print(f"Loading {len(episodes)} episodes...")
-    for i in tqdm(episodes):
-        # add new rows to the DataFrame
+    for i in (tqdm(episodes) if verbose else episodes):
+        # add row for every episode to the DataFrame
         df = load_episode(path, i, verbose)
         if len(df) > 0:
             dfs.append(df)
@@ -460,24 +455,23 @@ def extract_metrics(path: str, config: dict, verbose: bool = False) -> tuple[pd.
         print(f"Testing frames: {testing_frames.shape}")
         print(f"Training frames: {training_frames.shape}")
 
-    avg_times_pre = {}
-    for id in human_ids + CAV_ids:
-        avg_times_pre[id] = before_mutation[f"agent_{id}_duration"].mean()
-    
-    params = {"avg_times_pre": avg_times_pre}
-
     if not AV_only:
         before_mutation = add_benchmark_columns(before_mutation, params)
     after_mutation = add_benchmark_columns(after_mutation, params)
     training_frames = add_benchmark_columns(training_frames, params)
     testing_frames = add_benchmark_columns(testing_frames, params)
 
+    avg_times_pre = {}
+    for id in human_ids + CAV_ids:
+        avg_times_pre[id] = before_mutation[f"agent_{id}_duration"].mean()
+    
+    params = {"avg_times_pre": avg_times_pre}
+
     t_CAV = 0
     for id in CAV_ids:
         t_CAV += testing_frames[f"agent_{id}_duration"].mean()
 
     t_CAV /= len(CAV_ids)
-
  
     if not AV_only:
         t_HDV_pre = 0
@@ -703,9 +697,9 @@ results_folder = f"./results"
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--id", type=str, required=True)
-    parser.add_argument("--skip_clearing", type=bool, default=False)
-    parser.add_argument("--skip_collecting", type=bool, default=False)
-    parser.add_argument("--results_folder", type=str, default=results_folder)
+    parser.add_argument("--skip-clearing", type=bool, default=False)
+    parser.add_argument("--skip-collecting", type=bool, default=False)
+    parser.add_argument("--results-folder", type=str, default=results_folder)
     parser.add_argument("--verbose", type=bool, default=False)
     args = parser.parse_args()
     exp_id = args.id
