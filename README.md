@@ -20,15 +20,19 @@ Via the broad experimental scheme, `URB` aims to:
 
 ## 🔎 Results
 
+### 40% AVs
+
 Travel times relative to human baseline ($t^{pre}$) across episodes in 3 instances (90 to 420 agents). Baselines are marked with dashed lines, human travel times with a solid black line and four tested RL algorithms with color lines. We pick the best out of three runs. Algorithms are trained for 6000 episodes (days simulated in SUMO), and QMIX (as the most promising) for 20000 (blue triangle). Many algorithms hardly beat the random baseline and stabilize, most stop learning. In Provins and Inglostadt, none of the algorithms managed to beat the human baseline and only QMIX on the smallest instance (St. Arnoult) managed to beat human travel times (in 2 out of 3 runs).
 
 <p align="center">
   <img src="docs/final_travel_times_one_replic_legend_out.png" align="center" width="90%"/>
 </p>
 
----
+### 100% AVs
 
-
+<p align="center">
+  <img src="docs/100_per_avs.png" align="center" width="30%"/>
+</p>
 
 
 ---
