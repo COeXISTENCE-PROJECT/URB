@@ -1,3 +1,8 @@
+"""
+This script is used to train QMIX agents using the TorchRL library in a traffic simulation environment.
+The QMIX implementation is based on: https://github.com/pytorch/rl/blob/main/sota-implementations/multiagent/qmix_vdn.py
+"""
+
 import os
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
     
@@ -138,7 +143,7 @@ if __name__ == "__main__":
     with open(exp_config_path, 'w', encoding='utf-8') as f:
         json.dump(dump_config, f, indent=4)
 
-    
+    # Initiate the traffic environment
     env = TrafficEnvironment(
         seed = env_seed,
         create_agents = False,
@@ -189,17 +194,14 @@ if __name__ == "__main__":
     env.start()
     env.reset()
 
-    # #### Human learning
-
+    #  Human learning
     pbar = tqdm(total=human_learning_episodes, desc="Human learning")
     for episode in range(human_learning_episodes):
         env.step()
         pbar.update()
     pbar.close()
     
-    # #### Mutation
-    
-    
+    #  Mutation
     env.mutation(disable_human_learning = not should_humans_adapt, mutation_start_percentile = -1)
     
     print(f"""
@@ -222,28 +224,18 @@ if __name__ == "__main__":
     )
 
      
-    # #### Transforms
-
-    
+    #  Transforms
     env = TransformedEnv(
         env,
         RewardSum(in_keys=[env.reward_key], out_keys=[("agents", "episode_reward")]),
     )
-
-     
-    # The <code style="color:white">check_env_specs()</code> function runs a small rollout and compared it output against the environment specs. It will raise an error if the specs aren't properly defined.
-
     
     check_env_specs(env)
     env.reset()
 
      
-    # #### Policy network
-
-     
-    # > Instantiate an `MPL` that can be used in multi-agent contexts.
-
-    
+    # Policy network
+    # Instantiate an `MPL` that can be used in multi-agent contexts.
     net = MultiAgentMLP(
             n_agent_inputs=env.observation_spec["agents", "observation"].shape[-1],
             n_agent_outputs=env.action_spec.space.n,
@@ -256,12 +248,10 @@ if __name__ == "__main__":
             activation_class=nn.Tanh,
         )
 
-    
     module = TensorDictModule(
             net, in_keys=[("agents", "observation")], out_keys=[("agents", "action_value")]
     )
 
-    
     value_module = QValueModule(
         action_value_key=("agents", "action_value"),
         out_keys=[
@@ -301,9 +291,7 @@ if __name__ == "__main__":
     )
 
      
-    # #### Collector
-
-    
+    #  Collector
     collector = SyncDataCollector(
             env,
             qnet_explore,
@@ -314,9 +302,7 @@ if __name__ == "__main__":
         )
 
      
-    # #### Replay buffer
-
-    
+    #  Replay buffer
     replay_buffer = TensorDictReplayBuffer(
             storage=LazyTensorStorage(memory_size, device=device),
             sampler=SamplerWithoutReplacement(),
@@ -324,9 +310,7 @@ if __name__ == "__main__":
         )
 
      
-    # #### DQN loss function
-
-    
+    #  DQN loss function
     loss_module = QMixerLoss(qnet, mixer, delay_value=True)
 
     loss_module.set_keys(
@@ -342,7 +326,7 @@ if __name__ == "__main__":
     optim = torch.optim.Adam(loss_module.parameters(), lr)
 
      
-    # #### Training loop
+    #  Training loop
     loss_values_path = os.path.join(records_folder, "losses/loss_values.txt")
     os.makedirs(os.path.dirname(loss_values_path), exist_ok=True)
     open(loss_values_path, 'w').close()

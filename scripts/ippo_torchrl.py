@@ -1,3 +1,8 @@
+"""
+This script is used to train IPPO agents using the TorchRL library in a traffic simulation environment.
+The IPPO implementation is based on: https://docs.pytorch.org/rl/stable/tutorials/multiagent_ppo.html
+"""
+
 import os
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
     
@@ -136,7 +141,7 @@ if __name__ == "__main__":
     with open(exp_config_path, 'w', encoding='utf-8') as f:
         json.dump(dump_config, f, indent=4)
 
-    
+    # Initiate the traffic environment
     env = TrafficEnvironment(
         seed = env_seed,
         create_agents = False,
@@ -188,7 +193,7 @@ if __name__ == "__main__":
     res = env.reset()
 
      
-    # #### Human learning
+    #  Human learning
 
     pbar = tqdm(total=human_learning_episodes, desc="Human learning")
     for episode in range(human_learning_episodes):
@@ -197,7 +202,7 @@ if __name__ == "__main__":
     pbar.close()
 
      
-    # #### Mutation
+    #  Mutation
 
     
     env.mutation(disable_human_learning = not should_humans_adapt, mutation_start_percentile=-1)
@@ -292,7 +297,7 @@ if __name__ == "__main__":
     )
 
      
-    # #### Collector
+    #  Collector
 
     collector = SyncDataCollector(
         env,
@@ -304,7 +309,7 @@ if __name__ == "__main__":
     ) 
 
      
-    # #### Replay buffer
+    #  Replay buffer
 
     replay_buffer = ReplayBuffer(
         storage=LazyTensorStorage(
@@ -315,7 +320,7 @@ if __name__ == "__main__":
     )
 
      
-    # #### PPO loss function
+    #  PPO loss function
 
     
     loss_module = ClipPPOLoss(
@@ -341,7 +346,7 @@ if __name__ == "__main__":
     optim = torch.optim.Adam(loss_module.parameters(), lr)
 
      
-    # #### Training loop
+    #  Training loop
     loss_values_path = os.path.join(records_folder, "losses/loss_values.txt")
     loss_entropy_path = os.path.join(records_folder, "losses/loss_entropy.txt")
     loss_objective_path = os.path.join(records_folder, "losses/loss_objective.txt")

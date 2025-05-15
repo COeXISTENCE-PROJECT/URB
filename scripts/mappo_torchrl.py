@@ -1,3 +1,8 @@
+"""
+This script is used to train MAPPO agents using the TorchRL library in a traffic simulation environment.
+The MAPPO implementation is based on: https://docs.pytorch.org/rl/stable/tutorials/multiagent_ppo.html
+"""
+
 import os
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
     
@@ -64,7 +69,6 @@ if __name__ == "__main__":
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
-    
     device = (
         torch.device(0)
         if torch.cuda.is_available()
@@ -72,7 +76,6 @@ if __name__ == "__main__":
     )
     print("device is: ", device)
 
-     
     # Hyperparameters setting
     params = dict()
     alg_params = json.load(open(f"../config/algo_config/{ALGORITHM}/{alg_config}.json"))
@@ -84,12 +87,10 @@ if __name__ == "__main__":
     del params["desc"], alg_params, env_params, task_params
 
 
-    
     # set params as variables in this script
     for key, value in params.items():
         globals()[key] = value
 
-    
     custom_network_folder = f"../networks/{network}"
     records_folder = f"../results/{exp_id}"
     plots_folder = f"../results/{exp_id}/plots"
@@ -102,7 +103,6 @@ if __name__ == "__main__":
     origins = data['origins']
     destinations = data['destinations']
 
-    
     # Copy agents.csv from custom_network_folder to records_folder
     agents_csv_path = os.path.join(custom_network_folder, "agents.csv")
     num_agents = len(pd.read_csv(agents_csv_path))
@@ -136,7 +136,7 @@ if __name__ == "__main__":
     with open(exp_config_path, 'w', encoding='utf-8') as f:
         json.dump(dump_config, f, indent=4)
 
-    
+    # Initiate the traffic environment
     env = TrafficEnvironment(
         seed = env_seed,
         create_agents = False,
@@ -184,20 +184,17 @@ if __name__ == "__main__":
     • AV agents              : {len(env.machine_agents)}
     """)
 
-    
     env.start()
     res = env.reset()
-
      
-    # #### Human learning
-
+    # Human learning
     pbar = tqdm(total=human_learning_episodes, desc="Human learning")
     for episode in range(human_learning_episodes):
         env.step()
         pbar.update()
     pbar.close()
      
-    # #### Mutation
+    # Mutation
     env.mutation(disable_human_learning = not should_humans_adapt, mutation_start_percentile = -1)
 
     print(f"""
@@ -227,12 +224,7 @@ if __name__ == "__main__":
 
     
     check_env_specs(env)
-
-
-    
     reset_td = env.reset()
-
-    
     share_parameters_policy = False 
 
     policy_net = torch.nn.Sequential(
@@ -249,14 +241,12 @@ if __name__ == "__main__":
         ),
     )
 
-    
     policy_module = TensorDictModule(
         policy_net,
         in_keys=[("agents", "observation")],
         out_keys=[("agents", "logits")],
     )
 
-    
     policy = ProbabilisticActor(
         module=policy_module,
         spec=env.action_spec,
@@ -267,7 +257,6 @@ if __name__ == "__main__":
         log_prob_key=("agents", "sample_log_prob"),
     )
 
-    
     share_parameters_critic = False
     mappo = True  # IPPO if False
 
@@ -290,9 +279,7 @@ if __name__ == "__main__":
     )
 
      
-    # #### Collector
-
-    
+    # Collector
     collector = SyncDataCollector(
         env,
         policy,
@@ -303,9 +290,7 @@ if __name__ == "__main__":
     ) 
 
      
-    # #### Replay buffer
-
-    
+    # Replay buffer
     replay_buffer = ReplayBuffer(
         storage=LazyTensorStorage(
             frames_per_batch, device=device
@@ -315,9 +300,7 @@ if __name__ == "__main__":
     )
 
      
-    # #### PPO loss function
-
-    
+    # PPO loss function
     loss_module = ClipPPOLoss(
         actor_network=policy,
         critic_network=critic,
@@ -342,8 +325,7 @@ if __name__ == "__main__":
 
     optim = torch.optim.Adam(loss_module.parameters(), lr)
 
-     
-    # #### Training loop
+    # Training loop
     loss_values_path = os.path.join(records_folder, "losses/loss_values.txt")
     loss_entropy_path = os.path.join(records_folder, "losses/loss_entropy.txt")
     loss_objective_path = os.path.join(records_folder, "losses/loss_objective.txt")

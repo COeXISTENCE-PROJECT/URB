@@ -42,7 +42,7 @@ Via the broad experimental scheme, `URB` aims to:
 
 #### Simulation results for 4 algorithms and 3 baselines in _Provins_ for 40% AVs
 
-| **Algorithm** | ${t^{\text{\textbf{pre}}}}$ | ${t^{\text{\textbf{test}}}}$ | ${t_{\text{\textbf{CAV}}}}$ | ${t_{\text{\textbf{HDV}}}^{\text{\textbf{post}}}}$ | ${c_{\text{\textbf{all}}}}$ | ${c_{\text{\textbf{HDV}}}}$ | $\{c_{\text{\textbf{CAV}}}}$ | ${\Delta_{\text{\textbf{V}}}}$ | ${\Delta_{\text{\textbf{l}}}}$ | ${\text{\textbf{WR}}}$ |
+| **Algorithm** | ${t^{\text{\textbf{pre}}}}$ | ${t^{\text{\textbf{test}}}}$ | ${t_{\text{\textbf{CAV}}}}$ | ${t_{\text{\textbf{HDV}}}^{\text{\textbf{post}}}}$ | ${c_{\text{\textbf{all}}}}$ | ${c_{\text{\textbf{HDV}}}}$ | ${c_{\text{\textbf{CAV}}}}$ | ${\Delta_{\text{\textbf{V}}}}$ | ${\Delta_{\text{\textbf{l}}}}$ | ${\text{\textbf{WR}}}$ |
 |---------------|----------------------------|------------------------------|-----------------------------|----------------------------------------------------|-----------------------------|-----------------------------|------------------------------|--------------------------------|--------------------------------|------------------------|
 | IPPO          | 2.8                        | 2.88                         | 2.92                        | 2.85                                               | 0.53                        | 0.26                        | 0.93                         | -0.4                           | 0.03                           | 0\%                    |
 | IQL           | 2.8                        | 2.92                         | 3.03                        | 2.84                                               | 1.48                        | 0.98                        | 2.23                         | -0.52                          | 0.06                           | 0\%                    |
@@ -70,6 +70,8 @@ Via the broad experimental scheme, `URB` aims to:
 <p align="center">
   <img src="docs/100_per_avs.png" align="center" width="30%"/>
 </p>
+
+> For parameterization details, visit the dedicated [repository](https://github.com/COeXISTENCE-PROJECT/URB_data).
 
 
 ---
@@ -106,11 +108,11 @@ Collaborative fleet minimizing group average travel time with 40\% market share 
 
 ## 🏙️ Traffic network and demand data
 
-With this repository, `URB` comes with 6 traffic networks and associated demand data to experiment with. Some of the networks:
+With this repository, `URB` comes with 6 traffic networks and associated demand data to experiment with. Two examples:
 
 | ![Gretz Armainvilliers](networks/gretz_armainvilliers/gretz_armainvilliers_network.png) | ![Nangis](networks/nangis/nangis_network.png) |
 |------------------------|-----------------------|
-| ![Nemours](networks/nemours/nemours_network.png) | ![Provins](networks/provins/provins_network.png) |
+| Gretz Armainvilliers | Nangis |
 
 > More networks and demand data are available [here](https://www.kaggle.com/datasets/ukaszgorczyca/urb-networks). User can download the network folder of their choice, place the folder in `networks/`, and use it as described below.
 
@@ -120,9 +122,15 @@ With this repository, `URB` comes with 6 traffic networks and associated demand 
 
 #### Quickstart: Code Ocean Capsule
 
-For a quickstart interaction with `URB`, we provide an [executable code capsule on Code Ocean](https://codeocean.com/capsule/1896262/tree) that runs a concise demonstrative experiment using the QMIX algorithm in the St. Arnoult network. 
+[![Open in Code Ocean](https://codeocean.com/codeocean-assets/badge/open-in-code-ocean.svg)](https://codeocean.com/capsule/1896262/tree)
 
-This environment includes all necessary dependencies (including SUMO) preinstalled, enabling reproducibility with a single click via the *Reproducible Run* feature. We invite interested readers to explore this capsule to examine the experimental workflow and output formats in a fully isolated and controlled setting.
+For a quickstart interaction with `URB`, we provide an executable code capsule on Code Ocean that runs a concise demonstrative experiment using the QMIX algorithm in the St. Arnoult network. 
+
+This environment includes all necessary dependencies (including SUMO) preinstalled, enabling reproducibility with a single click. We invite those interested to explore this capsule to examine the experimental workflow and output formats in a fully isolated and controlled setting.
+
+1. Visit the [capsule link](https://codeocean.com/capsule/1896262/tree).
+2. Create a free CodeOcean account (if you don’t have one).
+3. Click **Reproducible Run** to execute the code in a controlled and reproducible environment.
 
 
 #### Prerequisites 
@@ -244,6 +252,8 @@ To better understand the causes of the changes in travel time, we track the _Ave
 
 We measure the _Cost of training_, expressed as the average of: $\sum_{\tau \in train}(t^\tau_a - \hat{t}^{pre}_a)$ over all agents $a$, i.e. the cumulated disturbance that CAV cause during the training period. We define $c\_{CAV}$ and $c\_{HDV}$ accordingly.
 We call an experiment _won_ by CAVs if their policy was on average faster than human drivers' behaviour. A final _winrate_ is a percentage of runs that were won by CAVs.
+
+
 ## 💎 Extending URB
 
 We provide templates for extending the possible experiments that can be conducted using `URB`.
@@ -260,10 +270,3 @@ Users can extend possible experiment configurations by adding:
 * Algorithm hyperparameterization in [`config/algo_config`](config/algo_config/),
 * Experiment setting in [`config/env_config`](config/env_config/), and
 * New tasks in [`config/task_config`](config/task_config/).
-
-## Reproducibility capsule
- 
-We have an experiment script encapsulated in a **CodeOcean** capsule. This capsule allows demonstrating URB's capabilities **without the need for SUMO installation or dependency management**.
-  1. Visit the [capsule link](https://codeocean.com/capsule/1896262/tree).
-  2. Create a free CodeOcean account (if you don’t have one).
-  3. Click **Reproducible Run** to execute the code in a controlled and reproducible environment.

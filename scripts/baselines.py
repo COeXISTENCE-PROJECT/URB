@@ -1,3 +1,8 @@
+"""
+This script is used to train AV agents using the baseline methods in a traffic simulation environment.
+Baseline methods can be found in the baseline_models/ directory.
+"""
+
 import os
 import sys
 
@@ -115,7 +120,7 @@ if __name__ == "__main__":
     with open(exp_config_path, 'w', encoding='utf-8') as f:
         json.dump(dump_config, f, indent=4)
 
-    
+    # Initiate the traffic environment
     env = TrafficEnvironment(
         seed = env_seed,
         create_agents = False,
@@ -168,16 +173,13 @@ if __name__ == "__main__":
     res = env.reset()
 
      
-    # #### Human learning
-    
+    # Human learning
     pbar = tqdm(total=total_episodes, desc="Human learning")
     for episode in range(human_learning_episodes):
         env.step()
         pbar.update()
 
-    # #### Mutation
-
-    
+    #  Mutation
     pre_mutation_agents = env.all_agents.copy()
     env.mutation(disable_human_learning = not should_humans_adapt, mutation_start_percentile = -1)
 
@@ -188,7 +190,7 @@ if __name__ == "__main__":
     • AV agents              : {len(env.machine_agents)}
     """)
 
-    
+    # Replace AV models with baseline models
     machines = env.machine_agents.copy()
     mutated_humans = dict()
 
@@ -206,6 +208,7 @@ if __name__ == "__main__":
         initial_knowledge = [-1 * item for item in initial_knowledge]
         mutated_humans[h_id].model = get_baseline(human_learning_params, initial_knowledge)
        
+    # Training
     pbar.set_description("AV learning")
     for episode in range(training_eps):
         env.reset()
@@ -224,6 +227,7 @@ if __name__ == "__main__":
             env.step(action)
         pbar.update()
     
+    # Testing
     pbar.set_description("Testing")
     for episode in range(test_eps):
         env.reset()
