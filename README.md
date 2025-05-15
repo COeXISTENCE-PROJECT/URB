@@ -118,6 +118,12 @@ With this repository, `URB` comes with 6 traffic networks and associated demand 
 
 ## 📦 Setup
 
+#### Quickstart: Code Ocean Capsule
+
+For a quickstart interaction with `URB`, we provide an [executable code capsule on Code Ocean](https://codeocean.com/capsule/1896262/tree) that runs a concise demonstrative experiment using the QMIX algorithm in the St. Arnoult network. 
+
+This environment includes all necessary dependencies (including SUMO) preinstalled, enabling reproducibility with a single click via the *Reproducible Run* feature. We invite interested readers to explore this capsule to examine the experimental workflow and output formats in a fully isolated and controlled setting.
+
 
 #### Prerequisites 
 
