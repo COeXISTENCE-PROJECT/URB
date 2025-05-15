@@ -9,7 +9,7 @@ We deliver here scripts for the experiment runs. Each associated algorithm with 
 
 We selected five most promising RL algorithms implemented in `TorchRL` applicable for the class of `URB` problems. You can tune them, adjust, hyperparameterize and modify, or create own scripts.
 
-Apart from RL immplementations we provide baseline algorithms to compare with, can be used with ```baselines.py``` and model options consist:
+Apart from RL algorithms, we provide baseline algorithms to compare with, can be used with ```baselines.py``` and model options consist:
 * **Baselines included in URB**
     * ```aon``` model which deterministically picks the shortest free-flow route regardless of the congestion,
     * ```random``` model which is fully undeterministic,
