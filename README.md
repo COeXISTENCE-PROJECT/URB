@@ -260,3 +260,10 @@ Users can extend possible experiment configurations by adding:
 * Algorithm hyperparameterization in [`config/algo_config`](config/algo_config/),
 * Experiment setting in [`config/env_config`](config/env_config/), and
 * New tasks in [`config/task_config`](config/task_config/).
+
+## Reproducibility capsule
+ 
+We have an experiment script encapsulated in a **CodeOcean** capsule. This capsule allows demonstrating URB's capabilities **without the need for SUMO installation or dependency management**.
+  1. Visit the [capsule link](https://codeocean.com/capsule/1896262/tree).
+  2. Create a free CodeOcean account (if you don’t have one).
+  3. Click **Reproducible Run** to execute the code in a controlled and reproducible environment.
