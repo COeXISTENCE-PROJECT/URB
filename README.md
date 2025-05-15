@@ -28,6 +28,43 @@ Via the broad experimental scheme, `URB` aims to:
   <img src="docs/final_travel_times_one_replic_legend_out.png" align="center" width="90%"/>
 </p>
 
+#### Simulation results for 4 algorithms and 3 baselines in _St. Arnoult_ for 40% AVs
+
+| **Algorithm** | ${t^{\text{\textbf{pre}}}}$ | ${t^{\text{\textbf{test}}}}$ | ${t_{\text{\textbf{CAV}}}}$ | ${t_{\text{\textbf{HDV}}}^{\text{\textbf{post}}}}$ | ${c_{\text{\textbf{all}}}}$ | ${c_{\text{\textbf{HDV}}}}$ | ${c_{\text{\textbf{CAV}}}}$ | ${\Delta_{\text{\textbf{V}}}}$ | ${\Delta_{\text{\textbf{l}}}}$ | ${\text{\textbf{WR}}}$ |
+|------------------|--------------------------------|---------------------------------|--------------------------------|-------------------------------------------------------|--------------------------------|--------------------------------|--------------------------------|-----------------------------------|-----------------------------------|---------------------------|
+| IPPO             | 3.15                           | 3.28                            | 3.34                           | 3.24                                                  | 0.6                            | 0.12                           | 1.33                           | -0.31                             | 0.05                              | 0\%                       |
+| IQL              | 3.15                           | 3.34                            | 3.49                           | 3.24                                                  | 0.66                           | 0.14                           | 1.44                           | -0.42                             | 0.08                              | 0\%                       |
+| MAPPO            | 3.15                           | 3.32                            | 3.43                           | 3.25                                                  | 0.66                           | 0.14                           | 1.45                           | -0.27                             | 0.08                              | 0\%                       |
+| QMIX             | 3.15                           | 3.2                             | 3.12                           | 3.25                                                  | 0.65                           | 0.13                           | 1.43                           | -0.2                              | 0.01                              | 66\%                      |
+| Human            | 3.15                           | 3.15                            | 3.15                           | 3.15                                                  | 0.0                            | 0.0                            | 0.0                            | 0                                 | 0.0                               | 100\%                     |
+| AON              | 3.15                           | 3.15                            | 3.01                           | 3.25                                                  | 0.55                           | 0.09                           | 1.21                           | -0.06                             | -0.0                              | 100\%                     |
+| Random           | 3.15                           | 3.38                            | 3.58                           | 3.25                                                  | 0.6                            | 0.09                           | 1.36                           | -0.33                             | 0.1                               | 0\%                       |
+
+#### Simulation results for 4 algorithms and 3 baselines in _Provins_ for 40% AVs
+
+| **Algorithm** | ${t^{\text{\textbf{pre}}}}$ | ${t^{\text{\textbf{test}}}}$ | ${t_{\text{\textbf{CAV}}}}$ | ${t_{\text{\textbf{HDV}}}^{\text{\textbf{post}}}}$ | ${c_{\text{\textbf{all}}}}$ | ${c_{\text{\textbf{HDV}}}}$ | $\{c_{\text{\textbf{CAV}}}}$ | ${\Delta_{\text{\textbf{V}}}}$ | ${\Delta_{\text{\textbf{l}}}}$ | ${\text{\textbf{WR}}}$ |
+|---------------|----------------------------|------------------------------|-----------------------------|----------------------------------------------------|-----------------------------|-----------------------------|------------------------------|--------------------------------|--------------------------------|------------------------|
+| IPPO          | 2.8                        | 2.88                         | 2.92                        | 2.85                                               | 0.53                        | 0.26                        | 0.93                         | -0.4                           | 0.03                           | 0\%                    |
+| IQL           | 2.8                        | 2.92                         | 3.03                        | 2.84                                               | 1.48                        | 0.98                        | 2.23                         | -0.52                          | 0.06                           | 0\%                    |
+| MAPPO         | 2.8                        | 2.92                         | 3.03                        | 2.85                                               | 1.23                        | 0.81                        | 1.87                         | -0.64                          | 0.06                           | 0\%                    |
+| QMIX          | 2.8                        | 2.96                         | 3.14                        | 2.85                                               | 0.88                        | 0.54                        | 1.41                         | -0.8                           | 0.07                           | 0\%                    |
+| Human         | 2.8                        | 2.8                          | 2.8                         | 2.8                                                | 0.0                         | 0.0                         | 0.0                          | 0.0                            | 0.0                            | 100\%                  |
+| AON           | 2.8                        | 2.81                         | 2.76                        | 2.84                                               | 0.47                        | 0.19                        | 0.99                         | -0.14                          | -0.0                           | 100\%                  |
+| Random        | 2.8                        | 2.93                         | 3.04                        | 2.85                                               | 0.51                        | 0.22                        | 0.95                         | -0.62                          | 0.06                           | 0\%                    |
+
+#### Simulation results for 4 algorithms and 3 baselines in _Ingolstadt_ for 40% AVs
+
+| **Algorithm** | ${t^{\text{\textbf{pre}}}}$ | ${t^{\text{\textbf{test}}}}$ | ${t_{\text{\textbf{CAV}}}}$ | ${t_{\text{\textbf{HDV}}}^{\text{\textbf{post}}}}$ | ${c_{\text{\textbf{all}}}}$ | ${c_{\text{\textbf{HDV}}}}$ | ${c_{\text{\textbf{CAV}}}}$ | ${\Delta_{\text{\textbf{V}}}}$ | ${\Delta_{\text{\textbf{l}}}}$ | ${\text{\textbf{WR}}}$ |
+|------------------|-----------------------------|------------------------------|-----------------------------|----------------------------------------------------|-----------------------------|-----------------------------|-----------------------------|--------------------------------|--------------------------------|------------------------|
+| IPPO             | 4.21                        | 4.4                          | 4.72                        | 4.18                                               | 1.76                        | 1.22                        | 2.56                        | -0.37                          | 0.07                           | 0\%                    |
+| IQL              | 4.21                        | 4.45                         | 4.8                         | 4.22                                               | 1.68                        | 1.08                        | 2.59                        | -0.62                          | 0.07                           | 0\%                    |
+| MAPPO            | 4.21                        | 4.44                         | 4.81                        | 4.2                                                | 1.82                        | 1.21                        | 2.75                        | -0.62                          | 0.07                           | 0\%                    |
+| QMIX             | 4.21                        | 4.36                         | 4.55                        | 4.23                                               | 1.2                         | 0.67                        | 1.98                        | -0.73                          | 0.02                           | 0\%                    |
+| Human            | 4.21                        | 4.21                         | 4.21                        | 4.21                                               | 0.0                         | 0.0                         | 0.0                         | 0.0                            | 0.0                            | 100\%                  |
+| AON              | 4.21                        | 4.29                         | 4.37                        | 4.23                                               | 0.87                        | 0.55                        | 0.24                        | -0.45                          | -0.01                          | 0\%                    |
+| Random           | 4.21                        | 4.45                         | 4.81                        | 4.22                                               | 0.99                        | 0.49                        | 1.74                        | -0.68                          | 0.07                           | 0\%                    |
+
+
 ### 100% AVs
 
 <p align="center">
@@ -80,6 +117,12 @@ With this repository, `URB` comes with 6 traffic networks and associated demand 
 ---
 
 ## 📦 Setup
+
+#### Quickstart: Code Ocean Capsule
+
+For a quickstart interaction with `URB`, we provide an [executable code capsule on Code Ocean](https://codeocean.com/capsule/1896262/tree) that runs a concise demonstrative experiment using the QMIX algorithm in the St. Arnoult network. 
+
+This environment includes all necessary dependencies (including SUMO) preinstalled, enabling reproducibility with a single click via the *Reproducible Run* feature. We invite interested readers to explore this capsule to examine the experimental workflow and output formats in a fully isolated and controlled setting.
 
 
 #### Prerequisites 
@@ -217,3 +260,10 @@ Users can extend possible experiment configurations by adding:
 * Algorithm hyperparameterization in [`config/algo_config`](config/algo_config/),
 * Experiment setting in [`config/env_config`](config/env_config/), and
 * New tasks in [`config/task_config`](config/task_config/).
+
+## Reproducibility capsule
+ 
+We have an experiment script encapsulated in a **CodeOcean** capsule. This capsule allows demonstrating URB's capabilities **without the need for SUMO installation or dependency management**.
+  1. Visit the [capsule link](https://codeocean.com/capsule/1896262/tree).
+  2. Create a free CodeOcean account (if you don’t have one).
+  3. Click **Reproducible Run** to execute the code in a controlled and reproducible environment.
