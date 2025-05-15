@@ -20,7 +20,7 @@ Via the broad experimental scheme, `URB` aims to:
 
 ## 🔎 Results
 
-### 40% AVs
+> **Task:** In a given network with a fixed demand pattern, experienced human agents have learned their route-choice strategies (minimized travel times). At some point, a given share of them _mutate_ to CAVs and delegate routing decisions. Then, for a given number of training episodes, the agents develop routing strategies to minimize their delay using MARL.
 
 **Travel times relative to human baseline ($t^{pre}$) across episodes in 3 instances (90 to 420 agents)**. Baselines are marked with dashed lines, human travel times with a solid black line and four tested RL algorithms with color lines. We pick the best out of three runs. Algorithms are trained for 6000 episodes (days simulated in SUMO), and QMIX (as the most promising) for 20000 (blue triangle). Many algorithms hardly beat the random baseline and stabilize, most stop learning. In Provins and Inglostadt, none of the algorithms managed to beat the human baseline and only QMIX on the smallest instance (St. Arnoult) managed to beat human travel times (in 2 out of 3 runs).
 
