@@ -9,6 +9,7 @@ authors:
   orcid: "https://orcid.org/0009-0008-3314-4429"
 - family-names: "Hoffmann"
   given-names: "Michał"
+  orcid: "https://orcid.org/0009-0003-5157-1807"
 - family-names: "Gorczyca"
   given-names: "Łukasz"
   orcid: "https://orcid.org/0009-0009-7381-0251"
@@ -26,5 +27,5 @@ authors:
   orcid: "https://orcid.org/0000-0002-9767-8883"
 title: "URB"
 version: 1.0.0
-date-released: 2025-02-21
+date-released: 2025-05-15
 url: "https://github.com/COeXISTENCE-PROJECT/URB"
