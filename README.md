@@ -270,3 +270,16 @@ Users can extend possible experiment configurations by adding:
 * Algorithm hyperparameterization in [`config/algo_config`](config/algo_config/),
 * Experiment setting in [`config/env_config`](config/env_config/), and
 * New tasks in [`config/task_config`](config/task_config/).
+
+## Citation
+```
+@misc{URB,
+  author = {A. O. Akman, A. Psarou, M. Hoffmann, Ł. Gorczyca, Ł. Kowalski, P. Gora, G. Jamróz, R. Kucharski},
+  doi = {10.48550/arXiv.2505.17734},
+  month = {5},
+  title = {{Urban Routing Benchmark}},
+  url = {https://github.com/COeXISTENCE-PROJECT/URB},
+  version = {1.0.0},
+  year = {2025}
+}
+```
