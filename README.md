@@ -276,6 +276,9 @@ Users can extend possible experiment configurations by adding:
 * (2) The same as (1), but in evaluation, we take into account some assumptions about the future drivers' decisions (we can think which option could be the best approximation of the human decisions taken by the RL models, e.g., the shortest route, or the route from the previous day, or some smarter decisions taking into account traffic characteristics from the previous day, or some combinations).
 * (3) Evolutionary algorithms for CAVs - CAVs assume some approximation of human driver's decisions (e.g., it can be the same approach as in (2)) and try to make the best decision collectively, e.g., using a genetic algorithm.
 * (4) The same as (3), but the evolutionary approach is for all the drivers (both, human and CAVs). In this case, we can't control human drivers decisions, but can assume that we send/propose them some decisions and some of them will follow.
+* (5) Adding noise to the departure times to ensure better generalization.
+* (6) Adapting route choices on-the-fly.
+
 
 ## Citation
 ```
