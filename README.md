@@ -271,11 +271,21 @@ Users can extend possible experiment configurations by adding:
 * Experiment setting in [`config/env_config`](config/env_config/), and
 * New tasks in [`config/task_config`](config/task_config/).
 
-### Proposed approaches to test:
+### Proposed approaches to test as bechmarks:
 * (1) Greedy algorithm:  Each driver/agent receives information about the decisions of all drivers/agents who started driving before it. Then, it evaluates the quality of all four to five available options (e.g., using a SUMO simulation or a surrogate model) and selects the best one. We do not consider information about future drivers' decisions.
 * (2) The same as (1), but in evaluation, we take into account some assumptions about the future drivers' decisions (we can think which option could be the best approximation of the human decisions taken by the RL models, e.g., the shortest route, or the route from the previous day, or some smarter decisions taking into account traffic characteristics from the previous day, or some combinations).
 * (3) Evolutionary algorithms for CAVs - CAVs assume some approximation of human driver's decisions (e.g., it can be the same approach as in (2)) and try to make the best decision collectively, e.g., using a genetic algorithm.
 * (4) The same as (3), but the evolutionary approach is for all the drivers (both, human and CAVs). In this case, we can't control human drivers decisions, but can assume that we send/propose them some decisions and some of them will follow.
+* (5) Stackelberg routing: 
+- Instead of optimizing one-day objective (or discounted sum of one-day objectives), use a given fixed (independent of observation!) assignment of fleet vehicles and let the system equilibrate.
+- Report the time it takes until the system equilibrates and  the fleet reward once it has equilibrated. (one can also report the discounted cumulative objective). Do this for every set of choices of fleet vehicles (maybe search this space if too large using metaheuristics).
+- (alternatively) if the system doesn't equilibrate, let it just run for some time.
+- Pick the fixed assignment of CAVs with the best reward (optimal Stackelberg strategy).
+
+Note 1: For strategies which intend to harm humans, it is likely that the most efficient Stackelberg strategies are mixed, i.e., probabilitic. (compare https://arxiv.org/abs/2506.22966 Appendix A in analytic settings). BTW, it would be interesting to demonstrate it in SUMO.
+Note 2: The equilibria to which human drivers will converge (hopefully) may, even in deterministic SUMO, not be unique and depend on the initial conditions or instance of human driver stochastic strategies (it depends on the model of human drivers).
+
+### Other approach to test:
 * (5) Adding noise to the departure times to ensure better generalization.
 * (6) Adapting route choices on-the-fly.
 
