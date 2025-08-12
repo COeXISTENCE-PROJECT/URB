@@ -23,15 +23,13 @@ from tqdm import tqdm
 
 
 
-# def initialize_records_table(agents: list[int])->pd.DataFrame:
-#     """
-#     Creates empty table indexed with agent ientifiers (integers)
-#     for storing driving data.
-#     """
-#     columns = ['kind', 'origin', 'destination', 'route', 'travel_time', 'time_start', 'time_end']
-#     records_df = pd.DataFrame(index=agents, columns=columns)
-#     records_df.index.name = 'agent'
-#     return records_df
+def initialize_records_dict(agents: list[int])->dict:
+    """
+    Creates a dictionary for agents records.
+    """
+    data = ['kind', 'origin', 'destination', 'route', 'travel_time', 'time_start', 'time_end']
+    records_dict = {aid : {d: None for d in data} for aid in agents}
+    return records_dict
 
 
 
@@ -224,6 +222,7 @@ if __name__ == "__main__":
 
     # experiment_data = dict()
     free_flows = env.get_free_flow_times() # free flow times for (origin, destination) pairs
+    possible_agents = [int(aid) for aid in env.possible_agents] # possible agents identifiers as integers
     
 
     ##################################################################
@@ -237,8 +236,8 @@ if __name__ == "__main__":
         print(f"Dummy episode: {env.day}")
 
         # # Episode-level data containers
-        # agent_actions = {int(aid) : None for aid in env.possible_agents}
-        # episode_data = initialize_records_table(agents=[int(aid) for aid in env.possible_agents])
+        # agent_actions = {aid : None for aid in possible_agents}
+        episode_data = initialize_records_dict(agents=possible_agents)
         
 
         # Iterate over machine agents (only machine agents ids are added to env.possible_agents during mutation)
