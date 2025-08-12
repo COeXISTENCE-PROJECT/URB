@@ -23,15 +23,6 @@ from tqdm import tqdm
 
 
 
-# def initialize_records_dict(agents: list[int])->dict:
-#     """
-#     Creates a dictionary for agents records.
-#     """
-#     data = ['kind', 'origin', 'destination', 'route', 'travel_time', 'time_start', 'time_end']
-#     records_dict = {aid : {d: None for d in data} for aid in agents}
-#     return records_dict
-
-
 
 
 if __name__ == "__main__":
@@ -178,6 +169,7 @@ if __name__ == "__main__":
         } 
     )
 
+
     print(f"""
     Agents in the traffic:
     • Total agents           : {len(env.all_agents)}
@@ -235,9 +227,10 @@ if __name__ == "__main__":
         env.reset()
         print(f"Dummy episode: {env.day}")
 
-        # # Episode-level data containers
+        # Episode-level data containers
         agent_actions = {aid : None for aid in possible_agents}
-        #episode_data = initialize_records_dict(agents=possible_agents)
+        episode_data = {aid: dict() for aid in possible_agents}
+        print(f"initialized episode_data: {episode_data}")
         
 
         # Iterate over machine agents (only machine agents ids are added to env.possible_agents during mutation)
@@ -262,42 +255,40 @@ if __name__ == "__main__":
             # Agent finished their drive - save agent episode data
             if termination or truncation:
                 print(f"in termination / truncation branch for agent {agentid}")
-                  
-                action = agent_actions[agentid_int]
-                # episode_data.loc[agentid_int] = {
+                
+                # episode_data[agentid_int].update(
+                #                             {
                 #                                 'kind': agent.kind,
                 #                                 'origin': agent.origin,
                 #                                 'destination': agent.destination,
-                #                                 'route': action,
+                #                                 #'route': action,
                 #                                 'travel_time': -reward,
                 #                                 'time_start': agent.start_time,
                 #                                 'time_end': agent.start_time - reward, # start_time + travel_time
-                #                                 }
+                #                             })
                 action = None
 
             # Agent is starting from their desination - select the action (route)
             else:
                 print(f"in action branch for agent {agentid}")
 
-                # # note: handle this case more gracefully
-                # if env.day == 0: #if not experiment_data: #first day of commute
-                #     times = free_flows[(agent.origin, agent.destination)]
-                #     action = random.choice([rou for rou, time in enumerate(times) if time == (min_time := min(times))])
-                # else:
-                #     action = choose_action(agentid_int, experiment_data, free_flows)
+                if env.day == 0: #first day of commute
+                    ff_times = free_flows[(agent.origin, agent.destination)] # free flow times for possible routes
+                    action = random.choice([route for route, time in enumerate(ff_times) if time == (min_time := min(ff_times))])
+                else:
+                    # action = choose_action(agentid_int, experiment_data, free_flows)
+                    action = 0 ### change after debugging!
 
-                action = 0 ### change after debugging!
-                agent_actions[agentid_int] = action
+                episode_data[agentid_int]['route'] = action
 
 
             print(f"action: {action}\n")
             env.step(action)
 
-        # experiment_data[env.day] = episode_data 
+        # experiment_data[env.day] = episode_data
+        del episode_data
+        # del agent_actions
         pbar.update()
-
-    # del episode_data
-    # del agent_actions
 
     print("\nCHECKPOINT 1\n")
 
