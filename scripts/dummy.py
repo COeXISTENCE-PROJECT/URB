@@ -223,7 +223,7 @@ if __name__ == "__main__":
     pbar.set_description("AV learning\n")
 
     # experiment_data = dict()
-    # free_flows = env.get_free_flow_times() # free flow times for (origin, destination) pairs
+    free_flows = env.get_free_flow_times() # free flow times for (origin, destination) pairs
     
 
     ##################################################################
