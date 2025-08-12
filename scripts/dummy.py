@@ -23,13 +23,13 @@ from tqdm import tqdm
 
 
 
-def initialize_records_dict(agents: list[int])->dict:
-    """
-    Creates a dictionary for agents records.
-    """
-    data = ['kind', 'origin', 'destination', 'route', 'travel_time', 'time_start', 'time_end']
-    records_dict = {aid : {d: None for d in data} for aid in agents}
-    return records_dict
+# def initialize_records_dict(agents: list[int])->dict:
+#     """
+#     Creates a dictionary for agents records.
+#     """
+#     data = ['kind', 'origin', 'destination', 'route', 'travel_time', 'time_start', 'time_end']
+#     records_dict = {aid : {d: None for d in data} for aid in agents}
+#     return records_dict
 
 
 
@@ -236,8 +236,8 @@ if __name__ == "__main__":
         print(f"Dummy episode: {env.day}")
 
         # # Episode-level data containers
-        # agent_actions = {aid : None for aid in possible_agents}
-        episode_data = initialize_records_dict(agents=possible_agents)
+        agent_actions = {aid : None for aid in possible_agents}
+        #episode_data = initialize_records_dict(agents=possible_agents)
         
 
         # Iterate over machine agents (only machine agents ids are added to env.possible_agents during mutation)
@@ -259,11 +259,11 @@ if __name__ == "__main__":
             observation, reward, termination, truncation, info = env.last()
             print(f"observation, reward, termination, truncation, info = ({observation}, {reward}, {termination}, {truncation}, {info})")
 
-            # Agent finished their drive - save agent episode info
+            # Agent finished their drive - save agent episode data
             if termination or truncation:
                 print(f"in termination / truncation branch for agent {agentid}")
                   
-                # action = agent_actions[agentid_int]
+                action = agent_actions[agentid_int]
                 # episode_data.loc[agentid_int] = {
                 #                                 'kind': agent.kind,
                 #                                 'origin': agent.origin,
@@ -286,8 +286,8 @@ if __name__ == "__main__":
                 # else:
                 #     action = choose_action(agentid_int, experiment_data, free_flows)
 
-                # agent_actions[agentid_int] = action
-                action = 0
+                action = 0 ### change after debugging!
+                agent_actions[agentid_int] = action
 
 
             print(f"action: {action}\n")
