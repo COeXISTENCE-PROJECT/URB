@@ -22,7 +22,8 @@ from utils import clear_SUMO_files
 from tqdm import tqdm
 
 
-
+# def dummy_method():
+#     return 0
 
 
 if __name__ == "__main__":
@@ -212,9 +213,10 @@ if __name__ == "__main__":
     # Training
     pbar.set_description("AV learning\n")
 
-    # experiment_data = dict()
-    free_flows = env.get_free_flow_times() # free flow times for (origin, destination) pairs
+    experiment_data = dict()
     possible_agents = [int(aid) for aid in env.possible_agents] # possible agents identifiers as integers
+    free_flows = env.get_free_flow_times() # free flow times for (origin, destination) pairs
+    
     
 
     ##################################################################
@@ -228,9 +230,7 @@ if __name__ == "__main__":
         print(f"Dummy episode: {env.day}")
 
         # Episode-level data containers
-        agent_actions = {aid : None for aid in possible_agents}
         episode_data = {aid: dict() for aid in possible_agents}
-        print(f"initialized episode_data: {episode_data}")
         
 
         # Iterate over machine agents (only machine agents ids are added to env.possible_agents during mutation)
@@ -255,17 +255,18 @@ if __name__ == "__main__":
             # Agent finished their drive - save agent episode data
             if termination or truncation:
                 print(f"in termination / truncation branch for agent {agentid}")
-                
-                # episode_data[agentid_int].update(
-                #                             {
-                #                                 'kind': agent.kind,
-                #                                 'origin': agent.origin,
-                #                                 'destination': agent.destination,
-                #                                 #'route': action,
-                #                                 'travel_time': -reward,
-                #                                 'time_start': agent.start_time,
-                #                                 'time_end': agent.start_time - reward, # start_time + travel_time
-                #                             })
+
+                travel_time = -reward
+                episode_data[agentid_int].update(
+                                            {
+                                                'kind': agent.kind,
+                                                'origin': agent.origin,
+                                                'destination': agent.destination,
+                                                #'route': action,
+                                                'travel_time': -reward,
+                                                'time_start': agent.start_time,
+                                                'time_end': agent.start_time + travel_time, # start_time + travel_time
+                                            })
                 action = None
 
             # Agent is starting from their desination - select the action (route)
@@ -285,9 +286,9 @@ if __name__ == "__main__":
             print(f"action: {action}\n")
             env.step(action)
 
-        # experiment_data[env.day] = episode_data
+        # Log episode data 
+        experiment_data[env.day] = episode_data
         del episode_data
-        # del agent_actions
         pbar.update()
 
     print("\nCHECKPOINT 1\n")
