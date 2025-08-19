@@ -15,12 +15,26 @@ import random
 import numpy as np
 import pandas as pd
 
-from utils import clear_SUMO_files
+
+from routerl import Keychain as kc
 from routerl import TrafficEnvironment
+from utils import clear_SUMO_files
 from tqdm import tqdm
 
+import greedy_utils
+
+"""
+Currently looks only at av travel times for route assesments (develop to enable also human times access).
+Uses only the last day (episode) for the current episode action choice.
+    =>Does not use past agent times to assess the route.
+
+- [] how to retrieve human travel times for route times estimation
+
+"""
+
+
+
 if __name__ == "__main__":
-    ## raise NotImplementedError("Greedy baseline.")
     parser = argparse.ArgumentParser()
     parser.add_argument('--id', type=str, required=True)
     parser.add_argument('--alg-conf', type=str, required=True)
@@ -198,81 +212,90 @@ if __name__ == "__main__":
     |
     User defined AV learning pipeline!
     """
-
     
-    ## 28.07.2025: start here
-    ## Implement greedy logic in pettingzoo framework
-
+    ################
     # Training
+    ################
     pbar.set_description("AV learning\n")
 
-    ########################################################
+
+    free_flows = env.get_free_flow_times() # free flow times for (origin, destination) pairs
+    experiment_records = dict()
+
+    # Auxiliary structures for working with env agents
+    agent_mapping = {agent.id : i for i,agent in enumerate(env.all_agents)} # auxiliary mapping: agent id to agent position in env.all_agents (list[Agent]) 
+    
+
+
+
+    ##################################################################
+    ## control print: show env.possible_agents and current env.agents
     print(f"env.agents={env.agents}")
     print(f"env.possible_agents={env.possible_agents}\n")
-    ########################################################
+    ###################################################################
 
-    for episode in range(training_eps):
+    for episode in range(training_eps + test_eps):
         env.reset()
         print(f"Dummy episode: {env.day}")
-
-        # Iterate over machine agents (only machine agents ids are added to env.possible_agents during mutation)
-        for agentid in env.agent_iter():
-
-            # - what is the order in the second iteration (finished drives) - the same as in the first (by start_time) or e.g. by arrival time (ps doesn't matter for now)
-
-            # why int(agent) != env.all_agents[int(agent_id)].id ? ->because (self.all_agents = self.machine_agents + self.human_agents after mutation in environment.py; local change: sorted again) 
-            # ######################################################################################
-            # # test prints #
-            # print(f"env.agents={env.agents}")
-            # print(f"Agent: {agentid} (type(agentid)={type(agentid)})")
-            # print(f"env.agent_selection={env.agent_selection}")
-            # agent_id = int(agentid)
-            # agent_obj, = [a for a in env.all_agents if a.id==agent_id] #agent_obj = env.all_agents[agent_id]
-            # print(f"id={agent_obj.id}, kind={agent_obj.kind}, start_time={agent_obj.start_time}")
-
-            # agent_test = env.all_agents[agent_id]
-            # print(f"agent_test: id={agent_test.id}, kind={agent_test.kind}, start_time={agent_test.start_time}")
-            # ######################################################################################
+        print(f"Experiment records: {experiment_records}\n")
 
 
-            # Get current agent object
-            agent = env.all_agents[env.agent_name_mapping[agentid]]
-            assert agent.id==int(agentid) # ensure that agent id match
+        episode_records = {int(aid): dict() for aid in env.possible_agents} # per-episode data
+        
+
+        for agentid in env.agent_iter(): # Iterate over machine agents (only machine agents ids are added to env.possible_agents during mutation)
+
+            # Get Agent object
+            agentid_int = int(agentid)
+            agent = env.all_agents[agent_mapping[agentid_int]]
+            assert agent.id==agentid_int # ensure that agent id matches
             
             ############################################################################
             # Sanity check (remove later)
             print(f"env.agents={env.agents}")
-            print(f"Agent: {agentid} (type(agentid)={type(agentid)})")
-            print(f"env.agent_selection={env.agent_selection}")
-            print(f"id={agent.id}, kind={agent.kind}, start_time={agent.start_time}")
+            print(f"Agent: id={agent.id}, kind={agent.kind}, start_time={agent.start_time}")
             #############################################################################
 
 
             observation, reward, termination, truncation, info = env.last()
             print(f"observation, reward, termination, truncation, info = ({observation}, {reward}, {termination}, {truncation}, {info})")
 
-            if termination or truncation:
+            
+            if termination or truncation: # Case: agent finished their drive - save agent episode data
                 print(f"in termination / truncation branch for agent {agentid}")
-                # agent finished their drive -- save reward info (if not done automatically)
 
-                ## guessing from 28.07.2025
-                ## was dead (terminated drive?) after the last active agent turn (?) --> save driving time & the rest you want
-                ## so supposingly: all agents that terminated their drives after the last agent departure and before the next start time are 
-                ## handled here (i assume - to check - agent selector puts them at the beggining of the list)
+                travel_time = -reward
+                episode_records[agentid_int].update(
+                                            {
+                                                'kind': agent.kind,
+                                                'origin': agent.origin,
+                                                'destination': agent.destination,
+                                                #'route': action,
+                                                'travel_time': travel_time,
+                                                'time_start': agent.start_time,
+                                                'time_end': agent.start_time + travel_time,
+                                            })
                 action = None
-                #raise NotImplementedError
-            else:
+
+            
+            else: # Case: agent is starting from their desination - select the action (route)
                 print(f"in action branch for agent {agentid}")
-                # choose an action for the current agent (based on the information you have)
-                action = 0 ## change! 
-                #raise NotImplementedError
+
+                if env.day == 0:
+                    od_free_flows = free_flows[(agent.origin, agent.destination)] # per-route free flow times
+                    action = random.choice([route for route, time in enumerate(od_free_flows) if time == (min_time := min(od_free_flows))])
+                else:
+                    action = greedy_utils.choose_agent_action(agent=agent, day=env.day, experiment_records=experiment_records, free_flow_times=free_flows)
+
+                episode_records[agentid_int]['route'] = action
+
+
             print(f"action: {action}\n")
             env.step(action)
-        
+
+        # Log episode data
+        experiment_records[env.day-1] = episode_records # day incremented after last step (when no agents to act/terminate)
         pbar.update()
-    raise NotImplementedError("Greedy.")
-
-
 
     """
     |
@@ -287,3 +310,9 @@ if __name__ == "__main__":
 
     # Clean SUMO-generated redundant files
     clear_SUMO_files(os.path.join(records_folder, "SUMO_output"), os.path.join(records_folder, "episodes"), remove_additional_files=True)
+
+    # print("Cleaning up manually")
+    # del experiment_data
+    # del env
+    # del agent_mapping
+    #print("\nEND OF SCRIPT\n")
