@@ -3,6 +3,19 @@ from typing import Optional, Literal
 
 from statistics import mean
 
+from routerl import Keychain as kc
+
+
+##############################################################
+# TODO: 
+#   - [x] incorporate in greedy.py
+#   - [x] test, fix potential bugs
+#   - [] fix plots (what's going on with no data for humans)
+#   - [] geerate results for parameters
+#       - [] same city, 'large' params
+#       - [] different city
+# (o co by mogło chodzić z 'greedy' bez historii??) - np. to samo, tylko naszymi records jest bieący dzień (i ew brak ograniczenia do 'common time'?) -> i wtedy mamy po prostu radsze estymacje dla prawdiwych danych)
+##############################################################
 
 
 
@@ -30,8 +43,8 @@ def _in_range(value, low, high)->bool:
 
 def episode_records_subset(
     episode_records: dict[int,dict],
-    origin: Optional[int],
-    destination: Optional[int],
+    origin: Optional[int]=None,
+    destination: Optional[int]=None,
     route: Optional[int] = None,
     time_start: tuple[Optional[int], Optional[int]] = (None, None),
     time_end: tuple[Optional[int], Optional[int]] = (None, None),
@@ -52,19 +65,22 @@ def episode_records_subset(
     if kind != 'machine':
         raise NotImplementedError("Implemented only for machine records.")
 
-    return {
-        aid: record
-        for aid, record in episode_records.items()
+    else:
+        type_machine = kc.TYPE_MACHINE
 
-        if (origin is None or record['origin'] == origin)
-        and (destination is None or record['destination'] == destination)
-        and (route is None or record['route'] == route)
+        return {
+            aid: record
+            for aid, record in episode_records.items()
 
-        and _in_range(record['time_start'], time_start)
-        and _in_range(record['time_end'], time_end)
+            if (origin is None or record['origin'] == origin)
+            and (destination is None or record['destination'] == destination)
+            and (route is None or record['route'] == route)
 
-        and (kind=='all' or record['kind'] == kind)                   
-    }
+            and _in_range(record['time_start'], *time_start)
+            and _in_range(record['time_end'], *time_end)
+
+            and (kind=='all' or record['kind'] == type_machine)                   
+        }
 
 def experiment_records_subset(
     experiment_records: dict[int, dict[int,dict]],
@@ -86,7 +102,7 @@ def experiment_records_subset(
     day_filtered_experiment_records = {
         day : records 
         for day, records in experiment_records.items()
-        if _in_range(day, days)
+        if _in_range(day, *days)
     }
 
     return {
@@ -146,10 +162,10 @@ def estimate_route_travel_time(agent: 'Agent', route: int, day: int, experiment_
         raise NotImplementedError("Curent implementation only for span=1 history.")
     
 
-
+    # Get records from previous day (if available)
     previous_day_records = experiment_records.get(day-1, {})
     if not previous_day_records:
-        print(f"No records for previous day day: {day-1}. Returning free flow times for agent {agent.id}.")
+        print(f"No records for previous day: {day-1}. Returning free flow time for agent {agent.id}, route {route}")
         return free_flow_times[(agent.origin, agent.destination)][route]
 
 
@@ -163,8 +179,12 @@ def estimate_route_travel_time(agent: 'Agent', route: int, day: int, experiment_
     }
 
     estimation_filters = [ # filters for time estimations
-        {'time_start': (agent.start_time, agent.start_time), 'description': "Exact start time."},
-        {'time_start': (None, agent.start_time), 'time_end': (agent.start_time, None), 'description': "Earlier start time, shared travel time."}
+        {'time_start': (agent.start_time, agent.start_time)},
+        {'time_start': (None, agent.start_time), 'time_end': (agent.start_time, None)}
+    ]
+    filter_descriptions = [
+        "Exact start time.",
+        "Earlier start time, shared travel time."
     ]
 
 
@@ -179,22 +199,24 @@ def estimate_route_travel_time(agent: 'Agent', route: int, day: int, experiment_
     ##############################################
 
     # 1-2. Try to estimate route travel time from existing data (predefined cases)
-    for estimation_args in estimation_filters:
+    for estimation_args, descr in zip(estimation_filters,filter_descriptions):
 
-        filter_args = base_filter_args.copy().update(estimation_args)
+        filter_args = base_filter_args.copy()
+        filter_args.update(estimation_args)
+
         estimation_records = episode_records_subset(
             episode_records=od_route_records,
             **filter_args
         )
 
         if estimation_records:
-            print(f"Estimation data for agent {agent.id}: {filter_args['description']}")
-            return _mean_travel_time(filtered_records)
+            print(f"Estimation data for agent {agent.id}, route {route}: {descr}")
+            return _mean_travel_time(estimation_records)
 
    
 
     # 3. Free-flow fallback for empty results
-    print(f"No prior driver data for this route. Best estimation for agent {agent.id}: free flow time.")
+    print(f"No prior driver data for this route ({route}). Best estimation for agent {agent.id}: free flow time.")
     return free_flow_times[(agent.origin, agent.destination)][route]
 
 
@@ -215,8 +237,7 @@ def choose_agent_action(agent: 'Agent', day: int, experiment_records: dict[int, 
                                     route=i,
                                     day=day,
                                     experiment_records=experiment_records,
-                                    free_flow_times=free_flow_times
-                                )
+                                    free_flow_times=free_flow_times)
                                 for i in range(num_routes)]
     action = random.choice([rou for rou, time_est in enumerate(route_time_estimations) if time_est == (min_time := min(route_time_estimations))])
     return action
