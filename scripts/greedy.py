@@ -218,7 +218,6 @@ if __name__ == "__main__":
     ################
     pbar.set_description("AV learning\n")
 
-
     free_flows = env.get_free_flow_times() # free flow times for (origin, destination) pairs
     experiment_records = dict()
 
@@ -228,7 +227,7 @@ if __name__ == "__main__":
 
 
 
-    ##################################################################
+    #### Control print ################################################
     ## control print: show env.possible_agents and current env.agents
     print(f"env.agents={env.agents}")
     print(f"env.possible_agents={env.possible_agents}\n")
@@ -236,8 +235,10 @@ if __name__ == "__main__":
 
     for episode in range(training_eps + test_eps):
         env.reset()
-        print(f"Dummy episode: {env.day}")
-        print(f"Experiment records: {experiment_records}\n")
+
+        ######## Control print ########
+        print(f"Episode: {env.day}") ##
+        ################################
 
 
         episode_records = {int(aid): dict() for aid in env.possible_agents} # per-episode data
@@ -245,7 +246,7 @@ if __name__ == "__main__":
 
         for agentid in env.agent_iter(): # Iterate over machine agents (only machine agents ids are added to env.possible_agents during mutation)
 
-            # Get Agent object
+            # Pick Agent object
             agentid_int = int(agentid)
             agent = env.all_agents[agent_mapping[agentid_int]]
             assert agent.id==agentid_int # ensure that agent id matches
@@ -285,7 +286,13 @@ if __name__ == "__main__":
                     od_free_flows = free_flows[(agent.origin, agent.destination)] # per-route free flow times
                     action = random.choice([route for route, time in enumerate(od_free_flows) if time == (min_time := min(od_free_flows))])
                 else:
-                    action = greedy_utils.choose_agent_action(agent=agent, day=env.day, experiment_records=experiment_records, free_flow_times=free_flows)
+                    action = greedy_utils.choose_agent_action(
+                        agent=agent,
+                        day=env.day,
+                        experiment_records=experiment_records,
+                        free_flow_times=free_flows,
+                        span=lookback_days
+                    )
 
                 episode_records[agentid_int]['route'] = action
 
