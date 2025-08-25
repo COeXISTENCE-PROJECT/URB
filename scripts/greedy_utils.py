@@ -84,9 +84,9 @@ def episode_records_subset(
 
 def experiment_records_subset(
     experiment_records: dict[int, dict[int,dict]],
-    days: tuple[Optional[int], Optional[int]],
-    origin: Optional[int],
-    destination: Optional[int],
+    days: tuple[Optional[int], Optional[int]]=(None, None),
+    origin: Optional[int]=None,
+    destination: Optional[int]=None,
     route: Optional[int] = None,
     time_start: tuple[Optional[int], Optional[int]] = (None, None),
     time_end: tuple[Optional[int], Optional[int]] = (None, None),
@@ -135,8 +135,26 @@ def _closest_timepoint_records(timepoint: int|float, episode_records:dict)->dict
         if abs(record['time_start'] - timepoint) == delta_min
     }
 
+
+def _get_latest_nonempty_episode_records(experiment_records: dict[int, dict[int, dict]])->dict:
+    """
+    For given experiment records, return episode records for the latest episode (day) with nonempty records (used for filtered experiment data).
+
+    experiment_records: {day_i: {agentid_j : {'travel_time': ..., ....}, ... }, ... }, may be {day_i : {}, ...} after filtering.
+    """
+    for day in sorted(experiment_records.keys(), reverse=True):  # check days in descending order
+        episode_records = experiment_records[day]
+        if episode_records:  # not empty
+            return episode_records
+    return {}  # if all empty
+
+
 def _mean_travel_time(records: dict[int, dict])->float:
-    """Mean travel time for episode records subset."""
+    """
+    Return mean travel time for episode records subset.
+    
+    records: {agentid_1 : {'travel_time': ..., ....}, ... , agentid_k: {'travel_time': ..., ....}}
+    """
     return mean(record['travel_time'] for record in records.values())
 
 
@@ -144,7 +162,64 @@ def _mean_travel_time(records: dict[int, dict])->float:
 # Route travel time estimation
 ###########################################
 
-def estimate_route_travel_time(agent: 'Agent', route: int, day: int, experiment_records: dict, free_flow_times: dict, span:int=1) -> float:
+def estimate_agent_routes_travel_time(agent: 'Agent', day: int, experiment_records: dict, free_flow_times: dict, span:int|None) -> float:
+    """
+    Using driving history, estimate travel time for all routes available for an agent.
+
+    Estimation order:
+    1. Machine with exact start time.
+    2. Last machine departed before agent (shared driving time).
+    3. Free flow time.
+
+    'day' is the current day of the experiment.
+    'span' is the number of past days (episodes) to consider in estimation; span None means using all available history.
+    """
+
+    assert span is None or span > 0
+
+    if span == 0:
+        raise NotImplementedError("span=0 (current day) is not supported. Only span>=1 (past days) is implemented.")
+
+    
+    days_range = (None, day) if span is None else (max(0,day-span), day)
+
+    #################################################################################
+    # Filter experiment records to origin, destination and history span of interest
+    #################################################################################
+    od_history_filter = {
+        'origin': agent.origin,
+        'destination': agent.destination,
+        'days': days_range,
+        'kind': 'machine'
+    }
+
+    od_history_records = experiment_records_subset(
+        experiment_records=experiment_records,
+        **od_history_filter
+    )
+    # If none of days available, return free flow times
+    if not od_history_records:
+        print(f"No records for day={day}, span={span}. Returning free flow times for agent {agent.id}, for all routes.")
+        return free_flow_times[(agent.origin, agent.destination)]
+
+    ####################################################################
+    # Estimate travel time for all routes available for given agent
+    ####################################################################
+    num_routes = len(free_flow_times[(agent.origin, agent.destination)])
+    route_time_estimations = []
+
+    for i in range(num_routes):
+        time_est = estimate_agent_route_travel_time(
+            agent=agent,
+            route=i,
+            day=day,
+            od_history_experiment_records=od_history_records,
+            free_flow_times=free_flow_times)
+        route_time_estimations.append(time_est)
+
+    return route_time_estimations
+
+def estimate_agent_route_travel_time(agent: 'Agent', route: int, day: int, od_history_experiment_records: dict, free_flow_times: dict) -> float:
     """
     Estimate travel time on a route for an agent using past episode(s).
 
@@ -154,64 +229,51 @@ def estimate_route_travel_time(agent: 'Agent', route: int, day: int, experiment_
     3. Free flow time.
 
     'day' is the current day of the experiment.
-    'span' is the number of past days (episodes) to consider in estimation; 'span' curently only supports 1
     """
 
 
-    if span != 1:
-        raise NotImplementedError("Curent implementation only for span=1 history.")
-    
+    base_filter = {
+        'route': route
 
-    # Get records from previous day (if available)
-    previous_day_records = experiment_records.get(day-1, {})
-    if not previous_day_records:
-        print(f"No records for previous day: {day-1}. Returning free flow time for agent {agent.id}, route {route}")
-        return free_flow_times[(agent.origin, agent.destination)][route]
-
-
-
-
-    base_filter_args = { # origin, destination, route
-        'origin': agent.origin,
-        'destination': agent.destination,
-        'route': route,
-        'kind': 'machine'
+        # filters applied in 'estimate_agent_routes_travel_time'
+        # 'origin': agent.origin,
+        # 'destination': agent.destination,
+        # 'days': (min(0,day-span), day),
+        # 'kind': 'machine'
     }
 
+    # Define estimation filters 
     estimation_filters = [ # filters for time estimations
         {'time_start': (agent.start_time, agent.start_time)},
         {'time_start': (None, agent.start_time), 'time_end': (agent.start_time, None)}
     ]
     filter_descriptions = [
         "Exact start time.",
-        "Earlier start time, shared travel time."
+        "Closest deparing before, shared travel time."
     ]
 
-
-    od_route_records = episode_records_subset(
-        episode_records=previous_day_records,
-        **base_filter_args
-    )
-
-
-    ##############################################
-    # Estimate travel time - in predefined order
-    ##############################################
+    ##################################################################################
+    # Estimate travel time - take the first available result in order of significance
+    ##################################################################################
 
     # 1-2. Try to estimate route travel time from existing data (predefined cases)
     for estimation_args, descr in zip(estimation_filters,filter_descriptions):
 
-        filter_args = base_filter_args.copy()
+        filter_args = base_filter.copy()
         filter_args.update(estimation_args)
 
-        estimation_records = episode_records_subset(
-            episode_records=od_route_records,
+        estimation_records = experiment_records_subset( # {day: {agentid: {'travel_time: ..., ...} } }
+            experiment_records=od_history_experiment_records,
             **filter_args
         )
 
-        if estimation_records:
+
+
+        # Take the records from the latest day possible (latest day in span range with nonempty data for current filtering); avg if >1 agent in such day
+        latest_nonempty_episode_records = _get_latest_nonempty_episode_records(experiment_records=estimation_records)
+        if latest_nonempty_episode_records: #{agentid_1: {....}, ...., agentid_k: {}}
             print(f"Estimation data for agent {agent.id}, route {route}: {descr}")
-            return _mean_travel_time(estimation_records)
+            return _mean_travel_time(latest_nonempty_episode_records)
 
    
 
@@ -225,19 +287,18 @@ def estimate_route_travel_time(agent: 'Agent', route: int, day: int, experiment_
 ###########################################
 
 
-def choose_agent_action(agent: 'Agent', day: int, experiment_records: dict[int, dict[int,dict]], free_flow_times: dict)->int:
+def choose_agent_action(agent: 'Agent', day: int, experiment_records: dict[int, dict[int,dict]], free_flow_times: dict, span:int)->int:
     """
     Selects route for the agent based on past episode(s) driving data using greedy strategy.
     """
  
     # Get travel time estimations for each route acrssible for the agent, choose one with minimal estimation
     num_routes = len(free_flow_times[(agent.origin, agent.destination)])
-    route_time_estimations = [ estimate_route_travel_time(
-                                    agent=agent,
-                                    route=i,
-                                    day=day,
-                                    experiment_records=experiment_records,
-                                    free_flow_times=free_flow_times)
-                                for i in range(num_routes)]
+    route_time_estimations = estimate_agent_routes_travel_time(
+        agent=agent,
+        day=day,
+        experiment_records=experiment_records,
+        free_flow_times=free_flow_times,
+        span=span)
     action = random.choice([rou for rou, time_est in enumerate(route_time_estimations) if time_est == (min_time := min(route_time_estimations))])
     return action
