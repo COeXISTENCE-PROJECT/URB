@@ -1,4 +1,4 @@
 {
-    "training_eps" : 100,
+    "training_eps" : 10,
     "lookback_days": 4
 }
