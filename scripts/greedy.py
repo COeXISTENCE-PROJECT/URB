@@ -1,5 +1,5 @@
 """
-This script is used to train AV agents with baseline greedy algorithm.
+This script is used to train AV agents with baseline greedy algorithm (version with traffic history lookup).
 """
 
 import os
@@ -22,15 +22,6 @@ from utils import clear_SUMO_files
 from tqdm import tqdm
 
 import greedy_utils
-
-"""
-Currently looks only at av travel times for route assesments (develop to enable also human times access).
-Uses only the last day (episode) for the current episode action choice.
-    =>Does not use past agent times to assess the route.
-
-- [] how to retrieve human travel times for route times estimation
-
-"""
 
 
 
@@ -218,30 +209,26 @@ if __name__ == "__main__":
     ################
     pbar.set_description("AV learning\n")
 
-    free_flows = env.get_free_flow_times() # free flow times for (origin, destination) pairs
-    experiment_records = dict()
-
-    # Auxiliary structures for working with env agents
+    
+    experiment_records = greedy_utils.initialize_experiment_records(traffic_environment=env)
     agent_mapping = {agent.id : i for i,agent in enumerate(env.all_agents)} # auxiliary mapping: agent id to agent position in env.all_agents (list[Agent]) 
     
 
 
 
-    #### Control print ################################################
-    ## control print: show env.possible_agents and current env.agents
-    print(f"env.agents={env.agents}")
-    print(f"env.possible_agents={env.possible_agents}\n")
-    ###################################################################
+    # #### Control print ################################################
+    # print(f"env.agents={env.agents}")
+    # print(f"env.possible_agents={env.possible_agents}\n")
+    # ###################################################################
 
     for episode in range(training_eps + test_eps):
         env.reset()
+        episode_actions = dict()
 
-        ######## Control print ########
-        print(f"Episode: {env.day}") ##
-        ################################
+        # ######## Control print ########
+        # print(f"Episode: {env.day}") ##
+        # ################################
 
-
-        episode_records = {int(aid): dict() for aid in env.possible_agents} # per-episode data
         
 
         for agentid in env.agent_iter(): # Iterate over machine agents (only machine agents ids are added to env.possible_agents during mutation)
@@ -251,57 +238,45 @@ if __name__ == "__main__":
             agent = env.all_agents[agent_mapping[agentid_int]]
             assert agent.id==agentid_int # ensure that agent id matches
             
-            ############################################################################
-            # Sanity check (remove later)
-            print(f"env.agents={env.agents}")
-            print(f"Agent: id={agent.id}, kind={agent.kind}, start_time={agent.start_time}")
-            #############################################################################
+            # ############################################################################
+            # # Sanity check (remove later)
+            # print(f"env.agents={env.agents}")
+            # print(f"Agent: id={agent.id}, kind={agent.kind}, start_time={agent.start_time}")
+            # #############################################################################
 
 
             observation, reward, termination, truncation, info = env.last()
-            print(f"observation, reward, termination, truncation, info = ({observation}, {reward}, {termination}, {truncation}, {info})")
+            # print(f"observation, reward, termination, truncation, info = ({observation}, {reward}, {termination}, {truncation}, {info})")
 
             
-            if termination or truncation: # Case: agent finished their drive - save agent episode data
-                print(f"in termination / truncation branch for agent {agentid}")
+            if termination or truncation:
+                # print(f"in termination / truncation branch for agent {agentid}")
 
+                # Update experiment records with current episode info
                 travel_time = -reward
-                episode_records[agentid_int].update(
-                                            {
-                                                'kind': agent.kind,
-                                                'origin': agent.origin,
-                                                'destination': agent.destination,
-                                                #'route': action,
-                                                'travel_time': travel_time,
-                                                'time_start': agent.start_time,
-                                                'time_end': agent.start_time + travel_time,
-                                            })
+                greedy_utils.update_records(
+                    od=(agent.origin, agent.destination),
+                    timestamp=agent.start_time,
+                    route=episode_actions[agentid_int],
+                    duration=travel_time,
+                    episode=episode,
+                    records=experiment_records
+                )
                 action = None
 
             
-            else: # Case: agent is starting from their desination - select the action (route)
-                print(f"in action branch for agent {agentid}")
+            else:
+                # print(f"in action branch for agent {agentid}")
 
-                if env.day == 0:
-                    od_free_flows = free_flows[(agent.origin, agent.destination)] # per-route free flow times
-                    action = random.choice([route for route, time in enumerate(od_free_flows) if time == (min_time := min(od_free_flows))])
-                else:
-                    action = greedy_utils.choose_agent_action(
-                        agent=agent,
-                        day=env.day,
-                        experiment_records=experiment_records,
-                        free_flow_times=free_flows,
-                        span=lookback_days
-                    )
-
-                episode_records[agentid_int]['route'] = action
+                # Select action for the current agent
+                action = greedy_utils.select_agent_action(agent=agent, records=experiment_records)
+                episode_actions[agentid_int] = action
 
 
-            print(f"action: {action}\n")
+            # print(f"action: {action}\n")
             env.step(action)
 
         # Log episode data
-        experiment_records[env.day-1] = episode_records # day incremented after last step (when no agents to act/terminate)
         pbar.update()
 
     """
