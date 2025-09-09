@@ -175,3 +175,4 @@ cython_debug/
 
 .DS_Store
 results/
+requirements.txt
