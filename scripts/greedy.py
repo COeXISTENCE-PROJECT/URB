@@ -36,8 +36,6 @@ if __name__ == "__main__":
     # Any additional arguments can be added here
     
     
-    ## PLACEHOLDER = None # Delete this line and add your own arguments in the following
-    
     args = parser.parse_args()
     ALGORITHM = 'greedy'
     exp_id = args.id
@@ -204,55 +202,31 @@ if __name__ == "__main__":
     User defined AV learning pipeline!
     """
     
-    ################
-    # Training
-    ################
     pbar.set_description("AV learning\n")
 
-    
+    # Auxiliary structures
     experiment_records = greedy_utils.initialize_experiment_records(traffic_environment=env)
-    agent_mapping = {agent.id : i for i,agent in enumerate(env.all_agents)} # auxiliary mapping: agent id to agent position in env.all_agents (list[Agent]) 
+    agent_mapping = {agent.id : i for i,agent in enumerate(env.all_agents)} # mapping: agent id to agent position in env.all_agents (list[Agent]) 
     
-
-
-
-    # #### Control print ################################################
-    # print(f"env.agents={env.agents}")
-    # print(f"env.possible_agents={env.possible_agents}\n")
-    # ###################################################################
 
     for episode in range(training_eps + test_eps):
         env.reset()
         episode_actions = dict()
 
-        # ######## Control print ########
-        # print(f"Episode: {env.day}") ##
-        # ################################
+        # Iterate over machine agents (only machine agents ids are added to env.possible_agents during mutation)
+        for agentid in env.agent_iter():
 
-        
-
-        for agentid in env.agent_iter(): # Iterate over machine agents (only machine agents ids are added to env.possible_agents during mutation)
-
-            # Pick Agent object
+            # Pick Agent object corresponding to agentid
             agentid_int = int(agentid)
             agent = env.all_agents[agent_mapping[agentid_int]]
-            assert agent.id==agentid_int # ensure that agent id matches
+            assert agent.id==agentid_int # ensure that agent object id matches agentid
             
-            # ############################################################################
-            # # Sanity check (remove later)
-            # print(f"env.agents={env.agents}")
-            # print(f"Agent: id={agent.id}, kind={agent.kind}, start_time={agent.start_time}")
-            # #############################################################################
-
 
             observation, reward, termination, truncation, info = env.last()
-            # print(f"observation, reward, termination, truncation, info = ({observation}, {reward}, {termination}, {truncation}, {info})")
-
-            
+   
             if termination or truncation:
-                # print(f"in termination / truncation branch for agent {agentid}")
 
-                # Update experiment records with current episode info
+                # Update experiment records with agent's episode info
                 travel_time = -reward
                 greedy_utils.update_records(
                     od=(agent.origin, agent.destination),
@@ -266,17 +240,12 @@ if __name__ == "__main__":
 
             
             else:
-                # print(f"in action branch for agent {agentid}")
 
                 # Select action for the current agent
                 action = greedy_utils.select_agent_action(agent=agent, records=experiment_records)
                 episode_actions[agentid_int] = action
 
-
-            # print(f"action: {action}\n")
             env.step(action)
-
-        # Log episode data
         pbar.update()
 
     """
@@ -292,9 +261,3 @@ if __name__ == "__main__":
 
     # Clean SUMO-generated redundant files
     clear_SUMO_files(os.path.join(records_folder, "SUMO_output"), os.path.join(records_folder, "episodes"), remove_additional_files=True)
-
-    # print("Cleaning up manually")
-    # del experiment_data
-    # del env
-    # del agent_mapping
-    #print("\nEND OF SCRIPT\n")
