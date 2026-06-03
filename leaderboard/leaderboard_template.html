@@ -318,6 +318,7 @@
     }
 
     .table-wrap {
+      position: relative;
       width: 100%;
       overflow-x: auto;
       border: 1px solid var(--line);
@@ -325,7 +326,22 @@
       background: #fff;
     }
 
+    .table-wrap::before {
+      position: absolute;
+      inset: 42px 0 0;
+      z-index: 2;
+      pointer-events: none;
+      background-image: url('https://raw.githubusercontent.com/aonurakman/assets/refs/heads/main/icons/coexistence_small.png');
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: min(66vw, 645px) auto;
+      content: '';
+      filter: grayscale(1);
+      opacity: 0.045;
+    }
+
     table {
+      position: relative;
       width: 100%;
       border-collapse: collapse;
       min-width: 920px;
@@ -377,6 +393,10 @@
       background: #edf4fb;
     }
 
+    td.contributor-td {
+      cursor: pointer;
+    }
+
     td.rank-cell {
       width: 52px;
       font-family: 'IBM Plex Mono', 'Consolas', monospace;
@@ -398,6 +418,25 @@
       border-color: var(--accent);
     }
 
+    .rank-badge {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      cursor: default;
+      font-size: 15px;
+      line-height: 1;
+    }
+
+    .rank-badge.visible {
+      display: inline-flex;
+    }
+
+    .rank-badge.applauding {
+      animation: contributor-pop 0.38s ease;
+    }
+
     .fold-badge {
       border: 1px solid #cad6e2;
       border-radius: 999px;
@@ -412,38 +451,78 @@
     }
 
     .contributor-cell {
+      position: relative;
       display: inline-flex;
       align-items: center;
-      gap: 7px;
-      max-width: 240px;
+      justify-content: center;
+      min-width: 58px;
+      min-height: 31px;
+      padding: 3px 8px 3px 3px;
+      border: 0;
+      border-radius: 999px;
+      appearance: none;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      font: inherit;
+      transition: background 0.12s ease, transform 0.12s ease;
+    }
+
+    .contributor-cell:hover,
+    .contributor-cell:focus-visible {
+      background: #eef4f7;
+      outline: none;
+    }
+
+    .contributor-cell.applauding {
+      animation: contributor-pop 0.38s ease;
+    }
+
+    .contributor-stack {
+      display: inline-flex;
+      align-items: center;
+      isolation: isolate;
     }
 
     .contributor-avatar {
-      width: 18px;
-      height: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      margin-left: -8px;
       border-radius: 999px;
-      border: 1px solid #c7d4e2;
-      background: #f3f6fa;
+      border: 2px solid #ffffff;
+      background: #e9eef3;
+      color: #3b4d5d;
+      box-shadow: 0 1px 3px rgba(27, 39, 51, 0.18);
       object-fit: cover;
       flex: 0 0 auto;
+      font-size: 10px;
+      font-weight: 700;
+      line-height: 1;
+      text-transform: uppercase;
     }
 
-    .contributor-name {
-      display: inline-block;
-      max-width: 200px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      vertical-align: middle;
+    .contributor-avatar:first-child {
+      margin-left: 0;
     }
 
-    a.contributor-name {
-      color: inherit;
-      text-decoration: none;
-      border-bottom: 1px solid transparent;
+    img.contributor-avatar {
+      color: transparent;
     }
 
-    a.contributor-name:hover {
-      border-color: var(--accent);
+    .contributor-avatar-fallback {
+      background: linear-gradient(135deg, #edf4ff, #e7f2ee);
+    }
+
+    @keyframes contributor-pop {
+      0%, 100% {
+        transform: scale(1);
+      }
+      45% {
+        transform: scale(1.08);
+      }
     }
 
     .metric-header {
@@ -573,6 +652,129 @@
       display: none;
     }
 
+    .contributor-card {
+      width: 330px;
+      max-width: 38vw;
+    }
+
+    .contributor-list {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    .contributor-row {
+      display: grid;
+      grid-template-columns: 36px minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #f8fafc;
+    }
+
+    .contributor-card .contributor-avatar {
+      width: 34px;
+      height: 34px;
+      margin-left: 0;
+      border-color: #ffffff;
+      font-size: 12px;
+    }
+
+    .contributor-details {
+      min-width: 0;
+    }
+
+    .contributor-full-name {
+      overflow: hidden;
+      color: #24303a;
+      font-size: 13px;
+      font-weight: 600;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .contributor-contribution {
+      margin-top: 2px;
+      overflow: hidden;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .applause-burst {
+      position: fixed;
+      z-index: 100;
+      width: 1px;
+      height: 1px;
+      pointer-events: none;
+    }
+
+    .applause-burst::before {
+      position: absolute;
+      width: 36px;
+      height: 36px;
+      border: 2px solid rgba(31, 111, 94, 0.3);
+      border-radius: 999px;
+      content: '';
+      transform: translate(-50%, -50%) scale(0.25);
+      animation: applause-ring 0.58s ease-out forwards;
+    }
+
+    .applause-burst.epic::before {
+      width: 68px;
+      height: 68px;
+      border-color: rgba(31, 111, 94, 0.34);
+      animation-duration: 0.82s;
+    }
+
+    .applause-burst.epic::after {
+      position: absolute;
+      width: 46px;
+      height: 46px;
+      border: 2px solid rgba(244, 190, 70, 0.28);
+      border-radius: 999px;
+      content: '';
+      transform: translate(-50%, -50%) scale(0.2);
+      animation: applause-ring 0.72s ease-out 0.08s forwards;
+    }
+
+    .applause-emoji {
+      position: absolute;
+      font-size: var(--s);
+      line-height: 1;
+      opacity: 0;
+      text-shadow: 0 2px 6px rgba(20, 30, 40, 0.14);
+      transform: translate(-50%, -50%) rotate(var(--r)) scale(0.55);
+      animation: applause-float 0.78s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation-delay: var(--d);
+    }
+
+    .applause-burst.epic .applause-emoji {
+      text-shadow: 0 3px 10px rgba(20, 30, 40, 0.2);
+      animation-duration: 1.05s;
+    }
+
+    @keyframes applause-ring {
+      to {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1.15);
+      }
+    }
+
+    @keyframes applause-float {
+      18% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+        transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y))) rotate(var(--r)) scale(1);
+      }
+    }
+
     td.metric-best[data-best="max"] {
       background: #eaf6f2;
       color: #184f43;
@@ -661,7 +863,8 @@
       }
 
       .preview-card,
-      .config-card {
+      .config-card,
+      .contributor-card {
         max-width: calc(100vw - 28px);
       }
     }
@@ -723,6 +926,11 @@
     <div class="hover-fallback" id="config-fallback">Loading config...</div>
   </div>
 
+  <div class="hover-card contributor-card" id="contributor-card">
+    <div class="hover-card-title" id="contributor-title">Contributors</div>
+    <div class="contributor-list" id="contributor-list"></div>
+  </div>
+
   <div class="metric-tooltip" id="metric-tooltip"></div>
 
   <script>
@@ -746,10 +954,15 @@
     const configTitle = document.getElementById('config-title');
     const configPre = document.getElementById('config-pre');
     const configFallback = document.getElementById('config-fallback');
+    const contributorCard = document.getElementById('contributor-card');
+    const contributorTitle = document.getElementById('contributor-title');
+    const contributorList = document.getElementById('contributor-list');
     const metricTooltip = document.getElementById('metric-tooltip');
 
     const metricDescriptions = strings.metric_descriptions || {};
     const headerLabels = strings.table_headers || {};
+    const contributorProfiles = leaderboardData.contributors || {};
+    const avatarTemplateCache = new Map();
 
     const unknownEnv = strings.unknown_env || 'unknown-env';
     const unknownTask = strings.unknown_task || 'unknown-task';
@@ -760,6 +973,12 @@
     const showAllLabel = strings.show_all_label || 'Show all';
     const collapseFoldsLabel = strings.collapse_folds_label || 'Collapse folds';
     const mergeFoldsLabel = strings.merge_folds_label || 'Merge folds';
+    const unknownContributorLabel = 'Unknown contributor';
+    const rankBadges = [
+      { emoji: '🏆', label: 'First place' },
+      { emoji: '🚀', label: 'Second place' },
+      { emoji: '🔥', label: 'Third place' },
+    ];
 
     const collapsedData = leaderboardData.experiments || [];
     const rawData = leaderboardData.raw_experiments || leaderboardData.experiments || [];
@@ -996,23 +1215,209 @@
       return value;
     }
 
-    function abbreviatedContributorName(name) {
-      const raw = String(name ?? '').trim();
-      if (!raw || raw === naLabel) return raw;
+    function contributorsFor(exp) {
+      if (Array.isArray(exp.contributors) && exp.contributors.length) {
+        return exp.contributors.map(resolveContributor);
+      }
 
-      const parts = raw.split(/\s+/).filter(Boolean);
-      if (parts.length <= 1) return raw;
+      return [
+        resolveContributor({
+          role: 'Script',
+          contribution: exp.script ? `Script - ${exp.script}` : 'Script',
+          name: exp.script_contributor || '',
+          username: exp.script_contributor_username || '',
+          avatar: exp.script_contributor_avatar || '',
+          url: exp.script_contributor_url || '',
+        }),
+      ];
+    }
 
-      const lastName = parts[parts.length - 1];
-      const initials = parts
-        .slice(0, -1)
-        .map((part) => {
-          const [firstChar] = Array.from(part);
-          return firstChar ? `${firstChar.toUpperCase()}.` : '';
-        })
-        .filter(Boolean);
+    function resolveContributor(contributor) {
+      const contributorId = contributor?.contributor_id || contributor?.id || '';
+      const profile = contributorId && contributorProfiles[contributorId]
+        ? contributorProfiles[contributorId]
+        : {};
+      return {
+        ...contributor,
+        id: contributorId || contributor?.id || '',
+        name: contributor?.name || profile.name || '',
+        username: contributor?.username || profile.username || '',
+        avatar: contributor?.avatar || profile.avatar || '',
+        url: contributor?.url || profile.url || '',
+      };
+    }
 
-      return [...initials, lastName].join(' ');
+    function contributorName(contributor) {
+      return String(
+        contributor?.name ||
+        contributor?.username ||
+        unknownContributorLabel
+      ).trim();
+    }
+
+    function contributorInitials(contributor) {
+      const name = String(
+        contributor?.name ||
+        contributor?.username ||
+        contributor?.role ||
+        ''
+      ).trim();
+      if (!name) return '?';
+
+      const parts = name.split(/\s+/).filter(Boolean);
+      if (parts.length > 1) {
+        return `${Array.from(parts[0])[0] || ''}${Array.from(parts[parts.length - 1])[0] || ''}`.toUpperCase();
+      }
+      return Array.from(name).slice(0, 2).join('').toUpperCase();
+    }
+
+    function createContributorAvatar(contributor) {
+      const name = contributorName(contributor);
+      if (contributor?.avatar) {
+        const avatar = avatarImageFor(contributor.avatar);
+        avatar.className = 'contributor-avatar';
+        avatar.alt = `${name} avatar`;
+        avatar.onerror = () => {
+          avatar.replaceWith(createContributorAvatar({ ...contributor, avatar: '' }));
+        };
+        return avatar;
+      }
+
+      const fallback = document.createElement('span');
+      fallback.className = 'contributor-avatar contributor-avatar-fallback';
+      fallback.textContent = contributorInitials(contributor);
+      fallback.setAttribute('aria-hidden', 'true');
+      return fallback;
+    }
+
+    function avatarImageFor(src) {
+      if (!avatarTemplateCache.has(src)) {
+        const template = document.createElement('img');
+        template.src = src;
+        template.loading = 'lazy';
+        template.referrerPolicy = 'no-referrer';
+        avatarTemplateCache.set(src, template);
+      }
+
+      return avatarTemplateCache.get(src).cloneNode(false);
+    }
+
+    function contributorSortValue(contributors) {
+      const names = contributors
+        .map(contributorName)
+        .filter((name) => name && name !== unknownContributorLabel);
+      return names.join(' / ') || naLabel;
+    }
+
+    function renderContributorStack(contributors) {
+      const stack = document.createElement('span');
+      stack.className = 'contributor-stack';
+      contributors.slice(0, 3).forEach((contributor) => {
+        const avatar = createContributorAvatar(contributor);
+        avatar.title = `${contributorName(contributor)} - ${contributor.role || 'Contributor'}`;
+        stack.appendChild(avatar);
+      });
+      return stack;
+    }
+
+    function showContributorPreview(contributors, evt) {
+      hidePreview();
+      hideConfigPreview();
+      contributorList.innerHTML = '';
+      contributorTitle.textContent = contributors.length === 1 ? 'Contributor' : 'Contributors';
+
+      contributors.forEach((contributor) => {
+        const row = document.createElement('div');
+        row.className = 'contributor-row';
+
+        row.appendChild(createContributorAvatar(contributor));
+
+        const details = document.createElement('div');
+        details.className = 'contributor-details';
+
+        const name = document.createElement('div');
+        name.className = 'contributor-full-name';
+        name.textContent = contributorName(contributor);
+
+        const contribution = document.createElement('div');
+        contribution.className = 'contributor-contribution';
+        contribution.textContent = contributor.contribution || contributor.role || 'Contribution';
+
+        details.appendChild(name);
+        details.appendChild(contribution);
+        row.appendChild(details);
+        contributorList.appendChild(row);
+      });
+
+      contributorCard.classList.add('visible');
+      positionHoverCard(contributorCard, evt);
+    }
+
+    function hideContributorPreview() {
+      contributorCard.classList.remove('visible');
+    }
+
+    function attachContributorHover(node, contributors) {
+      node.addEventListener('mouseenter', (evt) => showContributorPreview(contributors, evt));
+      node.addEventListener('mousemove', (evt) => positionHoverCard(contributorCard, evt));
+      node.addEventListener('mouseleave', hideContributorPreview);
+    }
+
+    function playApplause(node, emoji = '👏', options = {}) {
+      node.classList.remove('applauding');
+      void node.offsetWidth;
+      node.classList.add('applauding');
+      window.setTimeout(() => node.classList.remove('applauding'), 420);
+
+      const epic = Boolean(options.epic);
+      const rect = node.getBoundingClientRect();
+      const burst = document.createElement('div');
+      burst.className = epic ? 'applause-burst epic' : 'applause-burst';
+      burst.style.left = `${rect.left + rect.width / 2}px`;
+      burst.style.top = `${rect.top + rect.height / 2}px`;
+
+      const particles = epic ? [
+        [-48, -34, '-28deg', '18px', '0ms'],
+        [-34, -52, '-18deg', '20px', '35ms'],
+        [-15, -65, '-6deg', '21px', '70ms'],
+        [8, -68, '8deg', '21px', '25ms'],
+        [31, -58, '20deg', '20px', '65ms'],
+        [50, -38, '32deg', '18px', '95ms'],
+        [58, -10, '44deg', '17px', '45ms'],
+        [44, 17, '58deg', '16px', '100ms'],
+        [18, 31, '72deg', '17px', '135ms'],
+        [-12, 34, '-74deg', '16px', '90ms'],
+        [-40, 20, '-58deg', '17px', '120ms'],
+        [-59, -4, '-44deg', '17px', '50ms'],
+        [-24, -22, '-12deg', '19px', '150ms'],
+        [4, -34, '4deg', '20px', '175ms'],
+        [29, -20, '18deg', '19px', '205ms'],
+        [27, 6, '34deg', '17px', '185ms'],
+        [-2, 17, '-6deg', '18px', '225ms'],
+        [-29, 3, '-28deg', '17px', '210ms'],
+      ] : [
+        [-28, -22, '-22deg', '16px', '0ms'],
+        [-12, -35, '-8deg', '18px', '35ms'],
+        [8, -39, '10deg', '17px', '70ms'],
+        [25, -27, '24deg', '16px', '20ms'],
+        [30, -8, '34deg', '15px', '85ms'],
+        [-30, -4, '-34deg', '15px', '55ms'],
+      ];
+
+      particles.forEach(([x, y, rotation, size, delay]) => {
+        const particle = document.createElement('span');
+        particle.className = 'applause-emoji';
+        particle.textContent = emoji;
+        particle.style.setProperty('--x', `${x}px`);
+        particle.style.setProperty('--y', `${y}px`);
+        particle.style.setProperty('--r', rotation);
+        particle.style.setProperty('--s', size);
+        particle.style.setProperty('--d', delay);
+        burst.appendChild(particle);
+      });
+
+      document.body.appendChild(burst);
+      window.setTimeout(() => burst.remove(), epic ? 1320 : 960);
     }
 
     function toRawGitHubUrl(url) {
@@ -1057,6 +1462,7 @@
     }
 
     function showPreview(expId, candidates, evt) {
+      hideContributorPreview();
       hideConfigPreview();
       previewCandidates = candidates || [];
       previewCandidateIndex = 0;
@@ -1098,6 +1504,7 @@
 
     async function showConfigPreview(title, rawUrl, evt) {
       hidePreview();
+      hideContributorPreview();
       activeConfigToken += 1;
       const token = activeConfigToken;
       configCard.classList.add('visible');
@@ -1266,7 +1673,7 @@
         ...extraColumns.map((cfg) => ({ key: cfg.key, label: cfg.label })),
         { key: 'algorithm', label: headerLabels.algorithm || 'Algorithm' },
         { key: 'script', label: headerLabels.script || 'Script' },
-        { key: 'script_contributor', label: headerLabels.script_contributor || 'Script contributor' },
+        { key: 'script_contributor', label: headerLabels.script_contributor || 'Contributors' },
         { key: 'alg_config', label: headerLabels.alg_config || 'Algorithm Config' },
         { key: 'torch_seed', label: headerLabels.torch_seed || 'Torch Seed' },
       ];
@@ -1348,6 +1755,17 @@
 
         expWrap.appendChild(expAnchor);
 
+        const rankBadge = document.createElement('span');
+        rankBadge.className = 'rank-badge';
+        rankBadge.setAttribute('aria-hidden', 'true');
+        rankBadge.addEventListener('mouseenter', (evt) => {
+          evt.stopPropagation();
+          hidePreview();
+          const emoji = rankBadge.dataset.emoji || '👏';
+          playApplause(rankBadge, emoji);
+        });
+        expWrap.appendChild(rankBadge);
+
         if (exp.fold_count && exp.fold_count > 1) {
           const badge = document.createElement('span');
           badge.className = 'fold-badge';
@@ -1388,35 +1806,23 @@
           tr.appendChild(td);
         });
 
-        const contributorRaw = exp.script_contributor || naLabel;
-        const contributorDisplay = abbreviatedContributorName(contributorRaw);
+        const contributors = contributorsFor(exp);
+        const contributorRaw = contributorSortValue(contributors);
         const contributorTd = document.createElement('td');
+        contributorTd.className = 'contributor-td';
         contributorTd.dataset.value = contributorRaw;
 
-        const contributorWrap = document.createElement('span');
+        const contributorWrap = document.createElement('button');
+        contributorWrap.type = 'button';
         contributorWrap.className = 'contributor-cell';
-
-        if (exp.script_contributor_avatar) {
-          const avatar = document.createElement('img');
-          avatar.className = 'contributor-avatar';
-          avatar.src = exp.script_contributor_avatar;
-          avatar.alt = `${contributorRaw} avatar`;
-          avatar.loading = 'lazy';
-          avatar.referrerPolicy = 'no-referrer';
-          contributorWrap.appendChild(avatar);
-        }
-
-        const contributorNode = exp.script_contributor_url
-          ? document.createElement('a')
-          : document.createElement('span');
-        contributorNode.className = 'contributor-name';
-        contributorNode.textContent = contributorDisplay;
-        if (exp.script_contributor_url) {
-          contributorNode.href = exp.script_contributor_url;
-          contributorNode.target = '_blank';
-          contributorNode.rel = 'noopener';
-        }
-        contributorWrap.appendChild(contributorNode);
+        contributorWrap.setAttribute('aria-label', `Contributors: ${contributorRaw}`);
+        contributorWrap.appendChild(renderContributorStack(contributors));
+        attachContributorHover(contributorTd, contributors);
+        contributorTd.addEventListener('click', (evt) => {
+          evt.stopPropagation();
+          const rank = Number(tr.dataset.rank || '');
+          playApplause(contributorWrap, '👏', { epic: rank > 0 && rank <= 3 });
+        });
         contributorTd.appendChild(contributorWrap);
         tr.appendChild(contributorTd);
 
@@ -1428,7 +1834,10 @@
           td.textContent = cell.value;
           td.dataset.value = cell.value;
           if (cell.key === 'alg_config' && exp.alg_config) {
-            const titleParts = [exp.algorithm || 'algorithm', `${exp.alg_config}.json`];
+            const algConfigFile = String(exp.alg_config).endsWith('.json')
+              ? exp.alg_config
+              : `${exp.alg_config}.json`;
+            const titleParts = [exp.algorithm_config_group || exp.algorithm || 'algorithm', algConfigFile];
             attachConfigHover(
               td,
               `Algorithm config · ${titleParts.join('/')}`,
@@ -1494,6 +1903,21 @@
           const cell = row.children[0];
           cell.textContent = String(idx + 1);
           cell.dataset.value = String(idx + 1);
+          row.dataset.rank = String(idx + 1);
+          const badge = row.querySelector('.rank-badge');
+          if (!badge) return;
+          const rankBadge = rankBadges[idx];
+          if (!rankBadge) {
+            badge.classList.remove('visible');
+            badge.textContent = '';
+            badge.removeAttribute('title');
+            delete badge.dataset.emoji;
+            return;
+          }
+          badge.textContent = rankBadge.emoji;
+          badge.title = rankBadge.label;
+          badge.dataset.emoji = rankBadge.emoji;
+          badge.classList.add('visible');
         });
       }
 

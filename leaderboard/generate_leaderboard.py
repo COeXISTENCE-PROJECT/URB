@@ -312,38 +312,38 @@ def infer_github_username(contributor_name: str, contributor_email: str) -> str:
     return ""
 
 
-def script_contributor_info_from_git(
-    script_file: Path,
+def contributor_info_from_git(
+    repo_file: Path,
     repo_root: Path,
     cache: Dict[str, Tuple[str, str]],
 ) -> Tuple[str, str]:
     try:
-        rel_script = script_file.relative_to(repo_root).as_posix()
+        rel_file = repo_file.resolve().relative_to(repo_root.resolve()).as_posix()
     except ValueError:
         return "", ""
 
-    if rel_script in cache:
-        return cache[rel_script]
+    if rel_file in cache:
+        return cache[rel_file]
 
     try:
         result = subprocess.run(
-            ["git", "log", "--follow", "--reverse", "--format=%aN%x1f%aE", "--", rel_script],
+            ["git", "log", "--follow", "--reverse", "--format=%aN%x1f%aE", "--", rel_file],
             cwd=repo_root,
             capture_output=True,
             text=True,
             check=False,
         )
     except OSError:
-        cache[rel_script] = ("", "")
+        cache[rel_file] = ("", "")
         return "", ""
 
     if result.returncode != 0:
-        cache[rel_script] = ("", "")
+        cache[rel_file] = ("", "")
         return "", ""
 
     lines = [line.strip() for line in result.stdout.splitlines() if line.strip()]
     if not lines:
-        cache[rel_script] = ("", "")
+        cache[rel_file] = ("", "")
         return "", ""
 
     payload = lines[0].split("\x1f", 1)
@@ -352,8 +352,140 @@ def script_contributor_info_from_git(
     contributor_username = infer_github_username(contributor_name, contributor_email)
 
     info = (contributor_name, contributor_username)
-    cache[rel_script] = info
+    cache[rel_file] = info
     return info
+
+
+def script_contributor_info_from_git(
+    script_file: Path,
+    repo_root: Path,
+    cache: Dict[str, Tuple[str, str]],
+) -> Tuple[str, str]:
+    return contributor_info_from_git(script_file, repo_root, cache)
+
+
+def resolve_repo_algorithm_config_file(
+    algorithm: str,
+    alg_config: str,
+    repo_root: Path,
+) -> Optional[Path]:
+    config_name = str(alg_config or "").strip()
+    if not config_name:
+        return None
+
+    algorithm_name = str(algorithm or "").strip()
+    config_path = Path(config_name.replace("\\", "/"))
+    candidates: List[Path] = []
+
+    if config_path.is_absolute():
+        candidates.append(config_path)
+    else:
+        candidates.append(repo_root / config_path)
+        candidates.append(repo_root / "config" / "algo_config" / config_path)
+        if algorithm_name:
+            candidates.append(
+                repo_root / "config" / "algo_config" / algorithm_name / config_path
+            )
+
+    expanded_candidates: List[Path] = []
+    for candidate in candidates:
+        expanded_candidates.append(candidate)
+        if candidate.suffix != ".json":
+            expanded_candidates.append(Path(f"{candidate}.json"))
+
+    seen = set()
+    for candidate in expanded_candidates:
+        resolved = candidate.resolve()
+        if resolved in seen:
+            continue
+        seen.add(resolved)
+        if resolved.exists() and resolved.is_file():
+            return resolved
+    return None
+
+
+def github_avatar_url(username: str, size: int = 32) -> str:
+    return f"https://github.com/{username}.png?size={size}" if username else ""
+
+
+def github_profile_url(username: str) -> str:
+    return f"https://github.com/{username}" if username else ""
+
+
+def contributor_profile_id(name: str, username: str) -> str:
+    normalized_username = str(username or "").strip().lower()
+    if normalized_username:
+        return f"github:{normalized_username}"
+
+    normalized_name = re.sub(r"\s+", " ", str(name or "").strip()).casefold()
+    if normalized_name:
+        return f"name:{normalized_name}"
+
+    return ""
+
+
+def repo_relative_path(path: Optional[Path], repo_root: Path) -> str:
+    if not path:
+        return ""
+    try:
+        return path.resolve().relative_to(repo_root.resolve()).as_posix()
+    except ValueError:
+        return ""
+
+
+def contributor_record(
+    role: str,
+    contribution: str,
+    repo_file: Optional[Path],
+    repo_root: Path,
+    cache: Dict[str, Tuple[str, str]],
+) -> Dict[str, str]:
+    contributor_name, contributor_username = (
+        contributor_info_from_git(repo_file, repo_root, cache)
+        if repo_file
+        else ("", "")
+    )
+    contributor_id = contributor_profile_id(contributor_name, contributor_username)
+    return {
+        "contributor_id": contributor_id,
+        "role": role,
+        "contribution": contribution,
+        "name": contributor_name,
+        "username": contributor_username,
+        "avatar": github_avatar_url(contributor_username),
+        "url": github_profile_url(contributor_username),
+        "path": repo_relative_path(repo_file, repo_root),
+    }
+
+
+def build_contributor_pool(experiment_groups: Sequence[Sequence[Dict]]) -> Dict[str, Dict[str, str]]:
+    pool: Dict[str, Dict[str, str]] = {}
+    for experiments in experiment_groups:
+        for exp in experiments:
+            for contributor in exp.get("contributors") or []:
+                contributor_id = contributor.get("contributor_id") or contributor_profile_id(
+                    contributor.get("name", ""),
+                    contributor.get("username", ""),
+                )
+                if not contributor_id or contributor_id in pool:
+                    continue
+                pool[contributor_id] = {
+                    "id": contributor_id,
+                    "name": contributor.get("name", ""),
+                    "username": contributor.get("username", ""),
+                    "avatar": contributor.get("avatar", ""),
+                    "url": contributor.get("url", ""),
+                }
+    return pool
+
+
+def compact_contributor_records(experiments: Sequence[Dict]) -> None:
+    for exp in experiments:
+        for contributor in exp.get("contributors") or []:
+            contributor.pop("name", None)
+            contributor.pop("username", None)
+            contributor.pop("avatar", None)
+            contributor.pop("url", None)
 
 
 def validate_strings(strings: Dict, strings_path: Path) -> None:
@@ -428,27 +560,81 @@ def collect_experiments(results_dir: Path) -> List[Dict]:
         script_path = config.get("script") or ""
         script_file = resolve_repo_script_file(script_path, repo_root)
         script_name = script_file.name if script_file else script_name_from_path(script_path)
-        script_contributor, script_contributor_username = (
-            script_contributor_info_from_git(script_file, repo_root, contributor_cache)
-            if script_file
-            else ("", "")
-        )
-        script_contributor_avatar = (
-            f"https://github.com/{script_contributor_username}.png?size=32"
-            if script_contributor_username
-            else ""
-        )
-        script_contributor_url = (
-            f"https://github.com/{script_contributor_username}"
-            if script_contributor_username
-            else ""
-        )
         algorithm = (
             config.get("algorithm")
             or config.get("baseline_model")
             or config.get("policy")
             or ""
         )
+        algorithm_config_group = (
+            config.get("algorithm")
+            or config.get("policy")
+            or ("baseline" if config.get("baseline_model") else algorithm)
+            or ""
+        )
+        alg_config = (
+            config.get("alg_config")
+            or config.get("algorithm_config")
+            or config.get("algorithm_configuration")
+            or ""
+        )
+        algorithm_config_file = resolve_repo_algorithm_config_file(
+            algorithm_config_group,
+            alg_config,
+            repo_root,
+        )
+        result_config_file = exp_dir / "exp_config.json"
+        script_contributor, script_contributor_username = (
+            script_contributor_info_from_git(script_file, repo_root, contributor_cache)
+            if script_file
+            else ("", "")
+        )
+        algorithm_config_contributor, algorithm_config_contributor_username = (
+            contributor_info_from_git(algorithm_config_file, repo_root, contributor_cache)
+            if algorithm_config_file
+            else ("", "")
+        )
+        result_contributor, result_contributor_username = contributor_info_from_git(
+            result_config_file,
+            repo_root,
+            contributor_cache,
+        )
+        script_contributor_avatar = github_avatar_url(script_contributor_username)
+        script_contributor_url = github_profile_url(script_contributor_username)
+        algorithm_config_contributor_avatar = github_avatar_url(
+            algorithm_config_contributor_username
+        )
+        algorithm_config_contributor_url = github_profile_url(
+            algorithm_config_contributor_username
+        )
+        result_contributor_avatar = github_avatar_url(result_contributor_username)
+        result_contributor_url = github_profile_url(result_contributor_username)
+        alg_config_label = str(alg_config or "unknown")
+        if alg_config_label != "unknown" and not alg_config_label.endswith(".json"):
+            alg_config_label = f"{alg_config_label}.json"
+        contributors = [
+            contributor_record(
+                "Script",
+                f"Script - {script_name or script_path or 'unknown'}",
+                script_file,
+                repo_root,
+                contributor_cache,
+            ),
+            contributor_record(
+                "Algorithm config",
+                f"Algorithm config - {algorithm_config_group or 'unknown'}/{alg_config_label}",
+                algorithm_config_file,
+                repo_root,
+                contributor_cache,
+            ),
+            contributor_record(
+                "Result",
+                f"Result - {exp_dir.name}/exp_config.json",
+                result_config_file,
+                repo_root,
+                contributor_cache,
+            ),
+        ]
 
         experiments.append(
             {
@@ -459,15 +645,22 @@ def collect_experiments(results_dir: Path) -> List[Dict]:
                 "task_config": config.get("task_config"),
                 "network": config.get("network"),
                 "algorithm": algorithm,
+                "algorithm_config_group": algorithm_config_group,
                 "script": script_name,
                 "script_contributor": script_contributor,
                 "script_contributor_username": script_contributor_username,
                 "script_contributor_avatar": script_contributor_avatar,
                 "script_contributor_url": script_contributor_url,
-                "alg_config": config.get("alg_config")
-                or config.get("algorithm_config")
-                or config.get("algorithm_configuration")
-                or "",
+                "algorithm_config_contributor": algorithm_config_contributor,
+                "algorithm_config_contributor_username": algorithm_config_contributor_username,
+                "algorithm_config_contributor_avatar": algorithm_config_contributor_avatar,
+                "algorithm_config_contributor_url": algorithm_config_contributor_url,
+                "result_contributor": result_contributor,
+                "result_contributor_username": result_contributor_username,
+                "result_contributor_avatar": result_contributor_avatar,
+                "result_contributor_url": result_contributor_url,
+                "contributors": contributors,
+                "alg_config": alg_config,
                 "env_seed": config.get("env_seed"),
                 "torch_seed": config.get("torch_seed"),
                 "metrics": metrics["data"],
@@ -583,14 +776,19 @@ def attach_hover_urls(experiments: List[Dict], raw_repo_base: str) -> None:
         if exp_path:
             exp["plot_preview_url"] = f"{base}/{exp_path}/plots/travel_times.png"
 
-        algorithm = str(exp.get("algorithm") or "").strip()
+        algorithm = str(
+            exp.get("algorithm_config_group") or exp.get("algorithm") or ""
+        ).strip()
         alg_config = str(exp.get("alg_config") or "").strip()
         task_config = str(exp.get("task_config") or "").strip()
         env_config = str(exp.get("env_config") or "").strip()
 
         if algorithm and alg_config:
+            alg_config_file = (
+                alg_config if alg_config.endswith(".json") else f"{alg_config}.json"
+            )
             exp["alg_config_raw_url"] = (
-                f"{base}/config/algo_config/{algorithm}/{alg_config}.json"
+                f"{base}/config/algo_config/{algorithm}/{alg_config_file}"
             )
         if task_config:
             exp["task_config_raw_url"] = f"{base}/config/task_config/{task_config}.json"
@@ -653,6 +851,9 @@ def main(args: Optional[Sequence[str]] = None) -> None:
     template = load_template(parsed.template_path)
     raw_experiments = collect_experiments(parsed.results_dir)
     experiments = collapse_repeated_experiments(raw_experiments)
+    contributor_pool = build_contributor_pool([raw_experiments, experiments])
+    compact_contributor_records(raw_experiments)
+    compact_contributor_records(experiments)
 
     repo_url = parsed.repo_url or infer_default_repo_url(strings)
     build_experiment_links(raw_experiments, repo_url, parsed.local_link_prefix)
@@ -667,6 +868,7 @@ def main(args: Optional[Sequence[str]] = None) -> None:
         .replace("+00:00", "Z"),
         "results_dir": str(parsed.results_dir),
         "raw_repo_base": raw_repo_base,
+        "contributors": contributor_pool,
         "experiments": experiments,
         "raw_experiments": raw_experiments,
         "strings": strings,

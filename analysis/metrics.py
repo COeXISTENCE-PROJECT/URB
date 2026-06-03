@@ -311,7 +311,9 @@ def collect_to_single_CSV(
         return pd.DataFrame()
     
     df = pd.concat(dfs, axis=0, ignore_index=True)
-    df.to_csv(save_path, index=False)
+    df["episode"] = df["episode"].astype("int32")
+
+    df.to_csv(save_path, index=False, float_format="%.2f")    
 
     return df
 
@@ -712,6 +714,7 @@ def extract_metrics(path, config, verbose=False):
                 "time_excess": float,
             }
         )
+
         if not human_ids:
             vector_metrics_df["instability_humans"] = np.zeros(len(vector_metrics_df), dtype=float)
         if not CAV_ids:

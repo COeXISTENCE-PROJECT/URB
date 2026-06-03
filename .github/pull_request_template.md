@@ -36,7 +36,21 @@ If applicable, briefly state:
 - why the change was needed, and
 - whether it affects existing behavior.
 
+## For internal contributors
+If this PR was opened from a development branch (other than `dev`), we encourage contributors to keep branches focused and remove them after they are merged. 
+
+> [!CAUTION] 
+> **Unless the checkbox below is selected, the person merging this PR may delete the source branch after a successful merge.**
+
+- [ ] I recommend **NOT** deleting this branch after merging.
+
+If ticked, please add a brief justification here.
+
 ## Checklist
+
+> [!TIP]
+> Ensuring the following requirements satisfied will help reviewers and maintainers process this PR faster.
+
 - [ ] I placed new files in the appropriate directory
 - [ ] I ensured that changes are made consistent with the existing benchmark structure
 - [ ] I updated relevant documentation if needed

@@ -52,7 +52,7 @@
     "exp_id": "Experiment ID",
     "algorithm": "Algorithm",
     "script": "Script",
-    "script_contributor": "Script contributor",
+    "script_contributor": "Contributors",
     "alg_config": "Algorithm Config",
     "torch_seed": "Torch Seed"
   },
