@@ -1,0 +1,42 @@
+{
+    "training_eps": 1000,
+    "desc": "Initial feudal HRL config: discrete manager over route families and PPO-style worker updates.",
+    "manager_period": 1,
+    "use_cluster_embedding": true,
+    "cluster_source": "k_prototypes_shortest_path",
+    "cluster_csv_path": "networks/saint_arnoult/clusters/agents_clustered_k_prototypes_shortest_path_weighted_mse.csv",
+    "cluster_key_columns": [
+        "start_time",
+        "origin",
+        "destination"
+    ],
+    "num_subgoals": 4,
+    "num_clusters": 0,
+    "cluster_embed_dim": 8,
+    "manager_hidden_dims": [
+        128,
+        128
+    ],
+    "controller_hidden_dims": [
+        128,
+        128
+    ],
+    "subgoal_embed_dim": 16,
+    "manager_lr": 0.0003,
+    "controller_lr": 0.0003,
+    "manager_epochs": 3,
+    "controller_epochs": 3,
+    "batch_size": 64,
+    "update_every": 2,
+    "manager_clip_eps": 0.2,
+    "controller_clip_eps": 0.2,
+    "manager_entropy_coef": 0.01,
+    "controller_entropy_coef": 0.01,
+    "normalize_advantage": true,
+    "intrinsic_reward_weight": 0.15,
+    "manager_reward_weight": 1.0,
+    "goal_switch_penalty": 0.0,
+    "worker_pretrain_epochs": 0,
+    "action_mask_strategy": "uniform_bins",
+    "save_subgoal_records": true
+}
