@@ -1,16 +1,60 @@
 import os
+from pathlib import Path
+
 import pandas as pd
 import numpy as np
 import torch
 from gymnasium.spaces import Dict, MultiBinary
 from pettingzoo.utils.wrappers import BaseWrapper
 
+
+def validate_clustered_route_set(
+    network_name: str,
+    route_set_dir: str | Path,
+) -> Path:
+    """Validate a pre-generated clustered route set for incomplete or missing files."""
+    route_set_dir = Path(route_set_dir).resolve()
+    expected_files = [
+        route_set_dir / f"{network_name}_clusters_representants.csv",
+        route_set_dir / f"{network_name}_action_masks.csv",
+    ]
+
+    if not route_set_dir.is_dir():
+        raise FileNotFoundError(
+            f"Clustered route set not found: {route_set_dir}\n"
+            "Generate it first, for example:\n"
+            f"  python scripts/generate_clustered_routes.py --net {network_name} "
+            f"--route-set {route_set_dir.name} --config <config-name-or-path>"
+        )
+
+    missing_files = [path.name for path in expected_files if not path.is_file()]
+    if missing_files:
+        raise RuntimeError(
+            f"Incomplete clustered route set in {route_set_dir}. "
+            f"Missing files: {missing_files}\n"
+            "Regenerate this route set with path-clustering before running URB."
+        )
+
+    print(f"[CLUSTERED ROUTES] Using route set: {route_set_dir}")
+    config_path = route_set_dir / f"{network_name}_clustering_config.json"
+    if not config_path.is_file():
+        print(f"[CLUSTERED ROUTES] No clustering config found for route set metadata: {config_path}")
+    return route_set_dir
+
+
 class ClusteredRoutesLoader:
     """
     Loads clustered route representatives and exports them in RouteRL/SUMO formats.
     """
     
-    def __init__(self, network_name: str, network_folder: str, shuffle: bool = False, seed: int = 42):
+    def __init__(
+        self,
+        network_name: str,
+        network_folder: str | Path,
+        shuffle: bool = False,
+        seed: int = 42,
+        route_set_dir: str | Path | None = None,
+    ):
         """
         Initialize the loader.
         
@@ -18,19 +62,24 @@ class ClusteredRoutesLoader:
             network_name: Name of the network (e.g., 'saint_arnoult')
             network_folder: Path to the network folder in URB
             shuffle: Randomly shuffles the clusters if True
+            route_set_dir: Optional directory containing the generated
+                representatives and action masks. Defaults to
+                <network_folder>/clustered_routes.
         """
         self.network_name = network_name
         self.shuffle = shuffle
         self.rng = np.random.default_rng(seed)
 
-        self.clustering_csv_path = os.path.join(
-            network_folder, "clustered_routes",
-            f"{network_name}_clusters_representants.csv"
+        route_set_dir = (
+            Path(route_set_dir)
+            if route_set_dir is not None
+            else Path(network_folder) / "clustered_routes"
         )
-
-        self.masks_csv_path = os.path.join(
-            network_folder, "clustered_routes",
-            f"{network_name}_action_masks.csv"
+        self.clustering_csv_path = (
+            route_set_dir / f"{network_name}_clusters_representants.csv"
+        )
+        self.masks_csv_path = (
+            route_set_dir / f"{network_name}_action_masks.csv"
         )
         
         if not os.path.exists(self.clustering_csv_path):
@@ -59,7 +108,7 @@ class ClusteredRoutesLoader:
 
             if self.shuffle:
                 valid_keys = list(routes.keys()) # non-masked keys, e.g. 0, 3, 4
-                values = list(routes.values()) # corresponding routes+ffts e.g. A, B, C
+                values = list(routes.values()) # corresponding routes and ffts e.g. A, B, C
                 shuffled_values = self.rng.permutation(len(values)) # e.g. 2, 0, 1
                 routes = {
                     valid_keys[i]: values[shuffled_values[i]]
@@ -139,9 +188,9 @@ class ClusteredRoutesLoader:
                     rows.append({
                         'origins': o_idx,
                         'destinations': d_idx,
-                        'path': ' '.join(path), # space-separated!
+                        'path': ' '.join(path), # space-separated
                         'free_flow_time': fft,
-                        'cluster': cluster # NEW - for padding missing ffts
+                        'cluster': cluster # for padding missing ffts
                     })
 
         df = pd.DataFrame(rows)
@@ -196,6 +245,7 @@ class ClusteredRoutesLoader:
         # Export route.rou.xml
         rou_xml = os.path.join(records_folder, "route.rou.xml")
         self.export_to_sumo_rou_xml(rou_xml, origins, destinations)
+
 
 class AVMaskWrapper(BaseWrapper):
     """
