@@ -120,7 +120,7 @@ if __name__ == "__main__":
     max_grad_norm = params["max_grad_norm"]
     buffer_size = params["buffer_size"]
     use_libsumo = bool(params.get(kc.USE_LIBSUMO, False))
-    human_auto_routing = bool(params.get(kc.HUMAN_AUTO_ROUTING, False))
+    human_auto_routing_key = getattr(kc, "HUMAN_AUTO_ROUTING", None)
     ratio_machines = params["ratio_machines"]
     human_learning_episodes = params["human_learning_episodes"]
     human_model = params["human_model"]
@@ -235,6 +235,15 @@ if __name__ == "__main__":
     with open(exp_config_path, 'w', encoding='utf-8') as f:
         json.dump(dump_config, f, indent=4)
 
+    simulator_parameters = {
+        kc.NETWORK_NAME : network,
+        kc.CUSTOM_NETWORK_FOLDER : custom_network_folder,
+        kc.SUMO_TYPE : "sumo",
+        kc.USE_LIBSUMO : use_libsumo,
+    }
+    if human_auto_routing_key is not None:
+        simulator_parameters[human_auto_routing_key] = bool(params.get(human_auto_routing_key, False))
+
     # Initiate the traffic environment
     env = TrafficEnvironment(
         seed = env_seed,
@@ -253,13 +262,7 @@ if __name__ == "__main__":
                 kc.OBSERVATION_TYPE : observation_type,
             }
         },
-        simulator_parameters = {
-            kc.NETWORK_NAME : network,
-            kc.CUSTOM_NETWORK_FOLDER : custom_network_folder,
-            kc.SUMO_TYPE : "sumo",
-            kc.USE_LIBSUMO : use_libsumo,
-            kc.HUMAN_AUTO_ROUTING : human_auto_routing,
-        },
+        simulator_parameters = simulator_parameters,
         environment_parameters = {
             kc.SAVE_EVERY: save_every,
         },

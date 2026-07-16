@@ -109,8 +109,7 @@ if __name__ == "__main__":
     for key, value in params.items():
         globals()[key] = value
 
-    human_auto_routing_key = getattr(kc, "HUMAN_AUTO_ROUTING", "human_auto_routing")
-    human_auto_routing = bool(params.get(human_auto_routing_key, False))
+    human_auto_routing_key = getattr(kc, "HUMAN_AUTO_ROUTING", None)
     custom_network_folder = f"../networks/{network}"
     phases = [1, human_learning_episodes, int(training_eps) + human_learning_episodes]
     phase_names = ["Human stabilization", "Mutation and AV learning", "Testing phase"]
@@ -190,6 +189,14 @@ if __name__ == "__main__":
     with open(exp_config_path, 'w', encoding='utf-8') as f:
         json.dump(dump_config, f, indent=4)
 
+    simulator_parameters = {
+        "network_name" : network,
+        "custom_network_folder" : custom_network_folder,
+        "sumo_type" : "sumo",
+    }
+    if human_auto_routing_key is not None:
+        simulator_parameters[human_auto_routing_key] = bool(params.get(human_auto_routing_key, False))
+
     # Initiate the traffic environment
     env = TrafficEnvironment(
         seed = env_seed,
@@ -209,12 +216,7 @@ if __name__ == "__main__":
         environment_parameters = {
             "save_every" : save_every,
         },
-        simulator_parameters = {
-            "network_name" : network,
-            "custom_network_folder" : custom_network_folder,
-            "sumo_type" : "sumo",
-            human_auto_routing_key : human_auto_routing,
-        },
+        simulator_parameters = simulator_parameters,
         plotter_parameters = {
             "phases" : phases,
             "phase_names" : phase_names,
