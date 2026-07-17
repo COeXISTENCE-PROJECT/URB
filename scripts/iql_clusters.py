@@ -32,12 +32,13 @@ from clustered_routes import ClusteredRoutesLoader, AVMaskWrapper
 class DQN(BaseLearningModel):
     def __init__(self, state_size, action_space_size,
                  device="cpu", eps_init=0.99, eps_decay=0.998,
-                 buffer_size=256, batch_size=16, lr=0.003, 
+                 eps_min=0.0, buffer_size=256, batch_size=16, lr=0.003, 
                  num_epochs=1, num_hidden=2, widths=[32, 64, 32]):
         super().__init__()
         self.device = device
         self.action_space_size = action_space_size
         self.epsilon = eps_init
+        self.eps_min = eps_min
         self.eps_decay = eps_decay
         self.memory = deque(maxlen=buffer_size)
         self.batch_size = batch_size
@@ -110,7 +111,7 @@ class DQN(BaseLearningModel):
         self.decay_epsilon()
 
     def decay_epsilon(self):
-        self.epsilon *= self.eps_decay
+        self.epsilon = max(self.eps_min, self.epsilon * self.eps_decay)
 
 
 class Network(nn.Module):
@@ -333,7 +334,7 @@ if __name__ == "__main__":
     for idx in range(len(env.machine_agents)):
         env.machine_agents[idx].model = DQN(env.machine_agents[idx].action_space_size+1, env.machine_agents[idx].action_space_size, 
                                             device=device, eps_init=eps_init, eps_decay=eps_decay,
-                                            buffer_size=buffer_size, batch_size=batch_size, lr=lr, 
+                                            eps_min=eps_min, buffer_size=buffer_size, batch_size=batch_size, lr=lr, 
                                             num_epochs=num_epochs, num_hidden=num_hidden, widths=widths)
     agent_lookup = {str(agent.id): agent for agent in env.machine_agents}
     
