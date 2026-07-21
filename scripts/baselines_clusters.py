@@ -8,9 +8,10 @@ Main differences compared with baselines.py:
     as paths.csv, routes.csv, and route.rou.xml before starting SUMO.
 
 Runtime behavior:
-- If use_clustered_routes=true and the route set exists, the script exports the
+- If use_clustered_routes=true and --route-set is provided and exists, the script exports the
   clustered routes, loads action masks, disables JanuX path generation, and runs
   the selected baseline model only over valid clustered actions.
+- If use_clustered_routes=true but --route-set is missing, the script fails early.
 - If use_clustered_routes=true but the clustered files are missing, the script
   prints a warning and falls back to normal JanuX path generation without action
   masks.
@@ -81,7 +82,7 @@ if __name__ == "__main__":
     print(f"Environment config: {env_config}")
     print(f"Task config: {task_config}")
     print(f"Baseline model: {baseline_model}")
-    print(f"Route set: {route_set or 'legacy default'}")
+    print(f"Route set: {route_set or 'none'}")
     print(f"Shuffle: {shuffle}")
 
     # Check if baseline exists
@@ -157,12 +158,11 @@ if __name__ == "__main__":
     action_masks = None
 
     if use_clustered_routes:
+        if route_set is None:
+            raise ValueError("--route-set is required when use_clustered_routes=true")
+
         try:
-            route_set_dir = (
-                Path(custom_network_folder) / "clustered_routes" / route_set
-                if route_set
-                else None
-            )
+            route_set_dir = Path(custom_network_folder) / "clustered_routes" / route_set
             clustered_loader = ClusteredRoutesLoader(
                 network,
                 custom_network_folder,

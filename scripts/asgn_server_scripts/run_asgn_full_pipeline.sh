@@ -1,6 +1,6 @@
 #!/bin/bash
 # Example:
-# NETWORK_NAME=ingolstadt_custom2 TASK_CONF=asgn_100k_grid RESULTS_BASE_DIR=/scratch/tmp/$USER/asgn run_asgn_full_pipeline.sh
+# NETWORK_NAME=ingolstadt_custom2 TASK_CONF=asgn_100k_grid ROUTE_SET=my-route-set ASGN_SUMO_OUTPUT=0 RESULTS_BASE_DIR=/scratch/tmp/$USER/asgn run_asgn_full_pipeline.sh
 # The variables are only set for that one command.
 
 set -euo pipefail
@@ -15,6 +15,8 @@ if [[ "$EXPERIMENT_NAME" == "$DEFAULT_EXPERIMENT_NAME" ]]; then
 fi
 PATH_PROGRAM="${PATH_PROGRAM:-/home/$USER/URB}"
 RUN_ASGN_ARRAY="$PATH_PROGRAM/scripts/asgn_server_scripts/run_asgn_array.sh"
+ROUTE_SET=${ROUTE_SET:?ROUTE_SET must be set, e.g. ROUTE_SET=ingolstadt-default-kmeans-4}
+ASGN_SUMO_OUTPUT="${ASGN_SUMO_OUTPUT:-0}"
 TASK_CONF=${TASK_CONF:?TASK_CONF must be set, e.g. TASK_CONF=asgn_100k_grid}
 TASK_CONF_PATH="$PATH_PROGRAM/config/task_config/${TASK_CONF}.json"
 if [[ ! -f "$TASK_CONF_PATH" ]]; then
@@ -42,7 +44,7 @@ echo "Submitting step 1"
 jid1=$(sbatch --parsable \
   --partition="$PARTITION" \
   --qos="$QOS" \
-  --export=ALL,EXPERIMENT_NAME="$EXPERIMENT_NAME",NETWORK_NAME="$NETWORK_NAME",SEED_BASE=100,TASK_CONF="$TASK_CONF" \
+  --export=ALL,EXPERIMENT_NAME="$EXPERIMENT_NAME",NETWORK_NAME="$NETWORK_NAME",SEED_BASE=100,TASK_CONF="$TASK_CONF",ROUTE_SET="$ROUTE_SET",ASGN_SUMO_OUTPUT="$ASGN_SUMO_OUTPUT" \
   --array=0-$((ARRAY_SIZE - 1)) \
   "$RUN_ASGN_ARRAY")
 

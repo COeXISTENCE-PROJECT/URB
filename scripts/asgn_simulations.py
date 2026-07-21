@@ -1,3 +1,14 @@
+"""
+Local runs, i.e. runs not launched through one of the server scripts, generate
+samples for all methods with positive *_num_samples values and save them into
+one experiment directory. num_tasks_grid is ignored.
+
+With the current 4-action, grid_values=21 setup, the full grid has 1771 points.
+To cover every grid point at least once, set grid_num_samples >= 1771. Extra
+samples are assigned deterministically from the start of the grid, so use a
+multiple of 1771 to ensure even coverage.
+"""
+
 import os
 import sys
 
@@ -13,6 +24,7 @@ import json
 import logging
 import random
 from itertools import combinations
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -20,7 +32,7 @@ from routerl import Keychain as kc
 from routerl import TrafficEnvironment
 from tqdm import tqdm
 
-from clustered_routes import ClusteredRoutesLoader
+from clustered_routes import ClusteredRoutesLoader, validate_clustered_route_set
 from utils import clear_SUMO_files
 
 
@@ -181,8 +193,19 @@ def _write_single_method_joint_actions(all_agents, valid_by_agent, num_actions, 
     elif mode == "grid":
         grid_values = int(globals()["grid_values"])
         grid_num_samples = int(globals()["grid_num_samples"])
-        num_tasks_grid = int(globals().get("num_tasks_grid", 1))
-        task_id = int(os.environ.get("ASGN_METHOD_TASK_INDEX", os.environ.get("TASK_ID", "0")))
+        task_id_env = (
+            os.environ.get("ASGN_METHOD_TASK_INDEX")
+            if "ASGN_METHOD_TASK_INDEX" in os.environ
+            else os.environ.get("TASK_ID")
+        )
+        if task_id_env is None:
+            # Local runs do not have a launcher-provided task id, so cover the
+            # full grid even if the server config splits grid over many tasks.
+            num_tasks_grid = 1
+            task_id = 0
+        else:
+            num_tasks_grid = int(globals().get("num_tasks_grid", 1))
+            task_id = int(task_id_env)
 
         if grid_values < 2:
             raise ValueError("grid_values must be at least 2")
@@ -596,6 +619,13 @@ if __name__ == "__main__":
     parser.add_argument('--net',                type=str, required=True)
     parser.add_argument('--env-seed',           type=int, default=42)
     parser.add_argument('--mode',               type=str, choices=("generate", "simulations", "sample"), default="sample")
+    parser.add_argument(
+        '--route-set',
+        type=str,
+        required=True,
+        help="Named route-set subdirectory inside the network's clustered_routes directory.",
+    )
+    parser.add_argument('--sumo-output', action='store_true', default=False)
     args = parser.parse_args()
 
     exp_id          = args.id
@@ -603,14 +633,18 @@ if __name__ == "__main__":
     network         = args.net
     env_seed        = args.env_seed
     mode            = args.mode
+    route_set       = args.route_set
+    sumo_output     = args.sumo_output
 
-    print("### PATH TRAVEL TIME FEATURE SAMPLER ###")
+    print("### ASSIGNMENT SAMPLER ###")
     # No external baseline script - actions get overwritten in this file
     print(f"Experiment ID: {exp_id}")
     print(f"Network: {network}")
     print(f"Environment seed: {env_seed}")
     print(f"Task config: {task_config}")
     print(f"Mode: {mode}")
+    print(f"Generate SUMO departures and snapshots: {sumo_output}")
+    print(f"Route set: {route_set}")
 
     os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
     logging.getLogger("matplotlib").setLevel(logging.ERROR)
@@ -687,8 +721,19 @@ if __name__ == "__main__":
         with open(new_agents_csv_path, 'w', encoding='utf-8') as f:
             f.write(content)
 
-    # Load clustered routes + action masks
-    clustered_loader = ClusteredRoutesLoader(network, custom_network_folder, shuffle=False, seed=env_seed)
+    # Load clustered routes + action masks. ASGN sampling always requires clustered routes.
+    route_set_dir = validate_clustered_route_set(
+        network_name=network,
+        route_set_dir=Path(custom_network_folder) / "clustered_routes" / route_set,
+    )
+
+    clustered_loader = ClusteredRoutesLoader(
+        network,
+        custom_network_folder,
+        shuffle=False,
+        seed=env_seed,
+        route_set_dir=route_set_dir,
+    )
     num_actions = clustered_loader.get_number_of_paths() # K
     clustered_loader.export_paths_routes(records_folder, origins, destinations)
     action_masks = clustered_loader.create_masks(origins, destinations)
@@ -701,7 +746,7 @@ if __name__ == "__main__":
         create_agents = False,
         create_paths = False, # use clustered routes
         action_masks = action_masks, # use clustered routes
-        generate_asgn_data = True, # save SUMO_output files (use carefully; takes a lot of storage)
+        generate_asgn_data = sumo_output, # save SUMO_output files (use carefully; takes a lot of storage)
         save_detectors_info = False,
         agent_parameters = {
             "new_machines_after_mutation": 0, # no AVs at all; human actions are overwritten
@@ -719,6 +764,7 @@ if __name__ == "__main__":
             "network_name": network,
             "custom_network_folder": custom_network_folder,
             "sumo_type": "sumo",
+            "use_libsumo": True,
         },
         plotter_parameters = {
             "smooth_by": 1,

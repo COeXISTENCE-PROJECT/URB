@@ -53,7 +53,8 @@ class ClusteredRoutesLoader:
         network_folder: str | Path,
         shuffle: bool = False,
         seed: int = 42,
-        route_set_dir: str | Path | None = None,
+        *,
+        route_set_dir: str | Path,
     ):
         """
         Initialize the loader.
@@ -62,19 +63,19 @@ class ClusteredRoutesLoader:
             network_name: Name of the network (e.g., 'saint_arnoult')
             network_folder: Path to the network folder in URB
             shuffle: Randomly shuffles the clusters if True
-            route_set_dir: Optional directory containing the generated
-                representatives and action masks. Defaults to
-                <network_folder>/clustered_routes.
+            route_set_dir: Directory containing the generated representatives
+                and action masks.
         """
         self.network_name = network_name
         self.shuffle = shuffle
         self.rng = np.random.default_rng(seed)
 
-        route_set_dir = (
-            Path(route_set_dir)
-            if route_set_dir is not None
-            else Path(network_folder) / "clustered_routes"
-        )
+        if route_set_dir is None:
+            raise ValueError(
+                "[ClusteredRoutesLoader] route_set_dir must be provided explicitly."
+            )
+
+        route_set_dir = Path(route_set_dir)
         self.clustering_csv_path = (
             route_set_dir / f"{network_name}_clusters_representants.csv"
         )

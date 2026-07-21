@@ -16,6 +16,8 @@ ASGN_SERVER_DIR="$PATH_PROGRAM/scripts/asgn_server_scripts"
 CMD_PATH="$ASGN_SERVER_DIR/run_asgn_single_internal.sh"
 PRINTS_SAVE_PATH="$ASGN_SERVER_DIR/container_printouts/output_${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}.txt"
 RESULTS_BASE_DIR="${RESULTS_BASE_DIR:-/scratch/tmp/$USER/asgn}"
+ROUTE_SET=${ROUTE_SET:?ROUTE_SET must be set, e.g. ROUTE_SET=ingolstadt-default-kmeans-4}
+ASGN_SUMO_OUTPUT="${ASGN_SUMO_OUTPUT:-0}"
 
 mkdir -p "$ASGN_SERVER_DIR/container_printouts"
 mkdir -p "$RESULTS_BASE_DIR"
@@ -113,6 +115,8 @@ singularity exec --cleanenv \
     --env NETWORK_NAME="$NETWORK_NAME" \
     --env ENV_SEED="$ENV_SEED" \
     --env RESULTS_BASE_DIR="$RESULTS_BASE_DIR" \
+    --env ROUTE_SET="$ROUTE_SET" \
+    --env ASGN_SUMO_OUTPUT="$ASGN_SUMO_OUTPUT" \
     --bind "$RESULTS_BASE_DIR":"$RESULTS_BASE_DIR" \
     --bind "$PATH_PROGRAM":"$PUT_PROGRAM_TO" \
     "$PATH_SUMO_CONTAINER" /bin/bash "$CMD_PATH" > "$PRINTS_SAVE_PATH" 2>&1

@@ -66,7 +66,7 @@ if __name__ == "__main__":
     print(f"Algorithm config: {alg_config}")
     print(f"Environment config: {env_config}")
     print(f"Task config: {task_config}")
-    print(f"Route set: {route_set or 'legacy default'}")
+    print(f"Route set: {route_set or 'none'}")
     print(f"Shuffle: {shuffle}")
 
     os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
@@ -190,20 +190,20 @@ if __name__ == "__main__":
     use_clustered_routes = params.get("use_clustered_routes", False)
     create_paths_flag = True
     action_masks = None
-    route_set_dir = None
 
     if use_clustered_routes:
-        if route_set is not None:
-            route_set_dir = (
-                Path(custom_network_folder)
-                / "clustered_routes"
-                / route_set
-            )
-            route_set_dir = validate_clustered_route_set(
-                network_name=network,
-                network_folder=custom_network_folder,
-                route_set_dir=route_set_dir,
-            )
+        if route_set is None:
+            raise ValueError("--route-set is required when use_clustered_routes=true")
+
+        route_set_dir = (
+            Path(custom_network_folder)
+            / "clustered_routes"
+            / route_set
+        )
+        route_set_dir = validate_clustered_route_set(
+            network_name=network,
+            route_set_dir=route_set_dir,
+        )
 
         clustered_loader = ClusteredRoutesLoader(
             network,

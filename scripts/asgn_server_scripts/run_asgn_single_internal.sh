@@ -12,6 +12,8 @@ fi
 EXPERIMENT_NAME=${EXPERIMENT_NAME:?EXPERIMENT_NAME must be set by the launcher}
 RESULTS_BASE_DIR=${RESULTS_BASE_DIR:?RESULTS_BASE_DIR must be set by the launcher}
 NETWORK_NAME=${NETWORK_NAME:?NETWORK_NAME must be set by the launcher}
+ROUTE_SET=${ROUTE_SET:?ROUTE_SET must be set, e.g. ROUTE_SET=ingolstadt-default-kmeans-4}
+ASGN_SUMO_OUTPUT=${ASGN_SUMO_OUTPUT:-0}
 
 if [ "$PHASE" != "aggregate" ]; then
     TASK_ID=${TASK_ID:?TASK_ID must be set by the launcher}
@@ -82,9 +84,19 @@ if [ ! -f "$TASK_CONF_PATH" ]; then
 fi
 
 echo "--- Running: $EXP_ID | Env Seed: $ENV_SEED ---"
-python -u scripts/asgn_simulations.py \
---id "$EXP_ID" \
---net "$NETWORK_NAME" \
---task-conf "$TASK_CONF" \
---mode sample \
---env-seed "$ENV_SEED"
+CMD=(
+    python -u scripts/asgn_simulations.py
+    --id "$EXP_ID"
+    --net "$NETWORK_NAME"
+    --task-conf "$TASK_CONF"
+    --mode sample
+    --env-seed "$ENV_SEED"
+)
+
+CMD+=(--route-set "$ROUTE_SET")
+
+if [ "$ASGN_SUMO_OUTPUT" = "1" ]; then
+    CMD+=(--sumo-output)
+fi
+
+"${CMD[@]}"
