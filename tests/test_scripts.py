@@ -10,10 +10,13 @@ python_scripts = list(SCRIPTS_DIR.rglob("*.py"))
 excluded_scripts = [
     "utils.py",
     "base_script.py",
-    "baselines.py",
     "greedy_utils.py",
     "manager.py",
     "controller.py",
+
+    # Baselines use test_baselines.py
+    "baselines.py",
+    "baselines_clusters.py",
 
     # Assignment scripts have their own flow - not classic URB scripts
     "asgn_simulations.py",
@@ -23,13 +26,6 @@ excluded_scripts = [
     "clustered_routes.py",
     "generate_clustered_routes.py",
     "centralized_wrapper.py",
-
-    # Centralized controller requires clustered routes/action masks and its own configs
-    # "centralized_controller.py",
-
-    # Cluster-specific scripts either need extra args or are meant for clustered configs
-    # "baselines_clusters.py",
-    # "ippo_torchrl_clusters.py",
 ]
 
 print(f"[DEBUG] Looking for Python scripts in {SCRIPTS_DIR.resolve()}")

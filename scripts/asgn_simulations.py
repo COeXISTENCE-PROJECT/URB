@@ -32,7 +32,11 @@ from routerl import Keychain as kc
 from routerl import TrafficEnvironment
 from tqdm import tqdm
 
-from clustered_routes import ClusteredRoutesLoader, validate_clustered_route_set
+from clustered_routes import (
+    ClusteredRoutesLoader,
+    resolve_route_set,
+    validate_clustered_route_set,
+)
 from utils import clear_SUMO_files
 
 
@@ -622,8 +626,8 @@ if __name__ == "__main__":
     parser.add_argument(
         '--route-set',
         type=str,
-        required=True,
-        help="Named route-set subdirectory inside the network's clustered_routes directory.",
+        default=None,
+        help="Named route-set subdirectory. Uses the network default when omitted.",
     )
     parser.add_argument('--sumo-output', action='store_true', default=False)
     args = parser.parse_args()
@@ -633,7 +637,7 @@ if __name__ == "__main__":
     network         = args.net
     env_seed        = args.env_seed
     mode            = args.mode
-    route_set       = args.route_set
+    route_set       = resolve_route_set(network, args.route_set)
     sumo_output     = args.sumo_output
 
     print("### ASSIGNMENT SAMPLER ###")

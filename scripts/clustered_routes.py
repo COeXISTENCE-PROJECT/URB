@@ -8,6 +8,27 @@ from gymnasium.spaces import Dict, MultiBinary
 from pettingzoo.utils.wrappers import BaseWrapper
 
 
+DEFAULT_ROUTE_SETS_BY_NETWORK = {
+    "ingolstadt_custom": "default-pre-integration",
+    "ingolstadt_custom2": "default-pre-integration",
+    "saint_arnoult": "saint_arnoult-default-kmeans-4",
+    "provins": "provins-default-kmeans-4",
+}
+
+
+def resolve_route_set(network_name: str, requested_route_set: str | None) -> str:
+    if requested_route_set is not None:
+        return requested_route_set
+
+    try:
+        return DEFAULT_ROUTE_SETS_BY_NETWORK[network_name]
+    except KeyError:
+        raise ValueError(
+            f"No default route set configured for network {network_name!r}. "
+            "Provide --route-set explicitly."
+        ) from None
+
+
 def validate_clustered_route_set(
     network_name: str,
     route_set_dir: str | Path,

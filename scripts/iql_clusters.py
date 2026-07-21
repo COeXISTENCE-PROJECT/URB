@@ -26,7 +26,7 @@ from baseline_models import BaseLearningModel
 from utils           import clear_SUMO_files
 from utils           import print_agent_counts
 
-from clustered_routes import ClusteredRoutesLoader, AVMaskWrapper
+from clustered_routes import AVMaskWrapper, ClusteredRoutesLoader, resolve_route_set
 
 ### Simplified single-DQN implementation for single-step decision-making
 class DQN(BaseLearningModel):
@@ -141,7 +141,12 @@ if __name__ == "__main__":
     parser.add_argument('--net', type=str, required=True)
     parser.add_argument('--env-seed', type=int, default=42)
     parser.add_argument('--torch-seed', type=int, default=42)
-    parser.add_argument('--route-set', type=str, default=None)
+    parser.add_argument(
+        '--route-set',
+        type=str,
+        default=None,
+        help="Named route-set subdirectory. Uses the network default when omitted.",
+    )
     parser.add_argument("--shuffle", action="store_true", default=False)
     args = parser.parse_args()
     ALGORITHM = "iql"
@@ -152,7 +157,7 @@ if __name__ == "__main__":
     network = args.net
     env_seed = args.env_seed
     torch_seed = args.torch_seed
-    route_set = args.route_set
+    route_set = resolve_route_set(network, args.route_set)
     shuffle = args.shuffle
     print("### STARTING EXPERIMENT ###")
     print(f"Algorithm: {ALGORITHM.upper()}")
@@ -239,9 +244,6 @@ if __name__ == "__main__":
     action_masks = None
 
     if use_clustered_routes:
-        if route_set is None:
-            raise ValueError("--route-set is required when use_clustered_routes=true")
-
         try:
             route_set_dir = os.path.join(custom_network_folder, "clustered_routes", route_set)
             clustered_loader = ClusteredRoutesLoader(

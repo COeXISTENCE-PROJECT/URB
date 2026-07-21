@@ -1,5 +1,5 @@
 {
-  "config_source": "/home/torbusb/COeXISTENCE/URB/config/clustering_config/default-keep-gen-div-false.json",
+  "config_source": "/home/torbusb/COeXISTENCE/URB-centralized-clean/config/clustering_config/config1.json",
   "generator": "clustering",
   "path_gen_kwargs": {
     "verbose": true,

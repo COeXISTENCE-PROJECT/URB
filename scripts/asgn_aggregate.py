@@ -90,7 +90,7 @@ def _append_simulations_csv(simulation_csv_paths, output_path):
                 partial_df.to_csv(output_file, index=False, header=not wrote_header)
                 wrote_header = True
 
-                method = simulation_csv_path.parent.name.split("_")[1] # extract the method name from the subdirectory name (e.g. 123123_grid_7 -> grid)
+                method = simulation_csv_path.parent.name.split("_")[1] if "_" in simulation_csv_path.parent.name else simulation_csv_path.parent.name # extract the method name from the subdirectory name (e.g. 123123_grid_7 -> grid)
                 grouped_totals = []
 
                 for simulation_id, group in partial_df.groupby("simulation_id"):

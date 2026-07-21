@@ -16,7 +16,11 @@ from routerl import TrafficEnvironment
 from routerl.keychain import Keychain as kc
 from tqdm import tqdm
 
-from clustered_routes import ClusteredRoutesLoader, validate_clustered_route_set
+from clustered_routes import (
+    ClusteredRoutesLoader,
+    resolve_route_set,
+    validate_clustered_route_set,
+)
 from centralized_wrapper import (
     ActorCriticMLP,
     ActorCriticRNN,
@@ -44,7 +48,7 @@ if __name__ == "__main__":
         '--route-set',
         type=str,
         default=None,
-        help="Named route-set subdirectory inside the network's clustered_routes directory.",
+        help="Named route-set subdirectory. Uses the network default when omitted.",
     )
     args = parser.parse_args()
     ALGORITHM = "centralized"
@@ -56,7 +60,7 @@ if __name__ == "__main__":
     env_seed = args.env_seed
     torch_seed = args.torch_seed
     shuffle = args.shuffle
-    route_set = args.route_set
+    route_set = resolve_route_set(network, args.route_set)
     print("### STARTING EXPERIMENT ###")
     print(f"Algorithm: {ALGORITHM.upper()}")
     print(f"Experiment ID: {exp_id}")
@@ -192,9 +196,6 @@ if __name__ == "__main__":
     action_masks = None
 
     if use_clustered_routes:
-        if route_set is None:
-            raise ValueError("--route-set is required when use_clustered_routes=true")
-
         route_set_dir = (
             Path(custom_network_folder)
             / "clustered_routes"

@@ -11,7 +11,7 @@ Runtime behavior:
 - If use_clustered_routes=true and --route-set is provided and exists, the script exports the
   clustered routes, loads action masks, disables JanuX path generation, and runs
   the selected baseline model only over valid clustered actions.
-- If use_clustered_routes=true but --route-set is missing, the script fails early.
+- If --route-set is omitted, the default route set for the selected network is used.
 - If use_clustered_routes=true but the clustered files are missing, the script
   prints a warning and falls back to normal JanuX path generation without action
   masks.
@@ -19,7 +19,7 @@ Runtime behavior:
   baseline run: JanuX generates paths and no action masks are used.
 
 Intended usage: use an env config with use_clustered_routes=true, for example
-clusters or clusters-sumo-obs, and pass --route-set when using a named
+clusters or clusters-sumo-obs, and pass --route-set to override the default
 clustered_routes/<route-set> directory. Non-clustered fallback exists for
 compatibility, but this script is mainly for clustered baseline experiments.
 """
@@ -47,7 +47,7 @@ from routerl import TrafficEnvironment
 from routerl.human_learning import Random as RouteRLRandom
 from tqdm import tqdm
 
-from clustered_routes import ClusteredRoutesLoader
+from clustered_routes import ClusteredRoutesLoader, resolve_route_set
 
 from utils import clear_SUMO_files
 from baseline_models import get_baseline
@@ -62,7 +62,12 @@ if __name__ == "__main__":
     parser.add_argument('--net', type=str, required=True)
     parser.add_argument('--env-seed', type=int, default=42)
     parser.add_argument('--model', type=str, required=True)
-    parser.add_argument('--route-set', type=str, default=None)
+    parser.add_argument(
+        '--route-set',
+        type=str,
+        default=None,
+        help="Named route-set subdirectory. Uses the network default when omitted.",
+    )
     args = parser.parse_args()
     ALGORITHM = "baseline"
     exp_id = args.id
@@ -72,7 +77,7 @@ if __name__ == "__main__":
     network = args.net
     env_seed = args.env_seed
     baseline_model = args.model
-    route_set = args.route_set
+    route_set = resolve_route_set(network, args.route_set)
     shuffle = args.shuffle
     print("### STARTING EXPERIMENT ###")
     print(f"Experiment ID: {exp_id}")
@@ -158,9 +163,6 @@ if __name__ == "__main__":
     action_masks = None
 
     if use_clustered_routes:
-        if route_set is None:
-            raise ValueError("--route-set is required when use_clustered_routes=true")
-
         try:
             route_set_dir = Path(custom_network_folder) / "clustered_routes" / route_set
             clustered_loader = ClusteredRoutesLoader(

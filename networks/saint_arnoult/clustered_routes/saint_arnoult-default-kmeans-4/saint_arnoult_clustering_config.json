@@ -1,5 +1,5 @@
 {
-  "run_name": "saint_arnoult-default-kmeans-4",
+  "run_name": "saint_arnoult-default-kmeans-4-v2",
   "city_name": "saint_arnoult",
   "algorithm": "kmeans",
   "n_clusters": 4,
@@ -26,16 +26,16 @@
       "feature": "total_length",
       "reason": "correlation",
       "kept": "free_flow_time",
-      "correlation": 0.8852663766882489
+      "correlation": 0.8852663766882487
     }
   ],
-  "silhouette": 0.10884336272073174,
-  "average_actions_per_od": 3.7616822429906542,
+  "silhouette": 0.10876345627076367,
+  "average_actions_per_od": 3.7488372093023257,
   "cluster_sizes": {
     "0": 595,
-    "1": 612,
+    "1": 613,
     "2": 601,
     "3": 609
   },
-  "inertia": 2505.0844063643963
+  "inertia": 2505.455569692337
 }
