@@ -1,4 +1,13 @@
 {
+    "desc" : 
+    [
+        "50% AVs, 50% humans.",
+        "300 days of human learning",
+        "100 test episodes",
+        "Humans do not adapt during AV learning",
+        "AVs are competitive",
+        "Human model is gawron"
+    ],
     "ratio_machines": 0.5,
     "human_learning_episodes": 300,
     "test_eps": 100,

@@ -364,7 +364,7 @@ def add_benchmark_columns(df: pd.DataFrame, params: dict) -> pd.DataFrame:
     duration_ids = sorted({
         int(col.split("_")[1])
         for col in df.columns
-        if col.startswith("agent_") and col.endswith("_duration")
+        if col.startswith("agent_") and col.endswith("_travel_time")
     })
     action_ids = sorted({
         int(col.split("_")[1])
@@ -382,7 +382,7 @@ def add_benchmark_columns(df: pd.DataFrame, params: dict) -> pd.DataFrame:
     avg_times_pre = params.get("avg_times_pre", {})
 
     new_columns.update({
-        f"agent_{i}_time_lost": df[f"agent_{i}_duration"] - avg_times_pre.get(i, 0) 
+        f"agent_{i}_time_lost": df[f"agent_{i}_travel_time"] - avg_times_pre.get(i, 0) 
         for i in duration_ids
     })
 
@@ -517,7 +517,7 @@ def extract_metrics(path, config, verbose=False):
     avg_times_pre = {}
 
     if not before_mutation.empty:
-        pre_cols = [f"agent_{id}_duration" for id in all_ids if f"agent_{id}_duration" in before_mutation.columns]
+        pre_cols = [f"agent_{id}_travel_time" for id in all_ids if f"agent_{id}_travel_time" in before_mutation.columns]
         if pre_cols:
             pre_means_series = before_mutation[pre_cols].mean()
             avg_times_pre = {
@@ -542,7 +542,7 @@ def extract_metrics(path, config, verbose=False):
 
     # ----- Calculate metrics (Average travel times) -----
 
-    def get_agent_avg_travel_time(df_slice, ids, suffix="_duration"):
+    def get_agent_avg_travel_time(df_slice, ids, suffix="_travel_time"):
         if df_slice.empty or not ids:
             return np.nan # Use NaN for safe propagation if slice or ID list is empty
 
@@ -551,7 +551,8 @@ def extract_metrics(path, config, verbose=False):
         if len(cols) == 0:
             return np.nan
         
-        return df_slice[cols].mean(axis=0).mean()
+        return df_slice[cols].mean(axis=1).mean()
+
 
     t_CAV = get_agent_avg_travel_time(testing_frames, CAV_ids)
 
@@ -560,6 +561,7 @@ def extract_metrics(path, config, verbose=False):
     t_test = get_agent_avg_travel_time(testing_frames, all_ids)
     
     t_sumo = testing_frames["vehicleTripStatistics_duration"].mean() if "vehicleTripStatistics_duration" in testing_frames.columns else np.nan
+    t_sumo /= 60.0
 
     t_HDV_pre, t_pre, t_HDV_test = np.nan, np.nan, np.nan
     if not AV_only:
@@ -586,7 +588,7 @@ def extract_metrics(path, config, verbose=False):
         if df_slice.empty or not ids:
             return np.nan
         
-        cols = [f"agent_{id}_duration" for id in ids if f"agent_{id}_duration" in df_slice.columns]
+        cols = [f"agent_{id}_travel_time" for id in ids if f"agent_{id}_travel_time" in df_slice.columns]
         if len(cols) == 0:
             return np.nan
 
@@ -633,19 +635,16 @@ def extract_metrics(path, config, verbose=False):
 
     # ----- Compile metrics into DataFrames -----
     
-    def to_minutes(seconds):
-        return seconds / 60.0 if not pd.isna(seconds) else None
-    
     def safe_divide(numerator, denominator):
         return numerator / denominator if denominator and not pd.isna(denominator) else None
     metrics = {}
 
-    metrics["t_pre"] = None if AV_only else to_minutes(t_pre)
-    metrics["t_test"] = to_minutes(t_test)
-    metrics["t_train"] = to_minutes(t_train)
-    metrics["t_CAV"] = to_minutes(t_CAV)
-    metrics["t_HDV_pre"] = None if AV_only else to_minutes(t_HDV_pre)
-    metrics["t_HDV_test"] = None if AV_only else to_minutes(t_HDV_test)
+    metrics["t_pre"] = None if AV_only else t_pre
+    metrics["t_test"] = t_test
+    metrics["t_train"] = t_train
+    metrics["t_CAV"] = t_CAV
+    metrics["t_HDV_pre"] = None if AV_only else t_HDV_pre
+    metrics["t_HDV_test"] = None if AV_only else t_HDV_test
 
     metrics["CAV_advantage"] = None if AV_only else safe_divide(t_HDV_test, t_CAV)
     metrics["Effect_of_change"] = None if AV_only else safe_divide(t_HDV_pre, t_CAV)
@@ -661,14 +660,13 @@ def extract_metrics(path, config, verbose=False):
 
     metrics["winrate"] = winrate
 
-    # Convert time from seconds to minutes
-    metrics["cost_of_learning"] = to_minutes(total_cost_of_learning)
-    metrics["cost_of_learning_humans"] = to_minutes(cost_of_learning_humans)
-    metrics["cost_of_learning_CAVs"] = to_minutes(cost_of_learning_CAVs)
+    metrics["cost_of_learning"] = total_cost_of_learning
+    metrics["cost_of_learning_humans"] = cost_of_learning_humans
+    metrics["cost_of_learning_CAVs"] = cost_of_learning_CAVs
 
-    metrics["avg_time_lost"] = to_minutes(average_time_lost)
-    metrics["avg_human_time_lost"] = to_minutes(average_human_time_lost)
-    metrics["avg_CAV_time_lost"] = to_minutes(average_CAV_time_lost)
+    metrics["avg_time_lost"] = average_time_lost
+    metrics["avg_human_time_lost"] = average_human_time_lost
+    metrics["avg_CAV_time_lost"] = average_CAV_time_lost
     
     metrics["diff_sumo_routerl"] = t_sumo - t_test
 
@@ -696,7 +694,8 @@ def extract_metrics(path, config, verbose=False):
         time_excess = pd.Series(np.nan, index=after_mutation.index)
         agent_time_lost_cols = [f"agent_{id}_time_lost" for id in all_ids if f"agent_{id}_time_lost" in after_mutation.columns]
         if len(agent_time_lost_cols):
-            time_excess = after_mutation[agent_time_lost_cols].sum()
+            time_excess = after_mutation[agent_time_lost_cols].sum(axis=1)
+
 
         # check if there are nonnumerical values in the series and convert them to NaN
         vector_metrics_df = pd.DataFrame({

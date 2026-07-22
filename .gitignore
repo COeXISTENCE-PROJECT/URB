@@ -181,6 +181,8 @@ routes.csv
 detector/
 agents.csv
 combined_data.csv
+VectorMetrics.csv
+losses.csv
 
 # Ignore nothing in the networks directory, since it contains the agents.csv
 !networks/*

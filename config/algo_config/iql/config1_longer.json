@@ -3,6 +3,7 @@
 
     "eps_init" : 1.0,
     "eps_decay" : 0.9985,
+    "eps_min": 0.0,
     "buffer_size" : 2048,
     "batch_size" : 32,
     "lr" : 0.001,

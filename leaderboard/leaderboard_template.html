@@ -1973,7 +1973,9 @@
 
       updateRankColumn();
 
-      if (metricCols.includes('t_CAV')) {
+      if (metricCols.includes('CAV_advantage')) {
+        applySort('CAV_advantage', 'desc');
+      } else if (metricCols.includes('t_CAV')) {
         applySort('t_CAV', 'asc');
       } else if (metricCols.includes('t_test')) {
         applySort('t_test', 'asc');
