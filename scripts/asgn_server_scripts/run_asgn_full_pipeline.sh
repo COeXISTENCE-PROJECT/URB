@@ -1,6 +1,6 @@
 #!/bin/bash
 # Example:
-# NETWORK_NAME=ingolstadt_custom2 TASK_CONF=asgn_100k_grid ROUTE_SET=my-route-set ASGN_SUMO_OUTPUT=0 RESULTS_BASE_DIR=/scratch/tmp/$USER/asgn run_asgn_full_pipeline.sh
+# NETWORK_NAME=ingolstadt_custom2 TASK_CONF=asgn_100k_grid ROUTE_SET=my-route-set ASGN_SUMO_OUTPUT=0 RESULTS_BASE_DIR=/scratch/tmp/$USER/asgn ./run_asgn_full_pipeline.sh
 # The variables are only set for that one command.
 
 set -euo pipefail

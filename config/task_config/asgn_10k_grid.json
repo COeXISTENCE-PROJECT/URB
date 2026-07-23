@@ -13,7 +13,7 @@
     "dirichlet_alpha": 0,
     "num_tasks_dirichlet": 0,
 
-    "grid_num_samples": 100000,
+    "grid_num_samples": 10000,
     "num_tasks_grid": 40,
 
     "hex_num_samples": 0,

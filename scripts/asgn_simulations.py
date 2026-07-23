@@ -7,6 +7,9 @@ With the current 4-action, grid_values=21 setup, the full grid has 1771 points.
 To cover every grid point at least once, set grid_num_samples >= 1771. Extra
 samples are assigned deterministically from the start of the grid, so use a
 multiple of 1771 to ensure even coverage.
+
+Example command to run locally:
+python3 asgn_simulations.py --id grid10k --net ingolstadt_custom --task-conf asgn_local --mode sample --env-seed 1 --route-set default-pre-integration
 """
 
 import os
@@ -819,23 +822,24 @@ if __name__ == "__main__":
         }
 
     # For the hex-greedy method:
-    origin_to_idx = {str(edge): idx for idx, edge in enumerate(origins)}
-    destination_to_idx = {str(edge): idx for idx, edge in enumerate(destinations)}
+    if hex_num_samples > 0:
+        origin_to_idx = {str(edge): idx for idx, edge in enumerate(origins)}
+        destination_to_idx = {str(edge): idx for idx, edge in enumerate(destinations)}
 
-    hex_lookup = {}
-    for row in clustered_loader.df.itertuples(index=False):
-        key = (origin_to_idx[row.origins], destination_to_idx[row.destinations], int(row.cluster))
-        if pd.isna(row.h3_sequence):
-            sequence = tuple()
-        else:
-            sequence = tuple(
-                h.strip() # remove surrounding whitespaces
-                for h in str(row.h3_sequence).split(",")
-                if h.strip() # filter out empty entries
-            )
+        hex_lookup = {}
+        for row in clustered_loader.df.itertuples(index=False):
+            key = (origin_to_idx[row.origins], destination_to_idx[row.destinations], int(row.cluster))
+            if pd.isna(row.h3_sequence):
+                sequence = tuple()
+            else:
+                sequence = tuple(
+                    h.strip() # remove surrounding whitespaces
+                    for h in str(row.h3_sequence).split(",")
+                    if h.strip() # filter out empty entries
+                )
 
-        hex_lookup[key] = sequence
-    all_hexes = sorted({hex for sequence in hex_lookup.values() for hex in sequence})
+            hex_lookup[key] = sequence
+        all_hexes = sorted({hex for sequence in hex_lookup.values() for hex in sequence})
 
     # to look up agent details using simulations.csv keys
     save_agent_static_rows(
