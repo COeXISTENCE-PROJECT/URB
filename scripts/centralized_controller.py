@@ -815,7 +815,7 @@ if __name__ == "__main__":
             assert central_env.num_steps == central_env.num_machines
             train_pbar.update()
 
-        env.plot_results()
+        # env.plot_results()
 
         # TESTING PHASE
         ppo.policy_net.eval()
@@ -879,10 +879,13 @@ if __name__ == "__main__":
             for loss_value in ppo.loss:
                 losses_file.write(f"{loss_value}\n")
 
+        # add_relative_progress_to_saved_episodes()
+        # env.plot_results()
+        # central_env.close()
+
+        central_env.close()  # waits for all pending episode writes
         add_relative_progress_to_saved_episodes()
         env.plot_results()
-
-        central_env.close()
 
         clear_SUMO_files(
             os.path.join(records_folder, "SUMO_output"),
