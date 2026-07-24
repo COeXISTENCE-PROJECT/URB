@@ -1,0 +1,24 @@
+{
+    "greedy_num_samples": 0,
+    "greedy_num_candidates": 0,
+    "num_tasks_greedy": 0,
+
+    "random_num_samples": 0,
+    "num_tasks_random": 0,
+
+    "balanced_num_samples": 0,
+    "num_tasks_balanced": 0,
+
+    "dirichlet_num_samples": 0,
+    "dirichlet_alpha": 0,
+    "num_tasks_dirichlet": 0,
+
+    "grid_num_samples": 10000,
+    "num_tasks_grid": 1,
+
+    "hex_num_samples": 0,
+    "num_tasks_hex": 0,
+
+    "save_data_every": 100,
+    "save_joint_actions_every": 100
+}

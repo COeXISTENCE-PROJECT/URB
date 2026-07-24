@@ -1,0 +1,105 @@
+{
+  "route_set": "default-pre-integration",
+  "n_routes": 1156,
+  "n_ods": 306,
+  "n_clusters": 4,
+  "cluster_sizes": null,
+  "average_actions_per_od": 3.7777777777777777,
+  "action_count_distribution": {
+    "1": 10,
+    "2": 6,
+    "3": 26,
+    "4": 264
+  },
+  "silhouette": null,
+  "features_used": null,
+  "feature_pruning": null,
+  "overall_cross_cluster_edge_overlap": 0.31867743780872565,
+  "pairwise_cluster_overlap": [
+    {
+      "cluster_a": 0,
+      "cluster_b": 1,
+      "n_route_pairs": 266,
+      "n_ods": 266,
+      "mean_overlap": 0.3285587056425946
+    },
+    {
+      "cluster_a": 0,
+      "cluster_b": 2,
+      "n_route_pairs": 275,
+      "n_ods": 275,
+      "mean_overlap": 0.3137377227730116
+    },
+    {
+      "cluster_a": 0,
+      "cluster_b": 3,
+      "n_route_pairs": 273,
+      "n_ods": 273,
+      "mean_overlap": 0.2929809884208727
+    },
+    {
+      "cluster_a": 1,
+      "cluster_b": 2,
+      "n_route_pairs": 281,
+      "n_ods": 281,
+      "mean_overlap": 0.3818462151858305
+    },
+    {
+      "cluster_a": 1,
+      "cluster_b": 3,
+      "n_route_pairs": 283,
+      "n_ods": 283,
+      "mean_overlap": 0.2841571307242845
+    },
+    {
+      "cluster_a": 2,
+      "cluster_b": 3,
+      "n_route_pairs": 290,
+      "n_ods": 290,
+      "mean_overlap": 0.3109669396564032
+    }
+  ],
+  "mean_max_pairwise_overlap_per_od": 0.5313423832735222,
+  "mean_free_flow_time_spread_per_od": 1.4955218043190002,
+  "shortest_route_cluster_share": {
+    "0": 0.06209150326797386,
+    "1": 0.6895424836601307,
+    "2": 0.24509803921568626,
+    "3": 0.0032679738562091504
+  },
+  "zero_fft_routes": 1,
+  "cluster_means": [
+    {
+      "cluster": 0,
+      "n_routes": 276,
+      "free_flow_time_mean": 2.7108428839170293,
+      "total_length_mean": 2297.653265011157,
+      "mean_speed_mean": 44.96731487537286,
+      "traffic_lights_per_km_mean": 1.308989322689732
+    },
+    {
+      "cluster": 1,
+      "n_routes": 284,
+      "free_flow_time_mean": 2.0259491094429563,
+      "total_length_mean": 1977.8213034537612,
+      "mean_speed_mean": 50.15348990227856,
+      "traffic_lights_per_km_mean": 1.8927512957321355
+    },
+    {
+      "cluster": 2,
+      "n_routes": 303,
+      "free_flow_time_mean": 2.31275707787386,
+      "total_length_mean": 2044.9380984787917,
+      "mean_speed_mean": 47.11085600859385,
+      "traffic_lights_per_km_mean": 1.6198510428106592
+    },
+    {
+      "cluster": 3,
+      "n_routes": 293,
+      "free_flow_time_mean": 3.356411646316043,
+      "total_length_mean": 2719.3336908390097,
+      "mean_speed_mean": 45.284203382543964,
+      "traffic_lights_per_km_mean": 1.2936625244680373
+    }
+  ]
+}

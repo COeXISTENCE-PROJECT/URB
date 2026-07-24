@@ -6,7 +6,10 @@ import subprocess
 from pathlib import Path
 
 SCRIPTS_DIR = Path("scripts")
-python_script = SCRIPTS_DIR / "baselines.py"
+baseline_scripts = [
+    SCRIPTS_DIR / "baselines.py",
+    SCRIPTS_DIR / "baselines_clusters.py",
+]
 
 BASELINES_DIR = Path("baseline_models")
 baseline_names = list(BASELINES_DIR.rglob("*.py"))
@@ -26,22 +29,24 @@ def check_sumo_installed():
         except subprocess.CalledProcessError as e:
             pytest.exit(f"[SUMO ERROR] Failed to get SUMO version: {e.stderr}")
 
-
+@pytest.mark.parametrize("script_path", baseline_scripts)
 @pytest.mark.parametrize("baseline", baseline_names)
-def test_python_script_execution(baseline):
+def test_python_script_execution(script_path, baseline):
     try:
-        script_filename = python_script.name
+        script_filename = script_path.name
+        print(script_filename)
         baseline_name = baseline.name.split(".")[0]
+        print(baseline_name)
         result = subprocess.run(
             ["python", script_filename,
-             "--id", f"test_{baseline_name}",
+             "--id", f"test_{script_filename}_{baseline_name}",
              "--alg-conf", "test",
              "--env-conf", "test",
              "--task-conf", "test",
              "--net", "saint_arnoult",
              "--model", baseline_name],
-            capture_output=True, text=True, check=True, cwd=python_script.parent
+            capture_output=True, text=True, check=True, cwd=script_path.parent
         )
-        print(f"[DEBUG] Successfully executed baseline {baseline_name} with {python_script}")
+        print(f"[DEBUG] Successfully executed baseline {baseline_name} with {script_path}")
     except subprocess.CalledProcessError as e:
         pytest.fail(f"[FAIL] Baseline {baseline_name} failed: {e.stderr}")

@@ -1,0 +1,31 @@
+{
+    "generator": "clustering",
+    "path_gen_kwargs": {
+        "verbose": true,
+        "number_of_paths": 12,
+        "beta": -1,
+        "weight": "time",
+        "num_samples": 5000,
+        "max_path_length": 1000,
+        "allow_loops": false,
+        "adaptive": false,
+        "tolerate_num_iterations": 200,
+        "shift_parameters_by": 5,
+        "params_to_shift": "both",
+        "random_seed": 42,
+        "max_resample_iterations": 50,
+        "diverse_selection": false,
+        "keep_generating": false,
+        "min_difference_jaccard": 0.4,
+        "forbid_abs_reuse": true,
+        "collapse_destination": true,
+        "collapse_origin": true,
+        "forbid_junction_revisit": true,
+        "collapse_internal_junctions": true
+    },
+    "clustering": {
+        "algorithm": "kmeans",
+        "n_clusters": 4,
+        "diagnostics": false
+    }
+}
