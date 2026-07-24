@@ -5,7 +5,7 @@
     "num_epochs" : 6,
 
     "policy_type" : "mlp",
-    "observation_type" : "trip_info_eta",
+    "observation_type": "trip_info_eta_mask_norm",
     "reward_mode" : "transition_tt_fft",
     "rnn_type" : "gru",
 

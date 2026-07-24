@@ -111,7 +111,7 @@ if __name__ == "__main__":
     network = args.net
     env_seed = args.env_seed
     torch_seed = args.torch_seed
-    route_set = resolve_route_set(network, args.route_set)
+    requested_route_set = args.route_set
     shuffle = args.shuffle
     print("### STARTING EXPERIMENT ###")
     print(f"Algorithm: {ALGORITHM.upper()}")
@@ -122,7 +122,7 @@ if __name__ == "__main__":
     print(f"Algorithm config: {alg_config}")
     print(f"Environment config: {env_config}")
     print(f"Task config: {task_config}")
-    print(f"Route set: {route_set or 'none'}")
+    print(f"Requested route set: {requested_route_set or 'network default'}")
     print(f"Shuffle: {shuffle}")
 
     os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
@@ -150,6 +150,15 @@ if __name__ == "__main__":
     params.update(env_params)
     params.update(task_params)
     del params["desc"], alg_params, env_params, task_params
+
+    # JanuX fallback for non-clustered configs
+    use_clustered_routes = params.get("use_clustered_routes", False)
+    route_set = (
+        resolve_route_set(network, requested_route_set)
+        if use_clustered_routes
+        else None
+    )
+    print(f"Route set: {route_set or 'none (unclustered)'}")
 
     # Set params as variables in this script
     for key, value in params.items():
@@ -206,7 +215,6 @@ if __name__ == "__main__":
     dump_config["route_set"] = route_set
 
     # Clustered routes: load action masks and generate paths.csv, route.rou.xml from the pregenerated routes
-    use_clustered_routes = params.get("use_clustered_routes", False)
     create_paths_flag = True
     action_masks = None
 

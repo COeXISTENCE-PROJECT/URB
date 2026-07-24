@@ -9,5 +9,5 @@
     "path_gen_beta" : -5,
     "num_samples" : 10,
 
-    "observation_type": "trip_info_eta"
+    "observation_type": "trip_info_eta_mask_norm"
 }
