@@ -16,7 +16,7 @@
     "av_behavior" : "selfish",
     "human_model" : "gawron",
     "human_alpha": 0.2,
-    "human_beta": -1.5,
+    "human_beta": 1.5,
     "human_beta_randomness": 0.1,
     "human_deterministic": true
 }
