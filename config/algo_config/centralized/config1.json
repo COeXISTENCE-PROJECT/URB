@@ -1,0 +1,24 @@
+{
+    "training_eps" : 1000,
+
+    "batch_size" : 8,
+    "num_epochs" : 6,
+
+    "policy_type" : "rnn",
+    "observation_type" : "trip_info_eta_route_congestion",
+    "reward_mode" : "transition_tt_fft",
+    "rnn_type" : "gru",
+
+    "hidden_sizes" : [128, 128, 128],
+    "rnn_hidden_dim" : 128,
+
+    "lr" : 0.0003,
+    "clip_eps" : 0.2,
+    "gamma" : 0.99,
+    "gae_lambda" : 0.9,
+    "normalize_advantage" : true,
+    "entropy_coef" : 0.01,
+    "value_coef" : 0.5,
+    "max_grad_norm" : 1.0,
+    "buffer_size" : 32
+}
