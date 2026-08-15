@@ -191,3 +191,5 @@ networks/*/.DS_Store
 
 docs/leaderboard/
 server_scripts/
+
+studies/*/results/*/metrics/plots/
