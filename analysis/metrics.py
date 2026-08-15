@@ -5,6 +5,10 @@ import argparse
 import json
 import xml.etree.ElementTree as ET
 
+import matplotlib
+
+matplotlib.use("Agg")
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -474,7 +478,13 @@ def extract_metrics(path, config, verbose=False):
     # ----- Config validation -----
 
     try:
-        df = pd.read_csv(path)
+        # Observation payloads are not used by any metric and may contain
+        # mixed Python/string representations. Avoid loading these very wide
+        # columns into memory during batch post-processing.
+        df = pd.read_csv(
+            path,
+            usecols=lambda column: not column.endswith("_observation"),
+        )
     except Exception as e:
         if verbose:
             print(f"Error reading CSV file at {path}: {e}")
@@ -803,7 +813,10 @@ if __name__ == "__main__":
         computed_training_eps = 0   
 
     metric_config = {
-        "algorithm": exp_config["algorithm"],
+        # Older baseline result folders did not record this field. It is not
+        # currently used when calculating metrics, so keep those results
+        # analyzable while new launchers record it explicitly.
+        "algorithm": exp_config.get("algorithm", "unknown"),
 
         "human_learning_episodes": exp_config["human_learning_episodes"],
         "training_eps": computed_training_eps,
