@@ -128,6 +128,7 @@ if __name__ == "__main__":
     dump_config["num_agents"] = num_agents
     dump_config["num_machines"] = num_machines
     dump_config["script"] = script_path_for_config(__file__)
+    dump_config["algorithm"] = ALGORITHM
     with open(exp_config_path, 'w', encoding='utf-8') as f:
         json.dump(dump_config, f, indent=4)
 
