@@ -261,6 +261,11 @@ Users can extend possible experiment configurations by adding:
 * Experiment setting in [`config/env_config`](config/env_config/), and
 * New tasks in [`config/task_config`](config/task_config/).
 
+### Research studies
+
+Focused, falsifiable research hypotheses can be organized under [`studies/`](studies/README.md).
+Studies connect experiment plans, literature, exact URB runs, evidence, and conclusions.
+
 ---
 
 ## 🔎 Results
