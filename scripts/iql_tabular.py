@@ -328,16 +328,15 @@ if __name__ == "__main__":
     # Finalize the experiment
     pbar.close()
     env.plot_results()
-    loss_records = []
-    for agent in env.machine_agents:
-        for iteration, loss_value in enumerate(agent.model.loss, start=1):
-            loss_records.append(
-                {
-                    "iteration": iteration,
-                    "agent_id": agent.id,
-                    "loss": loss_value,
-                }
-            )
+    loss_records = (
+        {
+            "iteration": iteration,
+            "agent_id": agent.id,
+            "loss": loss_value,
+        }
+        for agent in env.machine_agents
+        for iteration, loss_value in enumerate(agent.model.loss, start=1)
+    )
     save_loss_records(
         records_folder,
         loss_records,
