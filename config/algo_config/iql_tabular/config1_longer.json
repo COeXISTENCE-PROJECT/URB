@@ -2,7 +2,7 @@
     "training_eps": 30000,
 
     "eps_init": 0.5,
-    "eps_decay": 0.9999925619092856,
+    "eps_decay": 0.9999232501089904,
     "eps_min": 0.05,
     "lr": 0.2,
     "bin_width": 100.0
