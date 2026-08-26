@@ -295,32 +295,51 @@ def collect_to_single_CSV(
         print(f"Loading {len(episodes)} episodes...")
 
     # ----- Each episode is loaded and merged into a single row DataFrame -----
-    columns = None
+    columns = []
+    known_columns = set()
     loaded_episodes = 0
     temp_path = f"{save_path}.tmp"
+    expanded_path = f"{temp_path}.expanded"
 
     try:
-        with open(temp_path, "w", newline="", encoding="utf-8") as output_file:
-            for i in tqdm(episodes) if verbose else episodes:
-                episode_df = load_episode(path, i, verbose)
-                if episode_df.empty:
-                    continue
+        for i in tqdm(episodes) if verbose else episodes:
+            episode_df = load_episode(path, i, verbose)
+            if episode_df.empty:
+                continue
 
-                if columns is None:
-                    columns = episode_df.columns
-                else:
-                    if set(episode_df.columns) != set(columns):
-                        raise ValueError(f"Episode {i} has inconsistent data columns")
-                    episode_df = episode_df.reindex(columns=columns)
+            new_columns = [
+                column for column in episode_df.columns
+                if column not in known_columns
+            ]
+            if new_columns:
+                columns.extend(new_columns)
+                known_columns.update(new_columns)
 
-                episode_df["episode"] = episode_df["episode"].astype("int32")
-                episode_df.to_csv(
-                    output_file,
-                    index=False,
-                    header=loaded_episodes == 0,
-                    float_format="%.2f",
-                )
-                loaded_episodes += 1
+                # Match pandas.concat: earlier episodes receive NaN for columns
+                # that first appear in a later episode.
+                if loaded_episodes:
+                    for chunk_number, chunk in enumerate(
+                        pd.read_csv(temp_path, chunksize=10)
+                    ):
+                        chunk.reindex(columns=columns).to_csv(
+                            expanded_path,
+                            mode="w" if chunk_number == 0 else "a",
+                            index=False,
+                            header=chunk_number == 0,
+                            float_format="%.2f",
+                        )
+                    os.replace(expanded_path, temp_path)
+
+            episode_df = episode_df.reindex(columns=columns)
+            episode_df["episode"] = episode_df["episode"].astype("int32")
+            episode_df.to_csv(
+                temp_path,
+                mode="w" if loaded_episodes == 0 else "a",
+                index=False,
+                header=loaded_episodes == 0,
+                float_format="%.2f",
+            )
+            loaded_episodes += 1
 
         if loaded_episodes == 0:
             if verbose:
@@ -331,6 +350,8 @@ def collect_to_single_CSV(
     finally:
         if os.path.exists(temp_path):
             os.remove(temp_path)
+        if os.path.exists(expanded_path):
+            os.remove(expanded_path)
 
     if verbose:
         print(f"Loaded {loaded_episodes} episodes.")
