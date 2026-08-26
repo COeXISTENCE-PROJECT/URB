@@ -237,6 +237,7 @@ if __name__ == "__main__":
     parser.add_argument("--shuffle", action="store_true", default=False)
     parser.add_argument('--skip-metrics', action='store_true', default=False)
     args = parser.parse_args()
+    
     ALGORITHM = "ippo"
     exp_id = args.id
     alg_config = args.alg_conf
@@ -247,6 +248,7 @@ if __name__ == "__main__":
     torch_seed = args.torch_seed
     requested_route_set = args.route_set
     shuffle = args.shuffle
+    
     print("### STARTING EXPERIMENT ###")
     print(f"Algorithm: {ALGORITHM.upper()}")
     print(f"Experiment ID: {exp_id}")
@@ -257,6 +259,7 @@ if __name__ == "__main__":
     print(f"Task config: {task_config}")
     print(f"Requested route set: {requested_route_set or 'network default'}")
     print(f"Shuffle: {shuffle}")
+    print(f"Metrics will {'NOT ' if args.skip_metrics else ''}be computed after the experiment.\n")
 
     os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
     logging.getLogger("matplotlib").setLevel(logging.ERROR)

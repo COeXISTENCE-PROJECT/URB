@@ -123,6 +123,7 @@ if __name__ == "__main__":
     parser.add_argument('--torch-seed', type=int, default=42)
     parser.add_argument('--skip-metrics', action='store_true', default=False)
     args = parser.parse_args()
+    
     ALGORITHM = "iql_tabular"
     exp_id = args.id
     alg_config = args.alg_conf
@@ -131,6 +132,7 @@ if __name__ == "__main__":
     network = args.net
     env_seed = args.env_seed
     torch_seed = args.torch_seed
+    
     print("### STARTING EXPERIMENT ###")
     print(f"Algorithm: {ALGORITHM.upper()}")
     print(f"Experiment ID: {exp_id}")
@@ -140,6 +142,7 @@ if __name__ == "__main__":
     print(f"Algorithm config: {alg_config}")
     print(f"Environment config: {env_config}")
     print(f"Task config: {task_config}")
+    print(f"Metrics will {'NOT ' if args.skip_metrics else ''}be computed after the experiment.\n")
 
     logging.getLogger("matplotlib").setLevel(logging.ERROR)
     random.seed(env_seed)

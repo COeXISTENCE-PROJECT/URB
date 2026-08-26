@@ -25,6 +25,7 @@ from tqdm            import tqdm
 from baseline_models import BaseLearningModel
 from utils           import clear_SUMO_files
 from utils           import print_agent_counts
+from utils           import run_metrics_analysis
 
 from clustered_routes import AVMaskWrapper, ClusteredRoutesLoader, resolve_route_set
 
@@ -148,6 +149,7 @@ if __name__ == "__main__":
         help="Named route-set subdirectory. Uses the network default when omitted.",
     )
     parser.add_argument("--shuffle", action="store_true", default=False)
+    parser.add_argument('--skip-metrics', action='store_true', default=False)
     args = parser.parse_args()
     ALGORITHM = "iql"
     exp_id = args.id
@@ -159,6 +161,7 @@ if __name__ == "__main__":
     torch_seed = args.torch_seed
     requested_route_set = args.route_set
     shuffle = args.shuffle
+    
     print("### STARTING EXPERIMENT ###")
     print(f"Algorithm: {ALGORITHM.upper()}")
     print(f"Experiment ID: {exp_id}")
@@ -169,6 +172,7 @@ if __name__ == "__main__":
     print(f"Task config: {task_config}")
     print(f"Requested route set: {requested_route_set or 'network default'}")
     print(f"Shuffle: {shuffle}")
+    print(f"Metrics will {'NOT ' if args.skip_metrics else ''}be computed after the experiment.\n")
 
     os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
     logging.getLogger("matplotlib").setLevel(logging.ERROR)
@@ -409,4 +413,7 @@ if __name__ == "__main__":
     losses_pd = pd.DataFrame([{"id": agent.id, "losses": agent.model.loss} for agent in env.machine_agents])
     losses_pd.to_csv(os.path.join(records_folder, "losses.csv"), index=False)
     env.stop_simulation()
+    
     clear_SUMO_files(os.path.join(records_folder, "SUMO_output"), os.path.join(records_folder, "episodes"), remove_additional_files=True)
+    if not args.skip_metrics:
+        run_metrics_analysis(exp_id, results_folder="../results")

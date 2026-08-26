@@ -33,6 +33,7 @@ from centralized_wrapper import (
 )
 
 from utils import clear_SUMO_files
+from utils import run_metrics_analysis
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -50,7 +51,9 @@ if __name__ == "__main__":
         default=None,
         help="Named route-set subdirectory. Uses the network default when omitted.",
     )
+    parser.add_argument('--skip-metrics', action='store_true', default=False)
     args = parser.parse_args()
+    
     ALGORITHM = "centralized"
     exp_id = args.id
     alg_config = args.alg_conf
@@ -61,6 +64,7 @@ if __name__ == "__main__":
     torch_seed = args.torch_seed
     shuffle = args.shuffle
     route_set = resolve_route_set(network, args.route_set)
+    
     print("### STARTING EXPERIMENT ###")
     print(f"Algorithm: {ALGORITHM.upper()}")
     print(f"Experiment ID: {exp_id}")
@@ -72,6 +76,7 @@ if __name__ == "__main__":
     print(f"Task config: {task_config}")
     print(f"Route set: {route_set or 'none'}")
     print(f"Shuffle: {shuffle}")
+    print(f"Metrics will {'NOT ' if args.skip_metrics else ''}be computed after the experiment.\n")
 
     os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
@@ -892,6 +897,8 @@ if __name__ == "__main__":
             os.path.join(records_folder, "episodes"),
             remove_additional_files=True,
         )
+        if not args.skip_metrics:
+            run_metrics_analysis(exp_id, results_folder="../results")
 
         update_diag_path = os.path.join(records_folder, "ppo_update_diagnostics.csv")
         pd.DataFrame(update_diag_rows).to_csv(update_diag_path, index=False)

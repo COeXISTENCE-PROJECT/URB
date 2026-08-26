@@ -324,6 +324,7 @@ if __name__ == "__main__":
     print(f"Task config: {task_config}")
     print(f"Requested route set: {requested_route_set or 'network default'}")
     print(f"Shuffle: {shuffle}")
+    print(f"Metrics will {'NOT ' if args.skip_metrics else ''}be computed after the experiment.\n")
     
     os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
     logging.getLogger("matplotlib").setLevel(logging.ERROR)

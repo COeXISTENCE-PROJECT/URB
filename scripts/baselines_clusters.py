@@ -51,6 +51,7 @@ from clustered_routes import ClusteredRoutesLoader, resolve_route_set
 
 from utils import clear_SUMO_files
 from utils import script_path_for_config
+from utils import run_metrics_analysis
 from baseline_models import get_baseline
 
 if __name__ == "__main__":
@@ -69,7 +70,9 @@ if __name__ == "__main__":
         default=None,
         help="Named route-set subdirectory. Uses the network default when omitted.",
     )
+    parser.add_argument('--skip-metrics', action='store_true', default=False)
     args = parser.parse_args()
+    
     ALGORITHM = "baseline"
     exp_id = args.id
     alg_config = args.alg_conf
@@ -80,6 +83,7 @@ if __name__ == "__main__":
     baseline_model = args.model
     requested_route_set = args.route_set
     shuffle = args.shuffle
+    
     print("### STARTING EXPERIMENT ###")
     print(f"Experiment ID: {exp_id}")
     print(f"Network: {network}")
@@ -341,3 +345,5 @@ if __name__ == "__main__":
     env.stop_simulation()
 
     clear_SUMO_files(os.path.join(records_folder, "SUMO_output"), os.path.join(records_folder, "episodes"), remove_additional_files=True)
+    if not args.skip_metrics:
+        run_metrics_analysis(exp_id, results_folder="../results")

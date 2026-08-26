@@ -42,6 +42,7 @@ if __name__ == "__main__":
     parser.add_argument('--model', type=str, required=True)
     parser.add_argument('--skip-metrics', action='store_true', default=False)
     args = parser.parse_args()
+    
     ALGORITHM = "baseline"
     exp_id = args.id
     alg_config = args.alg_conf
@@ -50,6 +51,7 @@ if __name__ == "__main__":
     network = args.net
     env_seed = args.env_seed
     baseline_model = args.model
+    
     print("### STARTING EXPERIMENT ###")
     print(f"Experiment ID: {exp_id}")
     print(f"Network: {network}")
@@ -58,6 +60,7 @@ if __name__ == "__main__":
     print(f"Environment config: {env_config}")
     print(f"Task config: {task_config}")
     print(f"Baseline model: {baseline_model}")
+    print(f"Metrics will {'NOT ' if args.skip_metrics else ''}be computed after the experiment.\n")
 
     # Check if baseline exists
     baseline_dir = Path(repo_root) / "baseline_models"

@@ -795,6 +795,7 @@ if __name__ == "__main__":
     print(f"Algorithm config: {alg_config}")
     print(f"Environment config: {env_config}")
     print(f"Task config: {task_config}")
+    print(f"Metrics will {'NOT ' if args.skip_metrics else ''}be computed after the experiment.\n")
 
     os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
     logging.basicConfig(level=logging.DEBUG)
@@ -1102,6 +1103,7 @@ if __name__ == "__main__":
     pbar.close()
     env.plot_results()
     env.stop_simulation()
+    
     clear_SUMO_files(os.path.join(records_folder, "SUMO_output"), os.path.join(records_folder, "episodes"), remove_additional_files=True)
     if not args.skip_metrics:
         run_metrics_analysis(os.path.basename(records_folder), results_folder=os.path.dirname(records_folder))

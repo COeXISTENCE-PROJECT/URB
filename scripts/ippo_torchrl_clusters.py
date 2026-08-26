@@ -62,6 +62,7 @@ from clustered_routes import AVMaskWrapper, ClusteredRoutesLoader, resolve_route
 from centralized_wrapper import TripInfoWithETARouteCongestionEncoder
 
 from utils import clear_SUMO_files
+from utils import run_metrics_analysis
 
 class TorchRLObservationEncoder(torch.nn.Module):
     """
@@ -102,7 +103,9 @@ if __name__ == "__main__":
         default=None,
         help="Named route-set subdirectory. Uses the network default when omitted.",
     )
+    parser.add_argument('--skip-metrics', action='store_true', default=False)
     args = parser.parse_args()
+    
     ALGORITHM = "ippo_torchrl"
     exp_id = args.id
     alg_config = args.alg_conf
@@ -113,6 +116,7 @@ if __name__ == "__main__":
     torch_seed = args.torch_seed
     requested_route_set = args.route_set
     shuffle = args.shuffle
+    
     print("### STARTING EXPERIMENT ###")
     print(f"Algorithm: {ALGORITHM.upper()}")
     print(f"Experiment ID: {exp_id}")
@@ -124,6 +128,7 @@ if __name__ == "__main__":
     print(f"Task config: {task_config}")
     print(f"Requested route set: {requested_route_set or 'network default'}")
     print(f"Shuffle: {shuffle}")
+    print(f"Metrics will {'NOT ' if args.skip_metrics else ''}be computed after the experiment.\n")
 
     os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
@@ -645,3 +650,5 @@ if __name__ == "__main__":
     env.stop_simulation()
 
     clear_SUMO_files(os.path.join(records_folder, "SUMO_output"), os.path.join(records_folder, "episodes"), remove_additional_files=True)
+    if not args.skip_metrics:
+        run_metrics_analysis(exp_id, results_folder="../results")
