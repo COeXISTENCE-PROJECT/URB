@@ -137,7 +137,7 @@ pip install --force-reinstall --no-cache-dir -r requirements.txt
 To use **URB** while using RL algorithm, you have to provide in the command line the following command:
 
 ```bash
-python scripts/<script_name> --id <exp_id> --alg-conf <hyperparam_id> --env-conf <env_conf_id> --task-conf <task_id> --net <net_name> --env-seed <env_seed> --torch-seed <torch_seed>
+python scripts/<script_name> --id <exp_id> --alg-conf <hyperparam_id> --env-conf <env_conf_id> --task-conf <task_id> --net <net_name> --env-seed <env_seed> --torch-seed <torch_seed> [--skip-metrics]
 ```
 
 where
@@ -150,6 +150,7 @@ where
 - ```<net_name>``` is the name of the network you wish to use. Must be one of the folder names in ```networks/``` i.e. ```ingolstadt_custom```, ```nangis```, ```nemours```, ```provins``` or ```saint_arnoult```,
 - ```<env_seed>``` is reproducibility random seed for the traffic environment, default seed is set to be 42,
 - ```<torch_seed>``` is reproducibility random seed for PyTorch, it is **optional** and by default is set to 42.
+- `--skip-metrics` is optional. When present, the experiment saves its raw outputs but does not calculate metrics at the end of the run.
 
 For example, the following command runs an experiment using:
 - QMIX algorithm, hyperparameterized by `config/algo_config/qmix_torchrl/config3.json`, 
@@ -210,8 +211,8 @@ python scripts/greedy.py --id ing_greedy --alg-conf config1 --task-conf config2 
 
 Each experiment outputs set of raw records, which are then processed with the script in this folder for a set of performance indicators which we report and several additional metrics that track the quality of the solution and its impact to the system.
 
-All experiment scripts in `scripts/` now automatically run `analysis/metrics.py` at the end of execution.
-Manual execution is still supported as described below.
+Experiment scripts automatically run `analysis/metrics.py` at the end of execution by default.
+Pass `--skip-metrics` to skip this step, for example when metrics will be calculated later on a machine with more memory. Manual execution is still supported as described below.
 
 #### Usage
 

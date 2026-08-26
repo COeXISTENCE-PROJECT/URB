@@ -775,6 +775,7 @@ if __name__ == "__main__":
     parser.add_argument('--net', type=str, required=True)
     parser.add_argument('--env-seed', type=int, default=42)
     parser.add_argument('--torch-seed', type=int, default=42)
+    parser.add_argument('--skip-metrics', action='store_true', default=False)
     args = parser.parse_args()
 
     ALGORITHM = "centralized_dqn"
@@ -1102,5 +1103,5 @@ if __name__ == "__main__":
     env.plot_results()
     env.stop_simulation()
     clear_SUMO_files(os.path.join(records_folder, "SUMO_output"), os.path.join(records_folder, "episodes"), remove_additional_files=True)
-    run_metrics_analysis(os.path.basename(records_folder), results_folder=os.path.dirname(records_folder))
-
+    if not args.skip_metrics:
+        run_metrics_analysis(os.path.basename(records_folder), results_folder=os.path.dirname(records_folder))

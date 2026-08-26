@@ -328,6 +328,7 @@ if __name__ == "__main__":
     parser.add_argument("--net", type=str, required=True)
     parser.add_argument("--env-seed", type=int, default=42)
     parser.add_argument("--torch-seed", type=int, default=42)
+    parser.add_argument('--skip-metrics', action='store_true', default=False)
     args = parser.parse_args()
 
     ALGORITHM = "feudal_hrl"
@@ -636,7 +637,8 @@ if __name__ == "__main__":
         os.path.join(records_folder, "episodes"),
         remove_additional_files=True,
     )
-    run_metrics_analysis(exp_id, results_folder="../results")
+    if not args.skip_metrics:
+        run_metrics_analysis(exp_id, results_folder="../results")
     
     rewards_path = os.path.join(plots_folder, "rewards.png")
     travel_times_path = os.path.join(plots_folder, "travel_times.png")

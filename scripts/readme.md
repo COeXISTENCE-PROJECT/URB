@@ -18,7 +18,7 @@ You can tune, adjust, hyperparameterize and modify all the provided implementati
 
 ### Output conventions
 
-- At the end of each experiment script, metrics are automatically computed by calling `analysis/metrics.py`.
+- At the end of each experiment script, metrics are automatically computed by calling `analysis/metrics.py`. Pass `--skip-metrics` to retain the raw experiment outputs and calculate metrics later.
 - For learning-based scripts, training losses are saved in a unified CSV file:
   `results/<exp_id>/losses/losses.csv`
 

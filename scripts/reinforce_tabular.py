@@ -152,6 +152,7 @@ if __name__ == "__main__":
     parser.add_argument('--net', type=str, required=True)
     parser.add_argument('--env-seed', type=int, default=42)
     parser.add_argument('--torch-seed', type=int, default=42)
+    parser.add_argument('--skip-metrics', action='store_true', default=False)
     args = parser.parse_args()
     ALGORITHM = "reinforce_tabular"
     exp_id = args.id
@@ -375,4 +376,5 @@ if __name__ == "__main__":
 
     env.stop_simulation()
     clear_SUMO_files(os.path.join(records_folder, "SUMO_output"), os.path.join(records_folder, "episodes"), remove_additional_files=True)
-    run_metrics_analysis(exp_id, results_folder=base_results_dir)
+    if not args.skip_metrics:
+        run_metrics_analysis(exp_id, results_folder=base_results_dir)

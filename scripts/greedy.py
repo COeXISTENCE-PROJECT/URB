@@ -41,7 +41,7 @@ if __name__ == "__main__":
     parser.add_argument('--task-conf', type=str, required=True)
     parser.add_argument('--net', type=str, required=True)
     parser.add_argument('--env-seed', type=int, default=42)
-    
+    parser.add_argument('--skip-metrics', action='store_true', default=False)
     
     args = parser.parse_args()
     ALGORITHM = 'greedy'
@@ -51,7 +51,6 @@ if __name__ == "__main__":
     task_config = args.task_conf
     network = args.net
     env_seed = args.env_seed
-
     
     # Initial print
     print("### STARTING EXPERIMENT ###")
@@ -262,4 +261,5 @@ if __name__ == "__main__":
 
     # Clean SUMO-generated redundant files
     clear_SUMO_files(os.path.join(records_folder, "SUMO_output"), os.path.join(records_folder, "episodes"), remove_additional_files=True)
-    run_metrics_analysis(exp_id, results_folder="../results")
+    if not args.skip_metrics:
+        run_metrics_analysis(exp_id, results_folder="../results")

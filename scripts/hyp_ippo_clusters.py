@@ -299,6 +299,7 @@ if __name__ == "__main__":
         help="Named route-set subdirectory. Uses the network default when omitted.",
     )
     parser.add_argument("--shuffle", action="store_true", default=False)
+    parser.add_argument('--skip-metrics', action='store_true', default=False)
     args = parser.parse_args()
 
     ALGORITHM = "hyp_ippo"
@@ -632,4 +633,5 @@ if __name__ == "__main__":
         os.path.join(records_folder, "episodes"),
         remove_additional_files=True
     )
-    run_metrics_analysis(exp_id, results_folder="../results")
+    if not args.skip_metrics:
+        run_metrics_analysis(exp_id, results_folder="../results")
