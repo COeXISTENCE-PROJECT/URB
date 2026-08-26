@@ -277,7 +277,7 @@ def load_episode(results_path: str, episode: int, verbose: bool) -> pd.DataFrame
 
 def collect_to_single_CSV(
     path: str, save_path: str = "metrics.csv", verbose: bool = False
-) -> pd.DataFrame:
+) -> None:
     """
     Collect results of the experiment to the single CSV file.
 
@@ -285,41 +285,56 @@ def collect_to_single_CSV(
         path (str): The path to the results folder, 'episodes' and 'SUMO_output' should be a subdirectories.
         save_path (str): The path to the output file.
         verbose (bool): If True, print the loading progress.
-    Returns:
-        pd.DataFrame: A DataFrame containing the episode data. This dataframe has one row for each episode and all columns from the SUMO and RouteRL files.
     """
 
     # ----- Get the episodes ids from the episodes folder -----
     episodes_path = os.path.join(path, "episodes")
     episodes = get_episodes(episodes_path)
 
-    dfs = []
-
     if verbose:
         print(f"Loading {len(episodes)} episodes...")
 
     # ----- Each episode is loaded and merged into a single row DataFrame -----
-    for i in tqdm(episodes) if verbose else episodes:
-        episode_df = load_episode(path, i, verbose)
-        if not episode_df.empty:
-           dfs.append(episode_df)
+    columns = None
+    loaded_episodes = 0
+    temp_path = f"{save_path}.tmp"
+
+    try:
+        with open(temp_path, "w", newline="", encoding="utf-8") as output_file:
+            for i in tqdm(episodes) if verbose else episodes:
+                episode_df = load_episode(path, i, verbose)
+                if episode_df.empty:
+                    continue
+
+                if columns is None:
+                    columns = episode_df.columns
+                else:
+                    if set(episode_df.columns) != set(columns):
+                        raise ValueError(f"Episode {i} has inconsistent data columns")
+                    episode_df = episode_df.reindex(columns=columns)
+
+                episode_df["episode"] = episode_df["episode"].astype("int32")
+                episode_df.to_csv(
+                    output_file,
+                    index=False,
+                    header=loaded_episodes == 0,
+                    float_format="%.2f",
+                )
+                loaded_episodes += 1
+
+        if loaded_episodes == 0:
+            if verbose:
+                print("No data loaded from any episodes.")
+            return
+
+        os.replace(temp_path, save_path)
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
 
     if verbose:
-        print(f"Loaded {len(dfs)} episodes.")
-        print(f"Final shape of the DataFrame: {pd.concat(dfs, axis=0, ignore_index=True).shape if dfs else (0,0)}")
-
-        
-    if not dfs:
-        if verbose:
-            print("No data loaded from any episodes. Returning empty DataFrame.")
-        return pd.DataFrame()
-    
-    df = pd.concat(dfs, axis=0, ignore_index=True)
-    df["episode"] = df["episode"].astype("int32")
-
-    df.to_csv(save_path, index=False, float_format="%.2f")    
-
-    return df
+        print(f"Loaded {loaded_episodes} episodes.")
+        print(f"Final shape of the DataFrame: ({loaded_episodes}, {len(columns)})")
 
 
 def plot_vector_values(df: pd.DataFrame, path: str, title: str, ylabel: str) -> None:
