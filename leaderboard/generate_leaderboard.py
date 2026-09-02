@@ -549,7 +549,7 @@ def collect_experiments(results_dir: Path) -> List[Dict]:
     for exp_dir in sorted(results_dir.iterdir()):
         if not exp_dir.is_dir():
             continue
-        if exp_dir.name == "sample_results":
+        if (exp_dir.name == "sample_results") or (exp_dir.name == "_archived_results"):
             continue
 
         config = read_config(exp_dir)

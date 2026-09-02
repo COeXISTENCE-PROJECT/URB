@@ -1,0 +1,22 @@
+{
+    "desc" : 
+    [
+        "10% AVs, 90% humans.",
+        "300 days of human learning",
+        "100 test episodes",
+        "Humans do not adapt during AV learning",
+        "AVs are selfish",
+        "Human model is gawron"
+    ],
+    "ratio_machines": 0.1,
+    "human_learning_episodes": 300,
+    "test_eps": 100,
+    "marginal_cost_coefficient_beta": 0,
+    "should_humans_adapt": false,
+    "av_behavior": "selfish",
+    "human_model": "gawron",
+    "human_alpha": 0.2,
+    "human_beta": -1.5,
+    "human_beta_randomness": 0.1,
+    "human_deterministic": false
+}

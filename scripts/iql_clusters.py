@@ -26,7 +26,7 @@ from baseline_models import BaseLearningModel
 from utils           import clear_SUMO_files
 from utils           import print_agent_counts
 
-from clustered_routes import ClusteredRoutesLoader, AVMaskWrapper
+from clustered_routes import AVMaskWrapper, ClusteredRoutesLoader, resolve_route_set
 
 ### Simplified single-DQN implementation for single-step decision-making
 class DQN(BaseLearningModel):
@@ -141,6 +141,12 @@ if __name__ == "__main__":
     parser.add_argument('--net', type=str, required=True)
     parser.add_argument('--env-seed', type=int, default=42)
     parser.add_argument('--torch-seed', type=int, default=42)
+    parser.add_argument(
+        '--route-set',
+        type=str,
+        default=None,
+        help="Named route-set subdirectory. Uses the network default when omitted.",
+    )
     parser.add_argument("--shuffle", action="store_true", default=False)
     args = parser.parse_args()
     ALGORITHM = "iql"
@@ -151,6 +157,7 @@ if __name__ == "__main__":
     network = args.net
     env_seed = args.env_seed
     torch_seed = args.torch_seed
+    requested_route_set = args.route_set
     shuffle = args.shuffle
     print("### STARTING EXPERIMENT ###")
     print(f"Algorithm: {ALGORITHM.upper()}")
@@ -160,6 +167,7 @@ if __name__ == "__main__":
     print(f"Algorithm config: {alg_config}")
     print(f"Environment config: {env_config}")
     print(f"Task config: {task_config}")
+    print(f"Requested route set: {requested_route_set or 'network default'}")
     print(f"Shuffle: {shuffle}")
 
     os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
@@ -188,6 +196,15 @@ if __name__ == "__main__":
     params.update(env_params)
     params.update(task_params)
     del params["desc"], env_params, task_params
+
+    # JanuX fallback for non-clustered configs
+    use_clustered_routes = params.get("use_clustered_routes", False)
+    route_set = (
+        resolve_route_set(network, requested_route_set)
+        if use_clustered_routes
+        else None
+    )
+    print(f"Route set: {route_set or 'none (unclustered)'}")
 
     # set params as variables in this script
     for key, value in params.items():
@@ -230,14 +247,20 @@ if __name__ == "__main__":
     exp_config_path = os.path.join(records_folder, "exp_config.json")
     dump_config = params.copy()
 
-    # CLUSTERED ROUTES: load action masks and generating paths.csv and route.rou.xml from the pregenerated routes
-    use_clustered_routes = params.get("use_clustered_routes", False)
+    # Clustered routes: load action masks and generating paths.csv and route.rou.xml from the pregenerated routes
     create_paths_flag = True
     action_masks = None
 
     if use_clustered_routes:
         try:
-            clustered_loader = ClusteredRoutesLoader(network, custom_network_folder, shuffle, env_seed)
+            route_set_dir = os.path.join(custom_network_folder, "clustered_routes", route_set)
+            clustered_loader = ClusteredRoutesLoader(
+                network,
+                custom_network_folder,
+                shuffle,
+                env_seed,
+                route_set_dir=route_set_dir,
+            )
             number_of_paths = clustered_loader.get_number_of_paths()
             clustered_loader.export_paths_routes(records_folder, origins, destinations)
             action_masks = clustered_loader.create_masks(origins, destinations)
@@ -253,6 +276,7 @@ if __name__ == "__main__":
     dump_config["network"] = network
     dump_config["env_seed"] = env_seed
     dump_config["torch_seed"] = torch_seed
+    dump_config["route_set"] = route_set
     dump_config["env_config"] = env_config
     dump_config["task_config"] = task_config
     dump_config["alg_config"] = alg_config
@@ -271,8 +295,8 @@ if __name__ == "__main__":
     env = TrafficEnvironment(
         seed = env_seed,
         create_agents = False,
-        create_paths = create_paths_flag, # CLUSTERED ROUTES: don't create paths if using own, clustered paths
-        action_masks = action_masks, # CLUSTERED ROUTES: use action masks if available
+        create_paths = create_paths_flag, # Clustered routes: don't create paths if using own, clustered paths
+        action_masks = action_masks, # Clustered routes: use action masks if available
         save_detectors_info = False,
         agent_parameters = {
             "new_machines_after_mutation": num_machines, 
