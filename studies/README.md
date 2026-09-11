@@ -1,109 +1,51 @@
 # URB studies
 
-This directory organizes focused research studies built with URB. Each study begins
-with a falsifiable hypothesis and collects the evidence needed to support, reject, or
-refine it.
+This directory contains focused studies carried out with URB. Each study starts with a clear hypothesis, supplies the experiments used to test it, gives the authors' conclusion, and includes at least one independent review.
 
-A study is not a replacement for URB's algorithm structure. Implementations remain in
-`scripts/` and `baseline_models/`, and configurations remain in `config/`. Focused
-study outputs may live in that study's `results/` directory so its evidence stays
-self-contained; shared benchmark outputs remain in the repository-level `results/`.
+Each directory other than `_template/` represents one study.
 
-The direction is intentionally simple: **experiments produce results; the study README
-interprets those results**.
+## Study structure
 
-## Study registry
-
-| Study | Hypothesis | Status | Conclusion |
-| --- | --- | --- | --- |
-| [Road clustering improves IQL](road-clustering-improves-iql/) | Diverse route representatives improve IQL route choice | falsified | Current clustered routes worsened IQL AV time by 7.54%; use JanuX as the tabular-IQL base. |
-
-Suggested statuses are `proposed`, `active`, `supported`, `falsified`, `inconclusive`,
-and `archived`. Supported and falsified describe the evidence under the stated scope;
-they are not claims of universal proof.
-
-## Directory structure
-
-Create a study by copying `_template/` to a short, descriptive, lowercase name. For
-example:
+Create a study by copying `_template/` to a short lowercase name.
 
 ```text
-studies/
-├── README.md
-├── _template/
-└── road-clustering-improves-iql/
-    ├── README.md
-    ├── experiments/
-    ├── notes/
-    ├── papers/
-    └── results/
+studies/<study-name>/
+├── COVER.png             # Optional study cover image
+├── PROPOSAL.md            # Hypothesis and experiment plan
+├── FINAL_REPORT.md        # Authors' assessment and conclusion
+├── REFERENCES.md          # Relevant papers and sources
+├── experiments/
+│   ├── README.md          # What was run and why
+│   └── <supplied runs>/   # Compact experiment evidence
+└── review/
+    ├── PROMPT.md          # Prompt for independent reviewers
+    ├── REVIEW.md          # Review template
+    └── <completed reviews>
 ```
 
-The study `README.md` is the authoritative research record. It should state:
+## Process
 
-- the hypothesis and plausible mechanism;
-- the scope in which the claim is expected to hold;
-- predictions that distinguish it from competing explanations;
-- evidence that would falsify or weaken it;
-- controlled experiment comparisons, seeds, and metrics;
-- links to exact scripts, configurations, and result directories;
-- the analysis and final conclusion, including negative results.
+1. Copy `_template/` and complete `PROPOSAL.md` before running the study.
+2. Optionally add a cover image as `COVER.png` in the study's top-level directory. Use an image that represents the study and record its source in `REFERENCES.md`.
+3. Run the planned experiments. Keep the exact configurations, main metrics, and other evidence needed to check the result under `experiments/`.
+4. Describe the supplied runs in `experiments/README.md`. Include failed or excluded runs when they affect the evidence.
+5. Complete `FINAL_REPORT.md`. Apply the rules from the proposal and keep the conclusion within the tested setting.
+6. Give `review/PROMPT.md` to a fresh LLM that did not help design, run, or interpret the study.
+7. Save each completed review under `review/` using the required model and timestamp filename.
 
-The supporting directories have distinct roles:
+## Study rules
 
-| Directory | Contains | Does not contain |
-| --- | --- | --- |
-| `experiments/` | Design, run matrix, commands, launchers, analysis code | Generated data or algorithm implementations |
-| `results/` | Per-run configurations, primary metrics, selected plots, derived summaries | Experiment plans or shared algorithm code |
-| `notes/` | Decisions, anomalies, interpretation changes, follow-up ideas | Private or machine-specific information |
-| `papers/` | Bibliography and concise relevance notes | Unlicensed or unnecessary PDF copies |
+- Test one main hypothesis and explain why it may be true.
+- Decide the main metric, meaningful effect, seeds, and possible conclusions before seeing the new results.
+- Keep important settings fixed unless they are part of the question. Use matched seeds for compared conditions when possible.
+- Supply the full range of relevant results rather than selecting only favourable runs.
+- Show variation across seeds, not only averages. Hyperparameter candidates do not count as repeat runs.
+- Clearly label analysis added after seeing the results.
+- Keep reusable algorithms and configurations in their normal URB directories. The study should contain only study-specific material and compact experiment evidence.
+- After a study is complete, remove run launchers, status files, logs, caches, and full simulator output. Keep the exact settings, study-specific code, per-seed results, and compact evidence needed to audit the conclusion.
+- A study may conclude `supported`, `falsified`, or `inconclusive`. None of these claims should extend beyond the setting that was tested.
+- Independent review judges whether a focused study is clear and trustworthy enough to display. It does not require publication-level breadth, novelty, or statistical power beyond the stated scope.
 
-Raw episodes, SUMO output, combined data, losses, and diagnostic plots may live locally
-under a study's `results/`, but should remain ignored. Retain only compact evidence
-needed to audit the conclusion in Git.
+## Stable format
 
-Additional directories such as `figures/` or `data/` should be added only when the
-study actually needs them. Prefer small, derived, reproducible artifacts over copied
-raw outputs.
-
-## Research expectations
-
-### Formulate before running
-
-Write the hypothesis, primary metric, important controls, and falsification criterion
-before examining the target results. Exploratory work is welcome, but it should be
-identified as exploratory rather than presented as confirmatory.
-
-### Change one scientific factor at a time
-
-An algorithm comparison should keep the network, demand, route set, observation,
-reward, AV population, training budget, and evaluation procedure fixed unless one of
-those factors is the subject of the study. Factorial studies should list every factor
-and interaction intentionally examined.
-
-### Preserve pairing and uncertainty
-
-Use the same scenario and seed schedule for compared methods where possible. Record
-failed and interrupted runs. Report per-run values and uncertainty alongside aggregate
-metrics; hyperparameter variants are not independent repetitions.
-
-### Separate evidence from interpretation
-
-Tables and plots should identify their source results. The conclusion should distinguish
-observed outcomes from proposed explanations and document important alternative
-explanations that remain unresolved.
-
-### Finish with a decision
-
-A completed study should say what URB should do next: adopt a method, reject it, narrow
-the claim, change the benchmark, or run a specific follow-up study. Inconclusive studies
-are valid outcomes when the reason is recorded.
-
-## Recommended workflow
-
-1. Copy `_template/` and register the study in the table above.
-2. Complete the hypothesis, scope, predictions, and falsification sections.
-3. Define the smallest experiment matrix under the study's `experiments/` directory.
-4. Run it through existing URB scripts and write outputs under the study's `results/`.
-5. Analyze all planned runs, including failures, and link the exact evidence.
-6. Write the conclusion in the study README and update the registry status.
+The studies will later be read automatically for the URB website. Keep the filenames, headings, field names, score table, and allowed conclusion and review values from `_template/` unchanged. Fill in placeholders rather than restructuring individual studies. The optional cover must be named `COVER.png`. New optional sections may be added after the standard sections.
