@@ -1,6 +1,7 @@
 ## Contribution type
 - [ ] Benchmark coverage extension
 - [ ] Leaderboard contribution
+- [ ] Study contribution
 - [ ] Software change
 - [ ] Mixed
 
@@ -30,6 +31,14 @@ Briefly state:
 - in which tasks, and
 - a quick summary on the success rate.
 
+## Study contribution details
+If applicable, briefly state:
+- the hypothesis and tested setting,
+- the conclusion and main evidence, and
+- who or what performed the independent review.
+
+Study contributions must follow [`studies/README.md`](../studies/README.md) and preserve the template's standard structure.
+
 ## Software change details
 If applicable, briefly state:
 - what part of the software was changed,
@@ -53,6 +62,7 @@ If ticked, please add a brief justification here.
 
 - [ ] I placed new files in the appropriate directory
 - [ ] I ensured that changes are made consistent with the existing benchmark structure
+- [ ] If this PR adds a study, I followed the Studies guidelines and included a completed independent review
 - [ ] I updated relevant documentation if needed
 - [ ] I kept the PR scope focused
 - [ ] I described the purpose of this PR clearly

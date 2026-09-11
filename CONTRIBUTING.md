@@ -5,6 +5,7 @@ Thank you for your interest in contributing to URB.
 This repository accepts:
 - **Benchmark coverage extensions**, which add new experimental components,
 - **Leaderboard contributions**, new results to be ranked in our leaderboard, and
+- **Study contributions**, focused tests of research hypotheses using URB, and
 - **Software changes**, which improve the framework itself.
 
 Please read the guidelines below before opening a pull request.
@@ -31,7 +32,12 @@ These contributions include new results (palced under `results/` with a unique e
 
 These can be obtained from existing methods and parameterizations, or with a new addition of a method or a parameterization. The addition of new tasks may be subject to further considerations to keep the contributor efforts more focused.
 
-### 3. Software changes
+### 3. Study contributions
+Study contributions test a focused research hypothesis and are placed under `studies/`. Copy [`studies/_template`](studies/_template/) and follow the full [`studies/README.md`](studies/README.md) guidelines.
+
+A submitted study should include its proposal, compact experiment evidence, final report, references, and at least one completed independent review. Independent reviews can be made by LLM agents (which we provide a prompt template for). Keep the template filenames and standard fields unchanged, report the full range of relevant results, and limit conclusions to the tested setting. A `COVER.png` image is optional.
+
+### 4. Software changes
 These contributions modify or improve the software itself rather than adding benchmark components.
 
 Examples include:
@@ -95,7 +101,7 @@ If your contribution is linked to an issue, include the issue number in the bran
 When opening a pull request, please:
 
 - clearly describe what the PR changes,
-- indicate whether it is a **benchmark extension**, **leaderboard contribution**, **software change**, or any combination that applies,
+- indicate whether it is a **benchmark extension**, **leaderboard contribution**, **study contribution**, **software change**, or any combination that applies,
 - explain why the change is needed,
 - keep the scope focused, and
 - update documentation if the change affects how the repository is used.
@@ -104,6 +110,11 @@ For benchmark extensions, please also state:
 - what was added,
 - where it was added, and
 - how it is expected to be used.
+
+For study contributions, please also state:
+- the hypothesis and tested setting,
+- the conclusion and main evidence, and
+- who or what performed the independent review.
 
 For software changes, please state:
 - what part of the software was changed, and
