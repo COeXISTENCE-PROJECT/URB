@@ -16,7 +16,7 @@
 
 <p align="center">
   <a href="https://coexistence-project.github.io/URB/">
-    <img alt="Official leaderboard" src="docs/official_leaderboard_badge.svg" width="294"/>
+    <img alt="Official website" src="docs/official_leaderboard_badge.svg" width="294"/>
   </a>
 </p>
 
@@ -137,7 +137,7 @@ pip install --force-reinstall --no-cache-dir -r requirements.txt
 To use **URB** while using RL algorithm, you have to provide in the command line the following command:
 
 ```bash
-python scripts/<script_name> --id <exp_id> --alg-conf <hyperparam_id> --env-conf <env_conf_id> --task-conf <task_id> --net <net_name> --env-seed <env_seed> --torch-seed <torch_seed> [--skip-metrics]
+python scripts/<script_name> --id <exp_id> --alg-conf <hyperparam_id> --env-conf <env_conf_id> --task-conf <task_id> --net <net_name> --env-seed <env_seed> --torch-seed <torch_seed> [--skip-metrics] [--save-model-every N]
 ```
 
 where
@@ -151,6 +151,7 @@ where
 - ```<env_seed>``` is reproducibility random seed for the traffic environment, default seed is set to be 42,
 - ```<torch_seed>``` is reproducibility random seed for PyTorch, it is **optional** and by default is set to 42.
 - `--skip-metrics` is optional. When present, the experiment saves its raw outputs but does not calculate metrics at the end of the run.
+- `--save-model-every N` is optional. Supported learning scripts save policy snapshots every `N` completed AV-training episodes and always after the final training episode. Snapshots are written to `results/<exp_id>/models/` and are intended for evaluation or analysis, not exact training resumption. Non-learning and TorchRL scripts accept this flag but ignore it with a warning.
 
 For example, the following command runs an experiment using:
 - QMIX algorithm, hyperparameterized by `config/algo_config/qmix_torchrl/config3.json`, 
@@ -206,6 +207,19 @@ python scripts/greedy.py --id ing_greedy --alg-conf config1 --task-conf config2 
 ```
 <br>
 
+## 🛠️ URB tools
+
+The tools in [`tools/`](tools/) can help streamlining organizing or reusing experiment artifacts:
+
+```bash
+# Reuse an experiment's saved configuration, changing only the environment seed
+python tools/rerun.py old_exp new_exp --env-seed 43
+
+# Rename an experiment without overwriting an existing result
+python tools/rename.py old_exp new_exp
+```
+
+`rerun.py` reads `results/old_exp/exp_config.json`; options supplied on the command line override the saved values. Both tools stop without changing anything if the requested source is missing or the destination ID already exists.
 
 ## 📊 Calculating metrics and indicators  
 
