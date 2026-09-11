@@ -24,10 +24,13 @@ from tqdm import tqdm
 
 from baseline_models import BaseLearningModel
 from clustered_routes import ClusteredRoutesLoader, resolve_route_set
+from utils           import add_model_snapshot_argument
 from utils           import clear_SUMO_files
+from utils           import model_snapshot_path
 from utils           import print_agent_counts
 from utils           import run_metrics_analysis
 from utils           import script_path_for_config
+from utils           import should_save_model_snapshot
 
 class AgentFeatureEmbedder(nn.Module):
     def __init__(self, agents_df, embed_dim, device="cpu"):
@@ -300,6 +303,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--shuffle", action="store_true", default=False)
     parser.add_argument('--skip-metrics', action='store_true', default=False)
+    add_model_snapshot_argument(parser)
     args = parser.parse_args()
 
     ALGORITHM = "hyp_ippo"
@@ -312,6 +316,7 @@ if __name__ == "__main__":
     torch_seed = args.torch_seed
     requested_route_set = args.route_set
     shuffle = args.shuffle
+    save_model_every = args.save_model_every
 
     print("### STARTING EXPERIMENT ###")
     print(f"Algorithm: {ALGORITHM.upper()}")
@@ -460,6 +465,8 @@ if __name__ == "__main__":
         "observation_type": observation_type,
         "path_gen_workers": path_gen_workers_value,
     })
+    if save_model_every is not None:
+        dump_config["save_model_every"] = save_model_every
 
     with open(os.path.join(records_folder, "exp_config.json"), "w") as f:
         json.dump(dump_config, f, indent=4)
@@ -524,12 +531,6 @@ if __name__ == "__main__":
         mutation_start_percentile=-1
     )
     print_agent_counts(env)
-    
-    models_folder = os.path.join(records_folder, "saved_models")
-    os.makedirs(models_folder, exist_ok=True)
-
-    post_mutation_path = os.path.join(models_folder, "model_post_mutation.pth")
-    print(f"Model zapisany po mutacji: {post_mutation_path}")
     
     obs_size = env.observation_space(env.possible_agents[0]).shape[0]
     action_size = env.machine_agents[0].action_space_size
@@ -602,6 +603,17 @@ if __name__ == "__main__":
                 action = agent_lookup[agent_id].model.act(obs)
 
             env.step(action)
+
+        completed_episode = episode + 1
+        if should_save_model_snapshot(completed_episode, training_eps, save_model_every):
+            torch.save(
+                {
+                    "training_episode": completed_episode,
+                    "hypernet": hypernet.state_dict(),
+                    "agent_embeddings": agent_embeddings.state_dict(),
+                },
+                model_snapshot_path(records_folder, completed_episode, "pt"),
+            )
 
         if episode % plot_every == 0:
             env.plot_results()

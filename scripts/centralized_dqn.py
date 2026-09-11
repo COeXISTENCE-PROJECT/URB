@@ -41,11 +41,14 @@ from tqdm        import tqdm
 
 from baseline_models import BaseLearningModel
 from utils           import (
+    add_model_snapshot_argument,
     clear_SUMO_files,
     CSVLossLogger,
+    model_snapshot_path,
     print_agent_counts,
     run_metrics_analysis,
-    script_path_for_config
+    script_path_for_config,
+    should_save_model_snapshot,
 )
 
 
@@ -776,6 +779,7 @@ if __name__ == "__main__":
     parser.add_argument('--env-seed', type=int, default=42)
     parser.add_argument('--torch-seed', type=int, default=42)
     parser.add_argument('--skip-metrics', action='store_true', default=False)
+    add_model_snapshot_argument(parser)
     args = parser.parse_args()
 
     ALGORITHM = "centralized_dqn"
@@ -786,6 +790,7 @@ if __name__ == "__main__":
     network = args.net
     env_seed = args.env_seed
     torch_seed = args.torch_seed
+    save_model_every = args.save_model_every
 
     print("### STARTING EXPERIMENT ###")
     print(f"Algorithm: {ALGORITHM.upper()}")
@@ -889,6 +894,8 @@ if __name__ == "__main__":
     dump_config["experience_collecting_episodes"] = experience_collecting_episodes # cDQN specific
     dump_config["algorithm"] = ALGORITHM
     dump_config["script"] = script_path_for_config(__file__)
+    if save_model_every is not None:
+        dump_config["save_model_every"] = save_model_every
 
     
     # Renaming 'training_episodes' parameter to match metrics.py assumptions. Previously changed from 'training_eps' to 'training_episodes' 
@@ -1065,6 +1072,21 @@ if __name__ == "__main__":
         # --- Network parameter update ---
         if episode > 0 and episode % update_every_k_episodes == 0:
             q_net.learn(loss_logger) 
+
+        completed_episode = episode + 1
+        if should_save_model_snapshot(
+            completed_episode,
+            training_episodes,
+            save_model_every,
+        ):
+            torch.save(
+                {
+                    "training_episode": completed_episode,
+                    "model": q_net.q_network.state_dict(),
+                    "epsilon": q_net.epsilon,
+                },
+                model_snapshot_path(records_folder, completed_episode, "pt"),
+            )
 
         # --- Plot visualization ---
         if episode % plot_every == 0:

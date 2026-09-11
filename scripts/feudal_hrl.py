@@ -45,11 +45,14 @@ from scripts.controller import FeudalController
 from scripts.manager import FeudalManager
 from routerl import TrafficEnvironment
 from utils import (  # type: ignore
+    add_model_snapshot_argument,
     clear_SUMO_files,
+    model_snapshot_path,
     print_agent_counts,
     run_metrics_analysis,
     save_loss_records,
     script_path_for_config,
+    should_save_model_snapshot,
 )
 
 def load_cluster_lookup(cluster_csv_path, key_columns):
@@ -329,6 +332,7 @@ if __name__ == "__main__":
     parser.add_argument("--env-seed", type=int, default=42)
     parser.add_argument("--torch-seed", type=int, default=42)
     parser.add_argument('--skip-metrics', action='store_true', default=False)
+    add_model_snapshot_argument(parser)
     args = parser.parse_args()
 
     ALGORITHM = "feudal_hrl"
@@ -339,6 +343,7 @@ if __name__ == "__main__":
     network = args.net
     env_seed = args.env_seed
     torch_seed = args.torch_seed
+    save_model_every = args.save_model_every
 
     print("### STARTING EXPERIMENT ###")
     print(f"Algorithm: {ALGORITHM.upper()}")
@@ -434,6 +439,8 @@ if __name__ == "__main__":
             "num_machines": num_machines,
         }
     )
+    if save_model_every is not None:
+        dump_config["save_model_every"] = save_model_every
     with open(exp_config_path, "w", encoding="utf-8") as f:
         json.dump(dump_config, f, indent=4)
 
@@ -561,6 +568,22 @@ if __name__ == "__main__":
                 action = agent_lookup[agent_id].model.act(observation)
                 
             env.step(action)
+
+        completed_episode = episode + 1
+        if should_save_model_snapshot(completed_episode, training_eps, save_model_every):
+            torch.save(
+                {
+                    "training_episode": completed_episode,
+                    "models": {
+                        str(agent.id): {
+                            "manager": agent.model.manager.state_dict(),
+                            "controller": agent.model.controller.state_dict(),
+                        }
+                        for agent in env.machine_agents
+                    },
+                },
+                model_snapshot_path(records_folder, completed_episode, "pt"),
+            )
 
         log_data = {
             "episode": human_learning_episodes + episode,

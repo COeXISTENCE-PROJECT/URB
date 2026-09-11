@@ -29,6 +29,7 @@ from torchrl.modules.models.multiagent import MultiAgentMLP
 from torchrl.objectives import SoftUpdate, ValueEstimators, DQNLoss
 from tqdm import tqdm
 
+from utils import add_model_snapshot_argument
 from utils import AppendODEmbedding
 from utils import clear_SUMO_files
 from utils import get_od_ids_for_group
@@ -36,6 +37,7 @@ from utils import print_agent_counts
 from utils import run_metrics_analysis
 from utils import save_loss_records
 from utils import script_path_for_config
+from utils import warn_model_snapshots_unsupported
 
 
 if __name__ == "__main__":
@@ -48,7 +50,9 @@ if __name__ == "__main__":
     parser.add_argument('--env-seed', type=int, default=42)
     parser.add_argument('--torch-seed', type=int, default=42)
     parser.add_argument('--skip-metrics', action='store_true', default=False)
+    add_model_snapshot_argument(parser)
     args = parser.parse_args()
+    warn_model_snapshots_unsupported(args.save_model_every)
     
     ALGORITHM = "iql_torchrl"
     exp_id = args.id

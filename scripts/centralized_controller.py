@@ -32,8 +32,11 @@ from centralized_wrapper import (
     TripInfoWithETASumoEncoder,
 )
 
+from utils import add_model_snapshot_argument
 from utils import clear_SUMO_files
+from utils import model_snapshot_path
 from utils import run_metrics_analysis
+from utils import should_save_model_snapshot
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -52,6 +55,7 @@ if __name__ == "__main__":
         help="Named route-set subdirectory. Uses the network default when omitted.",
     )
     parser.add_argument('--skip-metrics', action='store_true', default=False)
+    add_model_snapshot_argument(parser)
     args = parser.parse_args()
     
     ALGORITHM = "centralized"
@@ -63,6 +67,7 @@ if __name__ == "__main__":
     env_seed = args.env_seed
     torch_seed = args.torch_seed
     shuffle = args.shuffle
+    save_model_every = args.save_model_every
     route_set = resolve_route_set(network, args.route_set)
     
     print("### STARTING EXPERIMENT ###")
@@ -189,11 +194,8 @@ if __name__ == "__main__":
     dump_config["num_machines"] = num_machines
     dump_config["algorithm"] = ALGORITHM
     dump_config["step_diagnostics_every"] = step_diagnostics_every
-
-    # Save checkpoints for later model analysis
-    checkpoint_every = max(1, num_training_episodes // 10)
-    checkpoints_dir = os.path.join(records_folder, "checkpoints")
-    os.makedirs(checkpoints_dir, exist_ok=True)
+    if save_model_every is not None:
+        dump_config["save_model_every"] = save_model_every
 
     # Clustered routes: load action masks and generating paths.csv and route.rou.xml from the pregenerated routes
     use_clustered_routes = params.get("use_clustered_routes", False)
@@ -799,14 +801,19 @@ if __name__ == "__main__":
             ppo.learn()
             after_updates = getattr(ppo, "update_count", 0)
 
-            # Save model checkpoint (only for evaluation - for training resume would need: optimizer state (Adam),
-            # random number states, ...)
-            if (episode_idx + 1) % checkpoint_every == 0 or episode_idx + 1 == num_training_episodes:
-                checkpoint_path = os.path.join(
-                    checkpoints_dir,
-                    f"checkpoint_ep{episode_idx + 1}.pt",
+            completed_episode = episode_idx + 1
+            if should_save_model_snapshot(
+                completed_episode,
+                num_training_episodes,
+                save_model_every,
+            ):
+                torch.save(
+                    {
+                        "training_episode": completed_episode,
+                        "model": ppo.policy_net.state_dict(),
+                    },
+                    model_snapshot_path(records_folder, completed_episode, "pt"),
                 )
-                torch.save(ppo.policy_net.state_dict(), checkpoint_path)
 
             if after_updates > before_updates:
                 update_diag = getattr(ppo, "last_update_diag", {}).copy()

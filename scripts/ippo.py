@@ -24,10 +24,13 @@ from tqdm            import tqdm
 from baseline_models import BaseLearningModel
 from iql             import Network
 from utils           import clear_SUMO_files
+from utils           import add_model_snapshot_argument
+from utils           import model_snapshot_path
 from utils           import print_agent_counts
 from utils           import run_metrics_analysis
 from utils           import save_loss_records
 from utils           import script_path_for_config
+from utils           import should_save_model_snapshot
 
 ### A simplified single-step actor-only PPO implementation for single-step decisions.
 class PPO(BaseLearningModel):
@@ -125,6 +128,7 @@ if __name__ == "__main__":
     parser.add_argument('--env-seed', type=int, default=42)
     parser.add_argument('--torch-seed', type=int, default=42)
     parser.add_argument('--skip-metrics', action='store_true', default=False)
+    add_model_snapshot_argument(parser)
     args = parser.parse_args()
     ALGORITHM = "ippo"
     exp_id = args.id
@@ -134,6 +138,7 @@ if __name__ == "__main__":
     network = args.net
     env_seed = args.env_seed
     torch_seed = args.torch_seed
+    save_model_every = args.save_model_every
     
     print("### STARTING EXPERIMENT ###")
     print(f"Algorithm: {ALGORITHM.upper()}")
@@ -222,6 +227,8 @@ if __name__ == "__main__":
     dump_config["algorithm"] = ALGORITHM
     dump_config["num_agents"] = num_agents
     dump_config["num_machines"] = num_machines
+    if save_model_every is not None:
+        dump_config["save_model_every"] = save_model_every
     with open(exp_config_path, 'w', encoding='utf-8') as f:
         json.dump(dump_config, f, indent=4)
 
@@ -317,6 +324,19 @@ if __name__ == "__main__":
                 action = agent_lookup[agent_id].model.act(observation)
                 
             env.step(action)
+
+        completed_episode = episode + 1
+        if should_save_model_snapshot(completed_episode, training_eps, save_model_every):
+            torch.save(
+                {
+                    "training_episode": completed_episode,
+                    "models": {
+                        str(agent.id): agent.model.policy_net.state_dict()
+                        for agent in env.machine_agents
+                    },
+                },
+                model_snapshot_path(records_folder, completed_episode, "pt"),
+            )
             
         if episode % plot_every == 0:
             env.plot_results()

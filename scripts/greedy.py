@@ -26,10 +26,12 @@ from tqdm import tqdm
 
 import greedy_utils
 from greedy_utils import TrafficRecorder
+from utils import add_model_snapshot_argument
 from utils import clear_SUMO_files
 from utils import print_agent_counts
 from utils import run_metrics_analysis
 from utils import script_path_for_config
+from utils import warn_model_snapshots_unsupported
 
 
 
@@ -42,8 +44,10 @@ if __name__ == "__main__":
     parser.add_argument('--net', type=str, required=True)
     parser.add_argument('--env-seed', type=int, default=42)
     parser.add_argument('--skip-metrics', action='store_true', default=False)
+    add_model_snapshot_argument(parser)
     
     args = parser.parse_args()
+    warn_model_snapshots_unsupported(args.save_model_every)
     ALGORITHM = 'greedy'
     exp_id = args.id
     alg_config = args.alg_conf
