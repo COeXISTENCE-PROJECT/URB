@@ -17,7 +17,7 @@ import shutil
 import subprocess
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 
 
 METRIC_FILENAMES = [
@@ -25,6 +25,7 @@ METRIC_FILENAMES = [
     "metrics/benchmarkMetrics.csv",
     "metrics/benchmarkmetrics.csv",
 ]
+REQUIRED_LEADERBOARD_METRICS = ["t_test", "t_CAV"]
 
 VERSIONED_ID_RE = re.compile(r"^(?P<base>.+)_v(?P<version>\d+)$")
 GITHUB_USERNAME_RE = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$")
@@ -43,6 +44,7 @@ REQUIRED_STRING_KEYS = [
     "hero_text",
     "controls_hint",
     "download_csv_label",
+    "sort_newest_label",
     "filters_title",
     "filters_hint",
     "filter_env_label",
@@ -81,7 +83,7 @@ REQUIRED_STRING_KEYS = [
 REQUIRED_TABLE_HEADERS = [
     "rank",
     "exp_id",
-    "algorithm",
+    "experiment_date",
     "script",
     "script_contributor",
     "alg_config",
@@ -99,6 +101,41 @@ COLLAPSE_KEY_FIELDS = [
     "script",
     "alg_config",
 ]
+
+COLLAPSE_VARIABLE_FIELDS = {
+    "env_seed",
+    "torch_seed",
+    "exp_id",
+}
+
+COLLAPSE_KEY_CONFIG_FIELDS = {
+    "exp_type",
+    "env_config",
+    "task_config",
+    "network",
+    "algorithm",
+    "baseline_model",
+    "policy",
+    "script",
+    "alg_config",
+    "algorithm_config",
+    "algorithm_configuration",
+}
+
+LEGACY_CONTRIBUTOR_FIELDS = (
+    "script_contributor",
+    "script_contributor_username",
+    "script_contributor_avatar",
+    "script_contributor_url",
+    "algorithm_config_contributor",
+    "algorithm_config_contributor_username",
+    "algorithm_config_contributor_avatar",
+    "algorithm_config_contributor_url",
+    "result_contributor",
+    "result_contributor_username",
+    "result_contributor_avatar",
+    "result_contributor_url",
+)
 
 
 def read_metrics(exp_dir: Path) -> Optional[Dict[str, str]]:
@@ -121,6 +158,18 @@ def read_metrics(exp_dir: Path) -> Optional[Dict[str, str]]:
         first_row = rows[0]
         header_order = reader.fieldnames or list(first_row.keys())
         return {"data": first_row, "header": header_order}
+
+
+def has_complete_results(metrics: Dict) -> bool:
+    data = metrics.get("data") or {}
+    for metric in REQUIRED_LEADERBOARD_METRICS:
+        try:
+            value = float(data.get(metric, ""))
+        except (TypeError, ValueError):
+            return False
+        if not math.isfinite(value):
+            return False
+    return True
 
 
 def read_config(exp_dir: Path) -> Optional[Dict]:
@@ -184,8 +233,18 @@ def merged_metric_order(experiments: Sequence[Dict]) -> List[str]:
     return ordered
 
 
+def collapse_signature(config: Dict) -> str:
+    settings = {
+        key: value
+        for key, value in config.items()
+        if key not in COLLAPSE_VARIABLE_FIELDS and key not in COLLAPSE_KEY_CONFIG_FIELDS
+    }
+    return json.dumps(settings, sort_keys=True, separators=(",", ":"))
+
+
 def collapse_key(exp: Dict) -> Tuple[str, ...]:
-    return tuple(str(exp.get(field) or "") for field in COLLAPSE_KEY_FIELDS)
+    fields = tuple(str(exp.get(field) or "") for field in COLLAPSE_KEY_FIELDS)
+    return fields + (str(exp.get("_collapse_signature") or ""),)
 
 
 def pick_anchor(group: List[Dict]) -> Dict:
@@ -241,6 +300,7 @@ def collapse_repeated_experiments(experiments: List[Dict]) -> List[Dict]:
         merged["metric_order"] = merged_metric_order(group)
         merged["fold_count"] = len(group)
         merged["fold_members"] = [exp["exp_id"] for exp in group]
+        merged["experiment_date"] = max(exp.get("experiment_date", 0) for exp in group)
         merge_seed_fields(merged, group)
         collapsed.append(merged)
 
@@ -479,13 +539,16 @@ def build_contributor_pool(experiment_groups: Sequence[Sequence[Dict]]) -> Dict[
     return pool
 
 
-def compact_contributor_records(experiments: Sequence[Dict]) -> None:
+def compact_experiment_records(experiments: Sequence[Dict]) -> None:
     for exp in experiments:
         for contributor in exp.get("contributors") or []:
             contributor.pop("name", None)
             contributor.pop("username", None)
             contributor.pop("avatar", None)
             contributor.pop("url", None)
+        for field in LEGACY_CONTRIBUTOR_FIELDS:
+            exp.pop(field, None)
+        exp.pop("metric_order", None)
 
 
 def validate_strings(strings: Dict, strings_path: Path) -> None:
@@ -539,12 +602,265 @@ def load_template(template_path: Path) -> str:
         raise SystemExit(f"Unable to read template file: {template_path}") from exc
 
 
+def markdown_section(text: str, heading: str) -> str:
+    match = re.search(
+        rf"^## {re.escape(heading)}\s*$\n(.*?)(?=^## |\Z)",
+        text,
+        flags=re.MULTILINE | re.DOTALL,
+    )
+    return match.group(1).strip() if match else ""
+
+
+def markdown_field(text: str, label: str) -> str:
+    match = re.search(
+        rf"^- \*\*{re.escape(label)}:\*\*\s*(.+?)\s*$",
+        text,
+        flags=re.MULTILINE,
+    )
+    return match.group(1).strip() if match else ""
+
+
+def plain_markdown(text: str) -> str:
+    value = re.sub(r"\[([^\]]+)\]\([^\)]+\)", r"\1", text)
+    value = value.replace("**", "").replace("`", "")
+    return " ".join(value.split())
+
+
+def first_code_value(text: str) -> str:
+    match = re.search(r"`([^`]+)`", text)
+    if match:
+        return match.group(1)
+    return plain_markdown(text).split(",", 1)[0]
+
+
+def completed_study_reviews(review_dir: Path) -> List[Dict[str, str]]:
+    reviews: List[Dict[str, str]] = []
+    if not review_dir.exists():
+        return reviews
+
+    for review_path in sorted(review_dir.glob("*.md")):
+        if review_path.name in {"PROMPT.md", "REVIEW.md"}:
+            continue
+        reviews.append(
+            {
+                "filename": review_path.name,
+                "text": review_path.read_text(encoding="utf-8"),
+            }
+        )
+    return reviews
+
+
+def study_primary_author(authors: str) -> str:
+    author_names = re.split(r"\s+(?:and|&)\s+|,\s*", authors, flags=re.IGNORECASE)
+    return next(
+        (name.strip() for name in author_names if name.strip().casefold() != "codex"),
+        "",
+    )
+
+
+def study_contributor_id(authors: str, contributor_pool: Dict[str, Dict[str, str]]) -> str:
+    """Match the first named human study author to an existing contributor profile."""
+    primary_author = study_primary_author(authors)
+    author_key = re.sub(r"[^a-z0-9]+", "", primary_author.casefold())
+    if not author_key:
+        return ""
+
+    for contributor_id, profile in contributor_pool.items():
+        candidates = [profile.get("name", ""), profile.get("username", "")]
+        for candidate in candidates:
+            candidate_key = re.sub(r"[^a-z0-9]+", "", candidate.casefold())
+            if (
+                len(candidate_key) >= 6
+                and (author_key in candidate_key or candidate_key in author_key)
+            ):
+                return contributor_id
+    return ""
+
+
+def collect_studies(
+    studies_dir: Path,
+    repo_root: Path,
+    repo_url: str,
+    contributor_pool: Dict[str, Dict[str, str]],
+) -> List[Dict]:
+    if not studies_dir.exists():
+        return []
+
+    studies: List[Dict] = []
+    for study_dir in sorted(path for path in studies_dir.iterdir() if path.is_dir()):
+        if study_dir.name.startswith("_") or study_dir.name.startswith("."):
+            continue
+
+        proposal_path = study_dir / "PROPOSAL.md"
+        report_path = study_dir / "FINAL_REPORT.md"
+        experiments_dir = study_dir / "experiments"
+        if (
+            not proposal_path.exists()
+            or not report_path.exists()
+            or not experiments_dir.is_dir()
+            or not any(experiments_dir.iterdir())
+        ):
+            continue
+
+        proposal = proposal_path.read_text(encoding="utf-8")
+        report = report_path.read_text(encoding="utf-8")
+        short_answer = markdown_section(report, "Short answer")
+        status_match = re.search(
+            r"\*\*\s*(Supported|Falsified|Inconclusive)\b.*?\*\*",
+            short_answer,
+            flags=re.IGNORECASE,
+        )
+        if status_match:
+            status = status_match.group(1).lower()
+            summary = plain_markdown(short_answer[status_match.end() :])
+        else:
+            status = "pending" if "pending" in short_answer.lower() else "reported"
+            summary = plain_markdown(short_answer)
+
+        reviews = completed_study_reviews(study_dir / "review")
+
+        hypothesis_section = markdown_section(proposal, "Hypothesis")
+        hypothesis_match = re.search(r"\*\*(.+?)\*\*", hypothesis_section, flags=re.DOTALL)
+        hypothesis = plain_markdown(hypothesis_match.group(1)) if hypothesis_match else ""
+        if not hypothesis:
+            hypothesis = "See the study proposal."
+
+        conclusion = plain_markdown(markdown_section(report, "Conclusion"))
+        title = plain_markdown(
+            markdown_field(report, "Study") or markdown_field(proposal, "Study")
+        )
+        authors = plain_markdown(
+            markdown_field(report, "Authors") or markdown_field(proposal, "Authors")
+        )
+        title = title or study_dir.name.replace("-", " ").title()
+        summary = summary or conclusion or "Final report available."
+        conclusion = conclusion or summary
+
+        keywords = []
+        for value in markdown_field(proposal, "Keywords").split(","):
+            keyword = plain_markdown(value)
+            if keyword:
+                keywords.append(keyword)
+            if len(keywords) == 5:
+                break
+
+        if keywords:
+            scope = " · ".join(keywords)
+        else:
+            network = first_code_value(markdown_field(proposal, "Network and demand"))
+            task = first_code_value(markdown_field(proposal, "Task and CAV behaviour"))
+            cav_share = plain_markdown(markdown_field(proposal, "CAV share"))
+            scope = " · ".join(value for value in [network, task, cav_share] if value)
+        report_date = plain_markdown(markdown_field(report, "Report date"))
+
+        try:
+            relative_study_path = study_dir.resolve().relative_to(repo_root.resolve()).as_posix()
+        except ValueError:
+            relative_study_path = study_dir.as_posix()
+        if repo_url:
+            study_link = f"{repo_url.rstrip('/')}/{relative_study_path}"
+            study_document_base = study_link.replace("/tree/", "/blob/", 1)
+        else:
+            study_link = f"../../{relative_study_path}"
+            study_document_base = study_link
+
+        cover_path = study_dir / "COVER.png"
+        cover_name = re.sub(r"[^a-zA-Z0-9_-]+", "-", study_dir.name).strip("-")
+        cover_url = f"study-covers/{cover_name}.png" if cover_path.exists() else ""
+        studies.append(
+            {
+                "slug": study_dir.name,
+                "title": title,
+                "hypothesis": hypothesis,
+                "summary": summary,
+                "conclusion": conclusion,
+                "status": status,
+                "scope": scope,
+                "report_date": report_date,
+                "review_count": len(reviews),
+                "contributor_id": study_contributor_id(authors, contributor_pool),
+                "contributor_name": study_primary_author(authors),
+                "link": study_link,
+                "proposal_text": proposal,
+                "proposal_url": f"{study_document_base}/PROPOSAL.md",
+                "report_text": report,
+                "report_url": f"{study_document_base}/FINAL_REPORT.md",
+                "reviews": [
+                    {
+                        **review,
+                        "url": (
+                            f"{study_document_base}/review/"
+                            f"{quote(str(review['filename']))}"
+                        ),
+                    }
+                    for review in reviews
+                ],
+                "cover_url": cover_url,
+                "_cover_source": str(cover_path) if cover_path.exists() else "",
+            }
+        )
+
+    return sorted(
+        studies,
+        key=lambda study: (
+            bool(re.fullmatch(r"\d{4}-\d{2}-\d{2}", study["report_date"])),
+            study["report_date"],
+        ),
+        reverse=True,
+    )
+
+
+def copy_study_covers(studies: Sequence[Dict], output_dir: Path) -> None:
+    for study in studies:
+        cover_source = study.pop("_cover_source", "")
+        if not cover_source:
+            continue
+        destination = output_dir / study["cover_url"]
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(cover_source, destination)
+
+
+def result_dates_from_git(repo_root: Path) -> Dict[str, int]:
+    try:
+        result = subprocess.run(
+            [
+                "git",
+                "log",
+                "--reverse",
+                "--diff-filter=A",
+                "--format=@@%at",
+                "--name-only",
+                "--",
+                "results",
+            ],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return {}
+
+    if result.returncode != 0:
+        return {}
+
+    dates: Dict[str, int] = {}
+    timestamp = 0
+    for line in result.stdout.splitlines():
+        if line.startswith("@@"):
+            timestamp = int(line[2:])
+        elif line.endswith("/exp_config.json") and timestamp:
+            dates.setdefault(line, timestamp)
+    return dates
+
+
 def collect_experiments(results_dir: Path) -> List[Dict]:
     if not results_dir.exists():
         raise SystemExit(f"Results directory not found: {results_dir}")
 
     repo_root = Path(__file__).resolve().parent.parent
     contributor_cache: Dict[str, Tuple[str, str]] = {}
+    result_dates = result_dates_from_git(repo_root)
     experiments: List[Dict] = []
     for exp_dir in sorted(results_dir.iterdir()):
         if not exp_dir.is_dir():
@@ -554,7 +870,7 @@ def collect_experiments(results_dir: Path) -> List[Dict]:
 
         config = read_config(exp_dir)
         metrics = read_metrics(exp_dir)
-        if not config or not metrics:
+        if not config or not metrics or not has_complete_results(metrics):
             continue
 
         script_path = config.get("script") or ""
@@ -584,6 +900,14 @@ def collect_experiments(results_dir: Path) -> List[Dict]:
             repo_root,
         )
         result_config_file = exp_dir / "exp_config.json"
+        try:
+            result_config_path = result_config_file.resolve().relative_to(repo_root.resolve()).as_posix()
+        except ValueError:
+            result_config_path = ""
+        experiment_date = result_dates.get(
+            result_config_path,
+            int(result_config_file.stat().st_mtime),
+        )
         script_contributor, script_contributor_username = (
             script_contributor_info_from_git(script_file, repo_root, contributor_cache)
             if script_file
@@ -663,6 +987,8 @@ def collect_experiments(results_dir: Path) -> List[Dict]:
                 "alg_config": alg_config,
                 "env_seed": config.get("env_seed"),
                 "torch_seed": config.get("torch_seed"),
+                "experiment_date": experiment_date,
+                "_collapse_signature": collapse_signature(config),
                 "metrics": metrics["data"],
                 "metric_order": metrics["header"],
             }
@@ -673,7 +999,12 @@ def collect_experiments(results_dir: Path) -> List[Dict]:
 def build_html(payload: Dict, output_path: Path, template: str) -> None:
     """Write a self-contained HTML file with embedded data and styling."""
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    data_json = json.dumps(payload, indent=2)
+    data_json = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+    data_json = (
+        data_json.replace("<", "\\u003c")
+        .replace("\u2028", "\\u2028")
+        .replace("\u2029", "\\u2029")
+    )
     generated_at = payload["generated_at"]
     strings = payload["strings"]
 
@@ -691,6 +1022,7 @@ def build_html(payload: Dict, output_path: Path, template: str) -> None:
         "__HERO_TEXT__": strings["hero_text"],
         "__CONTROLS_HINT__": strings["controls_hint"],
         "__DOWNLOAD_LABEL__": strings["download_csv_label"],
+        "__SORT_NEWEST_LABEL__": strings["sort_newest_label"],
         "__FILTERS_TITLE__": strings["filters_title"],
         "__FILTERS_HINT__": strings["filters_hint"],
         "__ISOLATE_LABEL__": strings["isolate_label"],
@@ -761,6 +1093,24 @@ def infer_raw_repo_base(repo_url: str) -> str:
     return raw_base
 
 
+def build_network_image_urls(repo_root: Path, raw_repo_base: str) -> Dict[str, str]:
+    base = (raw_repo_base or "").rstrip("/")
+    networks_dir = repo_root / "networks"
+    if not base or not networks_dir.exists():
+        return {}
+
+    urls: Dict[str, str] = {}
+    for network_dir in sorted(path for path in networks_dir.iterdir() if path.is_dir()):
+        images = sorted(network_dir.glob("*.png"))
+        if not images:
+            continue
+        preferred = network_dir / f"{network_dir.name}_network.png"
+        image_path = preferred if preferred.exists() else images[0]
+        relative_path = image_path.relative_to(repo_root).as_posix()
+        urls[network_dir.name] = f"{base}/{relative_path}"
+    return urls
+
+
 def attach_hover_urls(experiments: List[Dict], raw_repo_base: str) -> None:
     base = (raw_repo_base or "").rstrip("/")
     for exp in experiments:
@@ -822,6 +1172,12 @@ def main(args: Optional[Sequence[str]] = None) -> None:
         help="Directory where the static site will be written.",
     )
     parser.add_argument(
+        "--studies-dir",
+        type=Path,
+        default=Path("studies"),
+        help="Base directory containing URB studies.",
+    )
+    parser.add_argument(
         "--repo-url",
         type=str,
         default="",
@@ -849,18 +1205,35 @@ def main(args: Optional[Sequence[str]] = None) -> None:
 
     strings = load_strings(parsed.strings_path)
     template = load_template(parsed.template_path)
+    template_dir = Path(__file__).resolve().parent
+    home_content = load_template(template_dir / "home_content.html")
+    home_styles = load_template(template_dir / "home_styles.css")
+    home_script = load_template(template_dir / "home_script.js")
+    template = template.replace("__HOME_CONTENT__", home_content)
+    template = template.replace("__HOME_STYLES__", home_styles)
+    template = template.replace("__HOME_SCRIPT__", home_script)
     raw_experiments = collect_experiments(parsed.results_dir)
     experiments = collapse_repeated_experiments(raw_experiments)
+    metric_order = merged_metric_order(raw_experiments)
+    for exp in raw_experiments + experiments:
+        exp.pop("_collapse_signature", None)
     contributor_pool = build_contributor_pool([raw_experiments, experiments])
-    compact_contributor_records(raw_experiments)
-    compact_contributor_records(experiments)
+    compact_experiment_records(raw_experiments)
+    compact_experiment_records(experiments)
 
     repo_url = parsed.repo_url or infer_default_repo_url(strings)
+    repo_root = Path(__file__).resolve().parent.parent
     build_experiment_links(raw_experiments, repo_url, parsed.local_link_prefix)
     build_experiment_links(experiments, repo_url, parsed.local_link_prefix)
     raw_repo_base = infer_raw_repo_base(repo_url)
     attach_hover_urls(raw_experiments, raw_repo_base)
     attach_hover_urls(experiments, raw_repo_base)
+    network_images = build_network_image_urls(
+        repo_root,
+        raw_repo_base,
+    )
+    studies = collect_studies(parsed.studies_dir, repo_root, repo_url, contributor_pool)
+    copy_study_covers(studies, parsed.output_dir)
 
     payload = {
         "generated_at": dt.datetime.now(dt.timezone.utc)
@@ -868,7 +1241,10 @@ def main(args: Optional[Sequence[str]] = None) -> None:
         .replace("+00:00", "Z"),
         "results_dir": str(parsed.results_dir),
         "raw_repo_base": raw_repo_base,
+        "network_images": network_images,
         "contributors": contributor_pool,
+        "studies": studies,
+        "metric_order": metric_order,
         "experiments": experiments,
         "raw_experiments": raw_experiments,
         "strings": strings,
@@ -884,6 +1260,11 @@ def main(args: Optional[Sequence[str]] = None) -> None:
     favicon_src = Path("docs/urb_car.png")
     if favicon_src.exists():
         shutil.copy(favicon_src, parsed.output_dir / "urb_car.png")
+
+    for asset_name in ["home_hero_network.webp", "arxiv.webp", "kaggle.svg"]:
+        asset_src = template_dir / "assets" / asset_name
+        if asset_src.exists():
+            shutil.copy(asset_src, parsed.output_dir / asset_name)
 
     print(f"Wrote leaderboard to {output_path}")
 

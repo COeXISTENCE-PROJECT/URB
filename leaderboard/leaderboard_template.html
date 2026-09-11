@@ -32,6 +32,8 @@
       --border: #d7dde2;
       --radius: 14px;
       --shadow: 0 10px 30px rgba(17, 24, 39, 0.07);
+      --sheen-cycle: 5.2s;
+      --sheen-delay: 0ms;
     }
 
     * {
@@ -59,49 +61,167 @@
       color: var(--accent);
     }
 
-    .header {
+    .ui-icon-sprite {
+      position: absolute;
+      width: 0;
+      height: 0;
+      overflow: hidden;
+    }
+
+    .ui-icon {
+      width: 17px;
+      height: 17px;
+      flex: 0 0 auto;
+      fill: none;
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 1.8;
+    }
+
+    .site-nav {
       display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 14px;
-      margin-bottom: 18px;
-      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 22px;
     }
 
-    .title {
-      margin: 0;
-      font-size: 33px;
-      font-weight: 600;
-      line-height: 1.05;
-      letter-spacing: -0.02em;
-    }
-
-    .title-link {
-      color: inherit;
-      text-decoration: none;
-      border-bottom: 1px solid transparent;
-      transition: border-color 0.15s ease;
-    }
-
-    .title-link:hover {
-      border-color: var(--accent);
-    }
-
-    .meta {
-      margin-top: 7px;
-      color: var(--muted);
-      font-size: 14px;
-    }
-
-    .pill {
-      font-size: 12px;
-      font-weight: 600;
-      color: #1f5b4e;
-      border: 1px solid var(--accent-border);
-      background: var(--accent-soft);
+    .view-switch {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px;
+      border: 1px solid rgba(199, 211, 216, 0.9);
       border-radius: 999px;
-      padding: 7px 12px;
-      white-space: nowrap;
+      background: rgba(255, 255, 255, 0.88);
+      box-shadow: 0 8px 24px rgba(31, 44, 51, 0.09);
+      backdrop-filter: blur(12px);
+    }
+
+    .urb-home {
+      display: grid;
+      width: 44px;
+      height: 44px;
+      place-items: center;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      transition: background 0.15s ease, transform 0.15s ease;
+    }
+
+    .urb-home:hover {
+      background: #dceee8;
+      transform: translateY(-1px);
+    }
+
+    .urb-home:focus-visible,
+    .view-option:focus-visible {
+      outline: 2px solid rgba(31, 111, 94, 0.35);
+      outline-offset: 2px;
+    }
+
+    .urb-home img {
+      width: 29px;
+      height: 29px;
+      object-fit: contain;
+    }
+
+    .view-options {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(136px, 1fr));
+      padding: 2px;
+      border-radius: 999px;
+      background: #edf1f1;
+    }
+
+    .view-slider {
+      position: absolute;
+      top: 2px;
+      bottom: 2px;
+      left: 2px;
+      width: calc(33.3333% - 1.3333px);
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow:
+        0 7px 16px rgba(20, 76, 64, 0.28),
+        0 2px 4px rgba(20, 76, 64, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.18);
+      transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .view-switch[data-view="leaderboard"] .view-slider {
+      transform: translateX(100%);
+    }
+
+    .view-switch[data-view="studies"] .view-slider {
+      transform: translateX(200%);
+    }
+
+    .view-option {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      height: 42px;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 0 24px;
+      border: 0;
+      background: transparent;
+      color: #59646d;
+      cursor: pointer;
+      font: inherit;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      transition: color 0.18s ease;
+    }
+
+    .view-option.is-active {
+      color: #ffffff;
+    }
+
+    .view-option > span {
+      position: relative;
+      transition: color 0.2s ease, transform 0.2s ease, text-shadow 0.2s ease;
+    }
+
+    .view-option > span::after {
+      position: absolute;
+      right: 0;
+      bottom: -4px;
+      left: 0;
+      height: 2px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, transparent, rgba(31, 111, 94, 0.62), transparent);
+      content: '';
+      opacity: 0;
+      transform: scaleX(0.35);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .view-option:not(.is-active):hover > span,
+    .view-option:not(.is-active):focus-visible > span {
+      color: #315e51;
+      text-shadow: 0 4px 12px rgba(31, 111, 94, 0.18);
+      transform: translateY(-1px);
+    }
+
+    .view-option:not(.is-active):hover > span::after,
+    .view-option:not(.is-active):focus-visible > span::after {
+      opacity: 1;
+      transform: scaleX(1);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .view-option > span,
+      .view-option > span::after {
+        transition: none;
+      }
+    }
+
+    .page-view[hidden],
+    #leaderboard-extras[hidden] {
+      display: none;
     }
 
     .card {
@@ -113,79 +233,937 @@
       padding: 18px;
     }
 
-    .hero {
+    .leaderboard-table-card,
+    .studies-shell {
+      width: min(1800px, calc(100vw - 40px));
+      margin-left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .leaderboard-intro {
+      width: min(1800px, calc(100vw - 40px));
+      margin-left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .studies-shell {
+      padding-bottom: 24px;
+    }
+
+    .studies-intro {
+      position: relative;
       display: grid;
       grid-template-columns: auto minmax(0, 1fr) auto;
-      gap: 14px;
+      min-height: 180px;
       align-items: center;
-      margin-bottom: 14px;
+      gap: 28px;
+      overflow: hidden;
+      margin-bottom: 16px;
+      padding: 32px;
+      border: 1px solid #cbded7;
+      border-radius: 20px;
+      background:
+        radial-gradient(circle at 88% 8%, rgba(255, 255, 255, 0.75), transparent 30%),
+        linear-gradient(135deg, #e5f1ed 0%, #f4f3ea 58%, #eef2f5 100%);
+      box-shadow: var(--shadow);
     }
 
-    .hero img {
-      width: 92px;
-      height: 52px;
-      object-fit: contain;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      padding: 5px;
-      background: #fff;
+    .studies-intro::after {
+      position: absolute;
+      top: -100px;
+      right: -50px;
+      width: 310px;
+      height: 310px;
+      border: 1px solid rgba(31, 111, 94, 0.14);
+      border-radius: 50%;
+      content: '';
     }
 
-    .hero-content {
-      min-width: 0;
+    .studies-intro-copy {
+      position: relative;
+      z-index: 1;
+      max-width: 760px;
     }
 
-    .hero p {
+    .studies-logo-scene {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      width: 212px;
+      height: 104px;
+      place-items: center;
+    }
+
+    .studies-logo-plane {
+      position: relative;
+      display: grid;
+      width: 204px;
+      height: 88px;
+      overflow: hidden;
+      place-items: center;
+      border: 1px solid rgba(153, 180, 171, 0.5);
+      border-radius: 20px;
+      background:
+        radial-gradient(circle at 24% 0%, rgba(255, 255, 255, 0.96), transparent 50%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.82), rgba(229, 239, 235, 0.66));
+      box-shadow:
+        0 20px 42px -32px rgba(20, 70, 59, 0.72),
+        inset 0 1px 0 rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(10px);
+    }
+
+    .studies-logo-plane::after {
+      position: absolute;
+      top: 0;
+      right: 22px;
+      left: 22px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.96), transparent);
+      content: '';
+    }
+
+    .studies-logo {
+      position: relative;
+      width: 176px;
+      height: auto;
+      filter: drop-shadow(0 5px 8px rgba(19, 52, 44, 0.16));
+    }
+
+    .studies-kicker {
+      margin: 0 0 10px;
+      color: var(--accent);
+      font-family: 'IBM Plex Mono', 'Consolas', monospace;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .studies-title {
+      max-width: 720px;
       margin: 0;
-      color: #2a3138;
-      line-height: 1.48;
-      font-size: 14px;
+      color: #18332d;
+      font-size: clamp(28px, 3vw, 40px);
+      font-weight: 600;
+      letter-spacing: -0.025em;
+      line-height: 1.08;
     }
 
-    .join-link {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      margin-top: 0;
-      min-width: 160px;
-      min-height: 42px;
-      padding: 8px 12px;
-      border-radius: 12px;
-      border: 1px solid #b6cdee;
-      background: #edf4ff;
-      color: #1a4f8f;
+    .studies-description {
+      max-width: 680px;
+      margin: 16px 0 0;
+      color: #496059;
+      font-size: 15px;
+      line-height: 1.55;
+    }
+
+    .studies-count {
+      position: relative;
+      z-index: 1;
+      flex: 0 0 auto;
+      min-width: 146px;
+      padding: 13px 16px;
+      border: 1px solid rgba(31, 111, 94, 0.18);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.68);
+      color: #31534b;
       font-size: 13px;
       font-weight: 600;
-      line-height: 1.15;
-      text-decoration: none;
       text-align: center;
-      white-space: pre-line;
-      transition: background 0.12s ease, border-color 0.12s ease;
+      backdrop-filter: blur(8px);
     }
 
-    .join-link:hover {
-      background: #dce9ff;
-      border-color: #9fbee8;
+    .studies-actions {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      min-width: 160px;
+      gap: 9px;
     }
 
-    .controls {
+    .studies-contribute {
+      position: relative;
+      display: inline-flex;
+      overflow: hidden;
+      min-height: 40px;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      padding: 0 14px 0 17px;
+      border: 1px solid rgba(255, 255, 255, 0.48);
+      border-radius: 12px;
+      background: linear-gradient(125deg, #174f62 0%, #1f6f5e 46%, #2c806a 100%);
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      text-decoration: none;
+      box-shadow:
+        0 9px 22px -10px rgba(23, 79, 98, 0.72),
+        inset 0 1px 0 rgba(255, 255, 255, 0.38),
+        inset 0 -1px 0 rgba(8, 49, 44, 0.28);
+      isolation: isolate;
+      transition: box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    .studies-contribute::before {
+      position: absolute;
+      z-index: 0;
+      top: -80%;
+      bottom: -80%;
+      left: -55%;
+      width: 34%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.42), transparent);
+      content: '';
+      transform: translate3d(0, 0, 0) rotate(18deg);
+      will-change: transform, opacity;
+      animation: synced-sheen var(--sheen-cycle) ease-in-out infinite;
+      animation-delay: var(--sheen-delay);
+    }
+
+    .studies-contribute span,
+    .studies-contribute .contribute-icon {
+      position: relative;
+      z-index: 1;
+    }
+
+    .studies-contribute .contribute-icon {
+      width: 18px;
+      height: 18px;
+      padding: 3px;
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      stroke-width: 2;
+      transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    .studies-contribute:hover {
+      box-shadow:
+        0 14px 28px -11px rgba(23, 79, 98, 0.82),
+        0 0 0 3px rgba(56, 139, 116, 0.13),
+        inset 0 1px 0 rgba(255, 255, 255, 0.46),
+        inset 0 -1px 0 rgba(8, 49, 44, 0.28);
+      transform: translateY(-2px);
+    }
+
+    .studies-contribute:hover .contribute-icon {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateX(2px);
+    }
+
+    .studies-contribute:focus-visible {
+      outline: 3px solid rgba(31, 111, 94, 0.3);
+      outline-offset: 3px;
+    }
+
+    @keyframes synced-sheen {
+      0%, 58% { opacity: 0; transform: translate3d(0, 0, 0) rotate(18deg); }
+      64% { opacity: 0.75; }
+      79%, 100% { opacity: 0; transform: translate3d(540%, 0, 0) rotate(18deg); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .studies-contribute,
+      .studies-contribute::before {
+        animation: none;
+      }
+
+      .studies-contribute::before {
+        will-change: auto;
+      }
+    }
+
+    .studies-toolbar {
       display: flex;
-      flex-wrap: wrap;
+      align-items: center;
       justify-content: space-between;
-      gap: 10px 14px;
-      margin-bottom: 12px;
-      padding-bottom: 12px;
+      gap: 16px;
+      margin-bottom: 16px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.78);
+    }
+
+    .studies-toolbar[hidden] {
+      display: none;
+    }
+
+    .study-status-filters {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+
+    .study-filter-btn {
+      min-height: 34px;
+      padding: 0 13px;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      background: transparent;
+      color: #5d6971;
+      cursor: pointer;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .study-filter-btn:hover {
+      background: #f0f4f3;
+      color: #304840;
+    }
+
+    .study-filter-btn.is-active {
+      border-color: var(--accent-border);
+      background: var(--accent-soft);
+      color: #1d574b;
+    }
+
+    .study-search {
+      display: flex;
+      flex: 0 1 310px;
+      align-items: center;
+      gap: 9px;
+      min-width: 220px;
+      height: 38px;
+      padding: 0 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #ffffff;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .study-search input {
+      width: 100%;
+      min-width: 0;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: var(--ink);
+      font: inherit;
+      font-size: 13px;
+    }
+
+    .study-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 400px));
+      grid-auto-rows: 1fr;
+      align-items: stretch;
+      justify-content: start;
+      gap: 16px;
+    }
+
+    .study-card {
+      position: relative;
+      display: flex;
+      height: 100%;
+      min-width: 0;
+      overflow: hidden;
+      flex-direction: column;
+      border: 1px solid var(--border);
+      border-radius: 17px;
+      background: #ffffff;
+      box-shadow: 0 8px 26px rgba(22, 32, 40, 0.06);
+      transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+    }
+
+    .study-card:hover {
+      border-color: #b8cec6;
+      box-shadow: 0 16px 34px rgba(22, 47, 39, 0.11);
+      transform: translateY(-3px);
+    }
+
+    .study-card-link {
+      position: absolute;
+      z-index: 1;
+      inset: 0;
+      border-radius: inherit;
+    }
+
+    .study-cover {
+      position: relative;
+      overflow: hidden;
+      flex: 0 0 auto;
+      aspect-ratio: 1.9 / 1;
+      border-bottom: 1px solid var(--line);
+      background: #eef1ef;
+    }
+
+    .study-cover.is-fallback {
+      background: linear-gradient(145deg, #f4f6f5, #e6ece9);
+    }
+
+    .study-cover-image {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #ffffff;
+      transition: transform 0.28s ease;
+    }
+
+    .study-cover.is-fallback .study-cover-image {
+      width: 72%;
+      margin: 0 auto;
+      background: transparent;
+    }
+
+    .study-card:hover .study-cover-image {
+      transform: scale(1.015);
+    }
+
+    .study-status {
+      position: absolute;
+      z-index: 2;
+      top: 12px;
+      left: 12px;
+      padding: 8px 13px;
+      border: 1px solid rgba(255, 255, 255, 0.75);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 4px 12px rgba(18, 30, 36, 0.1);
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: capitalize;
+      backdrop-filter: blur(8px);
+      pointer-events: none;
+    }
+
+    .study-status.supported {
+      color: #17604d;
+    }
+
+    .study-status.falsified {
+      color: #9a3e33;
+    }
+
+    .study-status.inconclusive {
+      color: #876119;
+    }
+
+    .study-status.pending,
+    .study-status.reported {
+      color: #59646d;
+    }
+
+    .study-new-badge {
+      position: absolute;
+      z-index: 4;
+      top: 12px;
+      right: 12px;
+      overflow: hidden;
+      padding: 7px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.58);
+      border-radius: 999px;
+      background: linear-gradient(135deg, #8a5a12 0%, #bd8624 56%, #e2b64d 100%);
+      box-shadow:
+        0 7px 16px rgba(132, 86, 14, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.32),
+        inset 0 -1px 0 rgba(86, 50, 7, 0.3);
+      color: #fffdf4;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      line-height: 1;
+      text-shadow: 0 1px 1px rgba(86, 50, 7, 0.22);
+      pointer-events: none;
+    }
+
+    .study-new-badge::after {
+      position: absolute;
+      top: -80%;
+      bottom: -80%;
+      left: -65%;
+      width: 34%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.58), transparent);
+      content: '';
+      transform: translate3d(0, 0, 0) rotate(18deg);
+      animation: synced-sheen var(--sheen-cycle) ease-in-out infinite;
+      animation-delay: var(--sheen-delay);
+    }
+
+    .study-card.has-new-badge .study-contributor-link {
+      top: 48px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .study-new-badge::after {
+        animation: none;
+      }
+    }
+
+    .study-contributor-link {
+      position: absolute;
+      z-index: 3;
+      top: 12px;
+      right: 13px;
+      display: block;
+      width: 40px;
+      height: 40px;
+      border-radius: 999px;
+      line-height: 0;
+      transition: box-shadow 0.16s ease, transform 0.16s ease;
+    }
+
+    .study-contributor-link:hover {
+      box-shadow: 0 8px 20px rgba(18, 30, 36, 0.2);
+      transform: translateY(-1px);
+    }
+
+    .study-contributor-link:focus-visible {
+      outline: 3px solid rgba(31, 111, 94, 0.34);
+      outline-offset: 3px;
+    }
+
+    .study-contributor-link .contributor-avatar {
+      display: flex;
+      width: 40px;
+      height: 40px;
+      margin-left: 0;
+      border-width: 3px;
+      border-color: rgba(255, 255, 255, 0.96);
+      box-shadow: 0 6px 16px rgba(18, 30, 36, 0.22);
+      font-size: 12px;
+    }
+
+    .study-card-body {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      padding: 18px;
+    }
+
+    .study-card-meta {
+      display: flex;
+      align-items: center;
+      margin-bottom: 11px;
+      color: var(--muted);
+      font-family: 'IBM Plex Mono', 'Consolas', monospace;
+      font-size: 10px;
+    }
+
+    .study-card-title {
+      margin: 0;
+      color: #20322d;
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.018em;
+      line-height: 1.22;
+    }
+
+    .study-card-summary {
+      display: -webkit-box;
+      overflow: hidden;
+      margin: 12px 0 0;
+      color: #53615d;
+      font-size: 13px;
+      line-height: 1.5;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 3;
+    }
+
+    .study-scope {
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+      color: #53635e;
+      font-family: 'IBM Plex Mono', 'Consolas', monospace;
+      font-size: 10px;
+      line-height: 1.45;
+    }
+
+    .study-card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: auto;
+      padding-top: 18px;
+      color: #54635f;
+      font-size: 11px;
+    }
+
+    .study-document-actions {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      gap: 7px;
+    }
+
+    .study-document-button {
+      min-height: 32px;
+      padding: 0 11px;
+      border: 1px solid #c7d7d2;
+      border-radius: 9px;
+      background: #f7faf9;
+      color: #315b50;
+      cursor: pointer;
+      font: inherit;
+      font-size: 11px;
+      font-weight: 600;
+      transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+    }
+
+    .study-document-button:hover {
+      border-color: #9fbdb3;
+      background: #edf5f2;
+      box-shadow: 0 5px 12px rgba(22, 47, 39, 0.1);
+      transform: translateY(-1px);
+    }
+
+    .study-document-button.report {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #ffffff;
+    }
+
+    .study-document-button.report:hover {
+      border-color: #185c4d;
+      background: #185c4d;
+    }
+
+    .study-document-button:focus-visible {
+      outline: 2px solid rgba(31, 111, 94, 0.35);
+      outline-offset: 2px;
+    }
+
+    .study-review-button {
+      position: relative;
+      z-index: 2;
+      margin-left: auto;
+      color: #53625e;
+    }
+
+    .study-review-button.missing {
+      border-color: #e0d6bd;
+      background: #fbf9f3;
+      color: #8a641d;
+      cursor: default;
+    }
+
+    .study-review-button.missing:hover {
+      border-color: #e0d6bd;
+      background: #fbf9f3;
+      box-shadow: none;
+      transform: none;
+    }
+
+    .study-document-dialog {
+      width: min(900px, calc(100vw - 32px));
+      max-width: none;
+      height: min(88vh, 880px);
+      max-height: none;
+      padding: 0;
+      overflow: hidden;
+      border: 1px solid #c8d6d2;
+      border-radius: 20px;
+      background: #ffffff;
+      color: #24332f;
+      box-shadow: 0 32px 90px rgba(15, 23, 42, 0.28);
+    }
+
+    .study-document-dialog::backdrop {
+      background: rgba(15, 23, 42, 0.5);
+      backdrop-filter: blur(4px);
+    }
+
+    .study-document-shell {
+      display: grid;
+      height: 100%;
+      grid-template-rows: auto auto minmax(0, 1fr) auto;
+    }
+
+    .study-document-header,
+    .study-document-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 20px 28px;
+      background: #f7faf9;
+    }
+
+    .study-document-header {
       border-bottom: 1px solid var(--line);
     }
 
-    .controls-left {
+    .study-review-tabs {
       display: flex;
-      align-items: center;
-      gap: 10px;
-      color: var(--muted);
+      gap: 7px;
+      overflow-x: auto;
+      padding: 10px 28px;
+      border-bottom: 1px solid var(--line);
+      background: #ffffff;
+      scrollbar-width: thin;
+    }
+
+    .study-review-tabs[hidden] {
+      display: none;
+    }
+
+    .study-review-tab {
+      flex: 0 0 auto;
+      min-height: 34px;
+      padding: 0 13px;
+      border: 1px solid #d4dfdc;
+      border-radius: 9px;
+      background: #f7faf9;
+      color: #53625e;
+      cursor: pointer;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .study-review-tab[aria-selected="true"] {
+      border-color: var(--accent);
+      background: #eaf3f0;
+      color: var(--accent);
+      box-shadow: 0 4px 10px rgba(31, 111, 94, 0.12);
+    }
+
+    .study-review-tab:focus-visible {
+      outline: 2px solid rgba(31, 111, 94, 0.35);
+      outline-offset: 2px;
+    }
+
+    .study-document-kicker {
+      margin: 0 0 4px;
+      color: var(--accent);
+      font-family: 'IBM Plex Mono', 'Consolas', monospace;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .study-document-title {
+      margin: 0;
+      color: #20322d;
+      font-size: clamp(19px, 3vw, 25px);
+      font-weight: 600;
+      letter-spacing: -0.025em;
+      line-height: 1.2;
+    }
+
+    .study-document-close {
+      display: grid;
+      width: 38px;
+      height: 38px;
+      flex: 0 0 auto;
+      place-items: center;
+      padding: 0;
+      border: 1px solid #cdd8d5;
+      border-radius: 999px;
+      background: #ffffff;
+      color: #465651;
+      cursor: pointer;
+      font: inherit;
+      font-size: 21px;
+      line-height: 1;
+    }
+
+    .study-document-close:hover {
+      border-color: #aebfba;
+      background: #eef4f2;
+    }
+
+    .study-document-scroll {
+      overflow: auto;
+      padding: 32px 36px 42px;
+      overscroll-behavior: contain;
+    }
+
+    .study-document-content {
+      max-width: 760px;
+      margin: 0 auto;
+      color: #34443f;
+      font-size: 15px;
+      line-height: 1.72;
+    }
+
+    .study-document-content h1,
+    .study-document-content h2,
+    .study-document-content h3,
+    .study-document-content h4 {
+      color: #1f302b;
+      line-height: 1.25;
+    }
+
+    .study-document-content h1 {
+      margin: 0 0 28px;
+      font-size: 30px;
+      letter-spacing: -0.035em;
+    }
+
+    .study-document-content h2 {
+      margin: 36px 0 12px;
+      padding-top: 10px;
+      border-top: 1px solid #e5ece9;
+      font-size: 21px;
+      letter-spacing: -0.02em;
+    }
+
+    .study-document-content h3 {
+      margin: 26px 0 10px;
+      font-size: 17px;
+    }
+
+    .study-document-content p {
+      margin: 0 0 15px;
+    }
+
+    .study-document-content ul,
+    .study-document-content ol {
+      margin: 0 0 18px;
+      padding-left: 24px;
+    }
+
+    .study-document-content li + li {
+      margin-top: 7px;
+    }
+
+    .study-document-content code {
+      padding: 2px 5px;
+      border-radius: 5px;
+      background: #eef3f1;
+      color: #245b4d;
+      font-family: 'IBM Plex Mono', 'Consolas', monospace;
+      font-size: 0.88em;
+    }
+
+    .study-document-content pre {
+      overflow-x: auto;
+      margin: 0 0 20px;
+      padding: 16px;
+      border-radius: 11px;
+      background: #17211e;
+      color: #eef6f3;
+    }
+
+    .study-document-content pre code {
+      padding: 0;
+      background: transparent;
+      color: inherit;
+    }
+
+    .study-document-content table {
+      display: block;
+      width: 100%;
+      overflow-x: auto;
+      margin: 18px 0 24px;
+      border-collapse: collapse;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .study-document-content th,
+    .study-document-content td {
+      min-width: 120px;
+      padding: 9px 12px;
+      border: 1px solid #dbe4e1;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    .study-document-content th {
+      background: #f2f6f4;
+      color: #263b35;
       font-size: 13px;
-      min-height: 33px;
-      flex-wrap: wrap;
+    }
+
+    .study-document-check {
+      display: inline-grid;
+      width: 17px;
+      height: 17px;
+      place-items: center;
+      margin-right: 7px;
+      border: 1px solid #adc0ba;
+      border-radius: 4px;
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 700;
+      vertical-align: -2px;
+    }
+
+    .study-document-footer {
+      border-top: 1px solid var(--line);
+      padding-top: 14px;
+      padding-bottom: 14px;
+    }
+
+    .study-document-source {
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .study-document-source:hover {
+      text-decoration: underline;
+    }
+
+    .study-document-done {
+      min-height: 36px;
+      padding: 0 17px;
+      border: 0;
+      border-radius: 9px;
+      background: #263b35;
+      color: #ffffff;
+      cursor: pointer;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    @media (max-width: 620px) {
+      .study-card-footer {
+        gap: 7px;
+      }
+
+      .study-document-button {
+        padding-right: 9px;
+        padding-left: 9px;
+      }
+
+      .study-document-dialog {
+        width: calc(100vw - 18px);
+        height: calc(100dvh - 18px);
+        border-radius: 16px;
+      }
+
+      .study-document-header,
+      .study-document-footer {
+        padding-right: 18px;
+        padding-left: 18px;
+      }
+
+      .study-review-tabs {
+        padding-right: 18px;
+        padding-left: 18px;
+      }
+
+      .study-document-scroll {
+        padding: 24px 20px 34px;
+      }
+    }
+
+    .studies-empty {
+      padding: 72px 24px;
+      border: 1px dashed #c9d4d1;
+      border-radius: 17px;
+      background: rgba(255, 255, 255, 0.52);
+      color: var(--muted);
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .studies-empty[hidden] {
+      display: none;
     }
 
     .controls-right {
@@ -213,6 +1191,12 @@
       border-color: #c5ced6;
     }
 
+    .action-btn.is-active {
+      border-color: var(--accent-border);
+      background: var(--accent-soft);
+      color: #174d41;
+    }
+
     .download-btn {
       border-color: var(--accent-border);
       background: var(--accent-soft);
@@ -225,18 +1209,16 @@
     }
 
     .filters-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
       margin-bottom: 8px;
     }
 
     .filters-title {
       font-size: 15px;
       font-weight: 600;
-    }
-
-    .filters-hint {
-      margin-top: 3px;
-      font-size: 12px;
-      color: var(--muted);
     }
 
     .filters {
@@ -317,6 +1299,92 @@
       font-size: 13px;
     }
 
+    .network-tabs {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: flex-end;
+      gap: 5px;
+      margin: 2px 8px -1px;
+      padding-top: 7px;
+      overflow-x: auto;
+      border-bottom: 1px solid var(--line);
+      scrollbar-width: thin;
+    }
+
+    .network-tab {
+      position: relative;
+      display: inline-flex;
+      flex: 0 0 auto;
+      align-items: center;
+      gap: 8px;
+      min-height: 40px;
+      padding: 0 15px;
+      border: 1px solid var(--line);
+      border-bottom-color: transparent;
+      border-radius: 10px 10px 0 0;
+      background: #f1f4f5;
+      color: #59646d;
+      cursor: pointer;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      transition: background 0.15s ease, box-shadow 0.18s ease, color 0.15s ease, transform 0.18s ease;
+    }
+
+    .network-tab:hover {
+      background: #f8fafb;
+      color: #31414a;
+      transform: translateY(-1px);
+    }
+
+    .network-tab.is-active {
+      z-index: 1;
+      border-color: var(--border);
+      border-bottom-color: #ffffff;
+      background: #ffffff;
+      color: var(--accent);
+      font-weight: 600;
+      box-shadow: 0 8px 18px rgba(22, 45, 39, 0.14), 0 2px 5px rgba(22, 45, 39, 0.08);
+      transform: translateY(-4px);
+    }
+
+    .network-tab.is-active::before {
+      position: absolute;
+      top: -1px;
+      right: 9px;
+      left: 9px;
+      height: 2px;
+      border-radius: 999px;
+      background: var(--accent);
+      content: '';
+    }
+
+    .network-tab:focus-visible {
+      outline: 2px solid rgba(31, 111, 94, 0.35);
+      outline-offset: -3px;
+    }
+
+    .network-count {
+      display: inline-flex;
+      min-width: 21px;
+      height: 20px;
+      align-items: center;
+      justify-content: center;
+      padding: 0 6px;
+      border-radius: 999px;
+      background: #e1e7e9;
+      color: #66717a;
+      font-family: 'IBM Plex Mono', 'Consolas', monospace;
+      font-size: 10px;
+      font-weight: 500;
+    }
+
+    .network-tab.is-active .network-count {
+      background: var(--accent-soft);
+      color: #1f5b4e;
+    }
+
     .table-wrap {
       position: relative;
       width: 100%;
@@ -368,12 +1436,64 @@
       cursor: default;
     }
 
+    thead th:focus-visible {
+      outline: 2px solid rgba(31, 111, 94, 0.38);
+      outline-offset: -3px;
+    }
+
     .sort-indicator {
       display: inline-block;
-      width: 10px;
-      margin-left: 6px;
-      color: #4f5a66;
-      font-size: 11px;
+      width: 1em;
+      color: currentColor;
+      font-size: 12px;
+      line-height: 1;
+    }
+
+    .sort-button {
+      display: inline-grid;
+      width: 22px;
+      height: 22px;
+      margin-left: 5px;
+      place-items: center;
+      padding: 0;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      background: transparent;
+      color: #75818b;
+      cursor: pointer;
+      font: inherit;
+      font-size: 12px;
+      line-height: 1;
+      vertical-align: middle;
+      transition: color 0.14s ease, background 0.14s ease, border-color 0.14s ease;
+    }
+
+    .sort-button:hover,
+    .sort-button:focus-visible {
+      border-color: var(--accent-border);
+      background: var(--accent-soft);
+      color: #1f6f5e;
+    }
+
+    .sort-button:focus-visible {
+      outline: 2px solid rgba(31, 111, 94, 0.3);
+      outline-offset: 1px;
+    }
+
+    .sort-button.is-active {
+      border-color: var(--accent-border);
+      background: #dceee8;
+      color: #174d41;
+    }
+
+    .header-label {
+      display: inline-block;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .sort-button {
+        transition: none;
+      }
     }
 
     tbody td {
@@ -393,14 +1513,34 @@
       background: #edf4fb;
     }
 
+    thead th.column-selected {
+      background: #eaf3f1;
+      color: #1f5b4e;
+    }
+
+    tbody td.column-selected {
+      background: #edf4fb;
+      box-shadow: inset 1px 0 0 rgba(31, 111, 94, 0.12), inset -1px 0 0 rgba(31, 111, 94, 0.12);
+    }
+
+    tbody tr:hover td.column-selected {
+      background: #e5f0f2;
+    }
+
+    tbody tr.row-selected td.column-selected {
+      background: #e3eef9;
+    }
+
     td.contributor-td {
       cursor: pointer;
     }
 
-    td.rank-cell {
-      width: 52px;
+    .rank-index {
+      min-width: 24px;
       font-family: 'IBM Plex Mono', 'Consolas', monospace;
-      color: #53606e;
+      color: #7a8793;
+      font-size: 11px;
+      text-align: right;
     }
 
     .exp-cell {
@@ -788,7 +1928,7 @@
     }
 
     .hint-footer {
-      max-width: 1250px;
+      width: min(1800px, calc(100vw - 40px));
       margin: 0 auto;
       padding-top: 6px;
       color: var(--muted);
@@ -827,24 +1967,73 @@
         padding: 20px 14px 44px;
       }
 
-      .title {
-        font-size: 28px;
+      .view-options {
+        grid-template-columns: repeat(3, minmax(100px, 1fr));
       }
 
-      .hero {
+      .view-option {
+        padding: 0 11px;
+        font-size: 14px;
+      }
+
+      .leaderboard-table-card,
+      .leaderboard-intro,
+      .studies-shell,
+      .hint-footer {
+        width: calc(100vw - 28px);
+      }
+
+      .studies-intro {
+        min-height: 0;
+        align-items: flex-start;
         grid-template-columns: 1fr;
+        padding: 26px;
       }
 
-      .hero img {
-        width: 82px;
-        height: 46px;
+      .studies-logo {
+        width: 158px;
       }
 
-      .join-link {
+      .studies-logo-scene {
+        width: 184px;
+        height: 84px;
+      }
+
+      .studies-logo-plane {
+        width: 180px;
+        height: 74px;
+        border-radius: 17px;
+      }
+
+      .studies-title {
+        font-size: clamp(30px, 9vw, 42px);
+      }
+
+      .studies-count {
+        min-width: 0;
+      }
+
+      .studies-actions {
+        width: 100%;
+        min-width: 0;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .studies-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .study-search {
+        flex-basis: auto;
         width: 100%;
       }
 
-      .controls {
+      .study-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .filters-header {
         flex-direction: column;
         align-items: flex-start;
       }
@@ -868,49 +2057,171 @@
         max-width: calc(100vw - 28px);
       }
     }
+
+    @media (max-width: 520px) {
+      .site-nav,
+      .view-switch {
+        width: 100%;
+      }
+
+      .view-options {
+        flex: 1;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .view-option {
+        min-width: 0;
+        padding: 0 4px;
+        font-size: 13px;
+      }
+
+      .report-link {
+        position: static;
+        width: max-content;
+        margin: 14px 14px 0 auto;
+      }
+
+      .study-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .view-switch {
+        gap: 4px;
+      }
+
+      .urb-home {
+        width: 40px;
+        height: 40px;
+      }
+
+      .view-option {
+        gap: 0;
+        font-size: 12px;
+      }
+
+      .view-option .ui-icon {
+        display: none;
+      }
+    }
+
+    @media (min-width: 1650px) {
+      .study-grid {
+        grid-template-columns: repeat(4, minmax(0, 400px));
+      }
+    }
+
+    @media (max-width: 1350px) and (min-width: 861px) {
+      .study-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+__HOME_STYLES__
   </style>
 </head>
-<body>
+<body class="home-active">
+  <svg class="ui-icon-sprite" aria-hidden="true">
+    <defs>
+      <symbol id="icon-home" viewBox="0 0 24 24"><path d="m3 11 9-9 9 9"></path><path d="M5 10v10h14V10"></path><path d="M9 20v-6h6v6"></path></symbol>
+      <symbol id="icon-leaderboard" viewBox="0 0 24 24"><path d="M4 20v-6h5v6"></path><path d="M9.5 20V8h5v12"></path><path d="M15 20v-9h5v9"></path><path d="M3 20h18"></path></symbol>
+      <symbol id="icon-studies" viewBox="0 0 24 24"><path d="M9 3h6"></path><path d="M10 9V3"></path><path d="M14 9V3"></path><path d="m8 9-4.4 8.1A2.6 2.6 0 0 0 5.9 21h12.2a2.6 2.6 0 0 0 2.3-3.9L16 9Z"></path><path d="M6.8 15h10.4"></path></symbol>
+      <symbol id="icon-github" viewBox="0 0 24 24"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3.3-.4 6.7-1.6 6.7-7.3A5.7 5.7 0 0 0 19.2 3.5 5.6 5.6 0 0 0 15 3.5c-1.6 0-3 .4-4.2 1.1A5.6 5.6 0 0 0 6 3.5a5.7 5.7 0 0 0-1.5 3.7c0 5.7 3.4 6.9 6.7 7.3A4.8 4.8 0 0 0 10 18v4"></path><path d="M9 19c-4.5 1.4-4.5-2.5-6-3"></path></symbol>
+      <symbol id="icon-paper" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><path d="M14 2v6h6"></path><path d="M8 13h8"></path><path d="M8 17h6"></path></symbol>
+      <symbol id="icon-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2"></rect><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path></symbol>
+      <symbol id="icon-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"></path></symbol>
+      <symbol id="icon-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></symbol>
+    </defs>
+  </svg>
   <div class="page">
-    <header class="header">
-      <div>
-        <h1 class="title"><a class="title-link" href="__TITLE_LINK_URL__" target="_blank" rel="noopener">__TITLE_LINK_TEXT__</a> __TITLE_SUFFIX__</h1>
-        <div class="meta">__META_TEXT__</div>
+    <nav class="site-nav" aria-label="URB pages">
+      <div class="view-switch" id="view-switch" data-view="home">
+        <a class="urb-home" href="__TITLE_LINK_URL__" target="_blank" rel="noopener" aria-label="Open the URB repository">
+          <img src="urb_car.png" alt="">
+        </a>
+        <div class="view-options" role="tablist" aria-label="Choose a page">
+          <span class="view-slider" aria-hidden="true"></span>
+          <button class="view-option is-active" id="home-tab" type="button" role="tab" aria-selected="true" aria-controls="home-view"><svg class="ui-icon" aria-hidden="true"><use href="#icon-home"></use></svg><span>Home</span></button>
+          <button class="view-option" id="leaderboard-tab" type="button" role="tab" aria-selected="false" aria-controls="leaderboard-view"><svg class="ui-icon" aria-hidden="true"><use href="#icon-leaderboard"></use></svg><span>Leaderboard</span></button>
+          <button class="view-option" id="studies-tab" type="button" role="tab" aria-selected="false" aria-controls="studies-view"><svg class="ui-icon" aria-hidden="true"><use href="#icon-studies"></use></svg><span>Studies</span></button>
+        </div>
       </div>
-      <div class="pill" id="stats-pill">__STATS_LOADING__</div>
-    </header>
+    </nav>
 
-    <section class="card hero">
-      <img src="urb.png" alt="__LOGO_ALT__">
-      <div class="hero-content">
-        <p>__HERO_TEXT__</p>
+    <main class="page-view" id="home-view" role="tabpanel" aria-labelledby="home-tab">
+__HOME_CONTENT__
+    </main>
+
+    <main class="page-view" id="leaderboard-view" role="tabpanel" aria-labelledby="leaderboard-tab" hidden>
+    <section class="studies-intro leaderboard-intro">
+      <div class="studies-logo-scene" aria-hidden="true">
+        <div class="studies-logo-plane">
+          <img class="studies-logo" src="urb.png" alt="">
+        </div>
       </div>
-      <a class="join-link" href="__JOIN_LEADERBOARD_URL__" target="_blank" rel="noopener">__JOIN_LEADERBOARD_LABEL__</a>
+      <div class="studies-intro-copy">
+        <p class="studies-kicker">Benchmark results</p>
+        <h1 class="studies-title">Leaderboard</h1>
+        <p class="studies-description">__HERO_TEXT__</p>
+      </div>
+      <div class="studies-actions">
+        <div class="studies-count" id="leaderboard-run-count" aria-live="polite">__STATS_LOADING__</div>
+        <a class="studies-contribute" href="__JOIN_LEADERBOARD_URL__" target="_blank" rel="noopener"><span>__JOIN_LEADERBOARD_LABEL__</span><svg class="ui-icon contribute-icon" aria-hidden="true"><use href="#icon-arrow-right"></use></svg></a>
+      </div>
     </section>
 
-    <section class="card">
-      <div class="controls">
-        <div class="controls-left">
-          <div id="combo-count"></div>
-          <div id="controls-hint">__CONTROLS_HINT__</div>
-        </div>
+    <section class="card leaderboard-table-card">
+      <div class="filters-header">
+        <div class="filters-title">__FILTERS_TITLE__</div>
         <div class="controls-right">
           <button class="action-btn" id="isolate-btn">__ISOLATE_LABEL__</button>
-          <button class="action-btn" id="fold-toggle-btn">__MERGE_FOLDS_LABEL__</button>
           <button class="action-btn" id="deselect-btn">__DESELECT_LABEL__</button>
+          <button class="action-btn" id="fold-toggle-btn">__MERGE_FOLDS_LABEL__</button>
+          <button class="action-btn" id="date-sort-btn" aria-pressed="false">__SORT_NEWEST_LABEL__</button>
           <button class="download-btn action-btn" id="download-csv">__DOWNLOAD_LABEL__</button>
         </div>
       </div>
-
-      <div class="filters-header">
-        <div class="filters-title">__FILTERS_TITLE__</div>
-        <div class="filters-hint">__FILTERS_HINT__</div>
-      </div>
       <div class="filters" id="filters"></div>
+      <div class="network-tabs" id="network-tabs" role="tablist" aria-label="Traffic network"></div>
       <div id="table-container"></div>
     </section>
+    </main>
+
+    <main class="page-view" id="studies-view" role="tabpanel" aria-labelledby="studies-tab" hidden>
+      <div class="studies-shell">
+        <section class="studies-intro">
+          <div class="studies-logo-scene" aria-hidden="true">
+            <div class="studies-logo-plane">
+              <img class="studies-logo" src="urb.png" alt="">
+            </div>
+          </div>
+          <div class="studies-intro-copy">
+            <p class="studies-kicker">Research with URB</p>
+            <h1 class="studies-title">Studies</h1>
+            <p class="studies-description">Questions about routing methods, tested with URB. Each study includes its proposal, experiments, conclusion, and any independent review.</p>
+          </div>
+          <div class="studies-actions">
+            <div class="studies-count" id="studies-count" aria-live="polite">Loading studies...</div>
+            <a class="studies-contribute" href="__JOIN_LEADERBOARD_URL__" target="_blank" rel="noopener"><span>Contribute</span><svg class="ui-icon contribute-icon" aria-hidden="true"><use href="#icon-arrow-right"></use></svg></a>
+          </div>
+        </section>
+
+        <div class="studies-toolbar" id="studies-toolbar">
+          <div class="study-status-filters" id="study-status-filters" aria-label="Filter studies by conclusion"></div>
+          <label class="study-search">
+            <span>Search</span>
+            <input id="study-search-input" type="search" placeholder="Title, hypothesis, or setting" autocomplete="off">
+          </label>
+        </div>
+
+        <section class="study-grid" id="study-grid" aria-live="polite"></section>
+        <div class="studies-empty" id="studies-empty" hidden></div>
+      </div>
+    </main>
   </div>
 
+  <div id="leaderboard-extras" hidden>
   <div class="hint-footer">__FOOTER_HINT____FOOTER_SEPARATOR____GENERATED_LABEL__ __GENERATED_AT__</div>
   <a class="report-link" href="__REPORT_PROBLEM_URL__" target="_blank" rel="noopener">__REPORT_PROBLEM_LABEL__</a>
 
@@ -932,20 +2243,65 @@
   </div>
 
   <div class="metric-tooltip" id="metric-tooltip"></div>
+  </div>
+
+  <dialog class="study-document-dialog" id="study-document-dialog" aria-labelledby="study-document-title">
+    <div class="study-document-shell">
+      <header class="study-document-header">
+        <div>
+          <p class="study-document-kicker" id="study-document-kicker">Study document</p>
+          <h2 class="study-document-title" id="study-document-title">Study document</h2>
+        </div>
+        <button class="study-document-close" type="button" data-study-dialog-close aria-label="Close study document">×</button>
+      </header>
+      <div class="study-review-tabs" id="study-review-tabs" role="tablist" aria-label="Independent reviews" hidden></div>
+      <div class="study-document-scroll">
+        <article class="study-document-content" id="study-document-content"></article>
+      </div>
+      <footer class="study-document-footer">
+        <a class="study-document-source" id="study-document-source" href="#" target="_blank" rel="noopener">View source on GitHub ↗</a>
+        <button class="study-document-done" type="button" data-study-dialog-close>Close</button>
+      </footer>
+    </div>
+  </dialog>
 
   <script>
     const leaderboardData = __DATA__;
     const strings = leaderboardData.strings || {};
+    document.documentElement.style.setProperty(
+      '--sheen-delay',
+      `${-(Date.now() % 5200)}ms`
+    );
 
+    const viewSwitch = document.getElementById('view-switch');
+    const homeTab = document.getElementById('home-tab');
+    const leaderboardTab = document.getElementById('leaderboard-tab');
+    const studiesTab = document.getElementById('studies-tab');
+    const homeView = document.getElementById('home-view');
+    const leaderboardView = document.getElementById('leaderboard-view');
+    const studiesView = document.getElementById('studies-view');
+    const leaderboardExtras = document.getElementById('leaderboard-extras');
+    const leaderboardRunCountEl = document.getElementById('leaderboard-run-count');
+    const studiesCountEl = document.getElementById('studies-count');
+    const studiesToolbar = document.getElementById('studies-toolbar');
+    const studyStatusFilters = document.getElementById('study-status-filters');
+    const studySearchInput = document.getElementById('study-search-input');
+    const studyGrid = document.getElementById('study-grid');
+    const studiesEmpty = document.getElementById('studies-empty');
+    const studyDocumentDialog = document.getElementById('study-document-dialog');
+    const studyDocumentKicker = document.getElementById('study-document-kicker');
+    const studyDocumentTitle = document.getElementById('study-document-title');
+    const studyDocumentContent = document.getElementById('study-document-content');
+    const studyDocumentSource = document.getElementById('study-document-source');
+    const studyReviewTabs = document.getElementById('study-review-tabs');
     const filtersEl = document.getElementById('filters');
+    const networkTabsEl = document.getElementById('network-tabs');
     const tableContainer = document.getElementById('table-container');
-    const comboCountEl = document.getElementById('combo-count');
-    const statsPill = document.getElementById('stats-pill');
     const downloadBtn = document.getElementById('download-csv');
     const isolateBtn = document.getElementById('isolate-btn');
     const deselectBtn = document.getElementById('deselect-btn');
     const foldToggleBtn = document.getElementById('fold-toggle-btn');
-    const controlsHint = document.getElementById('controls-hint');
+    const dateSortBtn = document.getElementById('date-sort-btn');
     const previewCard = document.getElementById('preview-card');
     const previewTitle = document.getElementById('preview-title');
     const previewImg = document.getElementById('preview-img');
@@ -961,7 +2317,9 @@
 
     const metricDescriptions = strings.metric_descriptions || {};
     const headerLabels = strings.table_headers || {};
+    const metricOrder = leaderboardData.metric_order || [];
     const contributorProfiles = leaderboardData.contributors || {};
+    const networkImages = leaderboardData.network_images || {};
     const avatarTemplateCache = new Map();
 
     const unknownEnv = strings.unknown_env || 'unknown-env';
@@ -982,11 +2340,21 @@
 
     const collapsedData = leaderboardData.experiments || [];
     const rawData = leaderboardData.raw_experiments || leaderboardData.experiments || [];
+    const studiesData = leaderboardData.studies || [];
+
+    leaderboardRunCountEl.textContent = formatString(strings.stats_pill || '{count} runs indexed', {
+      count: rawData.length,
+    });
 
     let useCollapsedFolds = true;
     let experiments = [];
     let filterConfig = [];
     let filterState = {};
+    let networkTabs = [];
+    let selectedNetwork = null;
+    let activeStudyStatus = 'all';
+    const sortState = { column: null, direction: 'desc' };
+    const selectedColumnKeys = new Set();
 
     let selectedRowIds = new Set();
     let isolateSelected = false;
@@ -1055,18 +2423,15 @@
           label: strings.filter_task_label || 'Task config',
           values: sortValues('task_config', uniqueValuesFrom(items, 'task_config')),
         },
-        {
-          key: 'network',
-          label: strings.filter_network_label || 'Traffic network',
-          values: sortValues('network', uniqueValuesFrom(items, 'network')),
-        },
       ];
     }
 
-    function updateStatsPill() {
-      statsPill.textContent = formatString(strings.stats_pill, {
-        count: experiments.length,
-      });
+    function buildNetworkTabs(items) {
+      const counts = new Map();
+      items.forEach((exp) => counts.set(exp.network, (counts.get(exp.network) || 0) + 1));
+      return Array.from(counts, ([name, count]) => ({ name, count })).sort(
+        (a, b) => b.count - a.count || String(a.name).localeCompare(String(b.name))
+      );
     }
 
     function updateIsolateButton() {
@@ -1077,10 +2442,67 @@
       foldToggleBtn.textContent = useCollapsedFolds ? mergeFoldsLabel : collapseFoldsLabel;
     }
 
-    function updateFilterSummary(filtered) {
-      comboCountEl.textContent = formatString(strings.filter_summary, {
-        shown: filtered.length,
-        total: experiments.length,
+    function updateDateSortButton() {
+      const active = sortState.column === 'experiment_date';
+      dateSortBtn.classList.toggle('is-active', active);
+      dateSortBtn.setAttribute('aria-pressed', String(active));
+    }
+
+    function renderNetworkTabs() {
+      networkTabsEl.innerHTML = '';
+      networkTabs.forEach(({ name, count }, index) => {
+        const tab = document.createElement('button');
+        tab.type = 'button';
+        tab.className = 'network-tab';
+        tab.id = `network-tab-${index}`;
+        tab.setAttribute('role', 'tab');
+        tab.setAttribute('aria-controls', 'table-container');
+        tab.setAttribute('aria-selected', String(name === selectedNetwork));
+        tab.tabIndex = name === selectedNetwork ? 0 : -1;
+        tab.classList.toggle('is-active', name === selectedNetwork);
+
+        const label = document.createElement('span');
+        label.textContent = name;
+        const badge = document.createElement('span');
+        badge.className = 'network-count';
+        badge.textContent = count;
+        badge.setAttribute('aria-label', `${count} experiment${count === 1 ? '' : 's'}`);
+
+        tab.appendChild(label);
+        tab.appendChild(badge);
+        function selectNetwork() {
+          if (selectedNetwork === name) return;
+          hidePreview();
+          selectedNetwork = name;
+          isolateSelected = false;
+          updateIsolateButton();
+          renderNetworkTabs();
+          renderTable();
+        }
+        tab.addEventListener('click', selectNetwork);
+        tab.addEventListener('keydown', (event) => {
+          if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+          event.preventDefault();
+          let nextIndex = index;
+          if (event.key === 'Home') nextIndex = 0;
+          if (event.key === 'End') nextIndex = networkTabs.length - 1;
+          if (event.key === 'ArrowLeft') nextIndex = (index - 1 + networkTabs.length) % networkTabs.length;
+          if (event.key === 'ArrowRight') nextIndex = (index + 1) % networkTabs.length;
+          const nextNetwork = networkTabs[nextIndex];
+          if (nextNetwork.name !== selectedNetwork) {
+            selectedNetwork = nextNetwork.name;
+            isolateSelected = false;
+            updateIsolateButton();
+            renderNetworkTabs();
+            renderTable();
+          }
+          networkTabsEl.children[nextIndex].focus();
+        });
+        const networkImage = networkImages[name] || '';
+        tab.addEventListener('mouseenter', (evt) => showNetworkPreview(name, networkImage, evt));
+        tab.addEventListener('mousemove', (evt) => positionHoverCard(previewCard, evt));
+        tab.addEventListener('mouseleave', hidePreview);
+        networkTabsEl.appendChild(tab);
       });
     }
 
@@ -1160,15 +2582,26 @@
 
     function rebuildFilters({ preserveSelections = true } = {}) {
       const previousState = preserveSelections ? filterState : null;
+      const previousConfig = preserveSelections ? filterConfig : [];
+      const previousNetwork = preserveSelections ? selectedNetwork : null;
       experiments = normalizeExperiments(useCollapsedFolds ? collapsedData : rawData);
       filterConfig = buildFilterConfig(experiments);
+      networkTabs = buildNetworkTabs(normalizeExperiments(rawData));
+      selectedNetwork = networkTabs.some((tab) => tab.name === previousNetwork)
+        ? previousNetwork
+        : (networkTabs[0]?.name || null);
 
       const nextState = {};
       filterConfig.forEach((cfg) => {
         let selectedValues = cfg.values;
         if (previousState && previousState[cfg.key]) {
           const previousValues = previousState[cfg.key];
-          if (previousValues.size === 0) {
+          const previousCfg = previousConfig.find((item) => item.key === cfg.key);
+          const previouslySelectedAll = previousCfg &&
+            previousValues.size === previousCfg.values.length;
+          if (previouslySelectedAll) {
+            selectedValues = cfg.values;
+          } else if (previousValues.size === 0) {
             selectedValues = [];
           } else {
             selectedValues = cfg.values.filter((value) => previousValues.has(value));
@@ -1180,7 +2613,7 @@
 
       filterState = nextState;
       renderFilters();
-      updateStatsPill();
+      renderNetworkTabs();
       updateIsolateButton();
       updateFoldToggleButton();
       renderTable();
@@ -1188,6 +2621,7 @@
 
     function baseFilteredExperiments() {
       return experiments.filter((exp) =>
+        exp.network === selectedNetwork &&
         filterConfig.every((cfg) => filterState[cfg.key].has(exp[cfg.key]))
       );
     }
@@ -1195,7 +2629,7 @@
     function filteredExperiments() {
       const base = baseFilteredExperiments();
       if (!isolateSelected) return base;
-      if (!selectedRowIds.size) return [];
+      if (!selectedRowIds.size) return base;
       return base.filter((exp) => selectedRowIds.has(exp.exp_id));
     }
 
@@ -1300,6 +2734,18 @@
       }
 
       return avatarTemplateCache.get(src).cloneNode(false);
+    }
+
+    function contributorAvatarUrl(src, size) {
+      try {
+        const url = new URL(src);
+        if (url.hostname === 'github.com' && url.pathname.endsWith('.png')) {
+          url.searchParams.set('size', String(size));
+        }
+        return url.toString();
+      } catch (error) {
+        return src;
+      }
     }
 
     function contributorSortValue(contributors) {
@@ -1461,7 +2907,7 @@
       return candidates.filter(Boolean);
     }
 
-    function showPreview(expId, candidates, evt) {
+    function showImagePreview(title, alt, candidates, evt) {
       hideContributorPreview();
       hideConfigPreview();
       previewCandidates = candidates || [];
@@ -1471,17 +2917,46 @@
         return;
       }
 
-      previewTitle.textContent = `Travel time plot · ${expId}`;
+      previewTitle.textContent = title;
       previewFallback.textContent = 'Preview unavailable.';
       previewCard.classList.remove('missing');
       previewImg.src = previewCandidates[0];
-      previewImg.alt = `Travel time plot for ${expId}`;
+      previewImg.alt = alt;
       previewCard.classList.add('visible');
       positionHoverCard(previewCard, evt);
     }
 
+    function showPreview(expId, candidates, evt) {
+      showImagePreview(
+        `Travel time plot · ${expId}`,
+        `Travel time plot for ${expId}`,
+        candidates,
+        evt
+      );
+    }
+
+    function showNetworkPreview(network, imageUrl, evt) {
+      showImagePreview(
+        `Traffic network · ${network}`,
+        `Traffic network ${network}`,
+        imageUrl ? [imageUrl] : [],
+        evt
+      );
+    }
+
     function hidePreview() {
       previewCard.classList.remove('visible');
+    }
+
+    function abbreviateExperimentId(expId) {
+      const value = String(expId || '');
+      return value.length > 15 ? `${value.slice(0, 15)}...` : value;
+    }
+
+    function formatExperimentDate(timestamp) {
+      const value = Number(timestamp);
+      if (!Number.isFinite(value) || value <= 0) return naLabel;
+      return new Date(value * 1000).toISOString().slice(0, 10);
     }
 
     function formatConfigText(text) {
@@ -1637,8 +3112,8 @@
 
     function renderTable() {
       tableContainer.innerHTML = '';
+      updateDateSortButton();
       const visibleExperiments = filteredExperiments();
-      updateFilterSummary(visibleExperiments);
 
       if (!visibleExperiments.length) {
         const empty = document.createElement('div');
@@ -1650,59 +3125,88 @@
 
       const metricCols = [];
       const seenMetrics = new Set();
-      visibleExperiments.forEach((exp) => {
-        const ordered = exp.metric_order || Object.keys(exp.metrics || {});
-        ordered.forEach((metric) => {
-          if (seenMetrics.has(metric)) return;
-          seenMetrics.add(metric);
-          metricCols.push(metric);
-        });
+      const orderedMetrics = metricOrder.length
+        ? metricOrder
+        : visibleExperiments.flatMap((exp) => Object.keys(exp.metrics || {}));
+      orderedMetrics.forEach((metric) => {
+        if (
+          seenMetrics.has(metric)
+          || !visibleExperiments.some((exp) => metric in (exp.metrics || {}))
+        ) return;
+        seenMetrics.add(metric);
+        metricCols.push(metric);
       });
 
-      const extraColumns = filterConfig
-        .map((cfg) => ({
-          key: cfg.key,
-          label: cfg.label,
-          format: cfg.display,
-        }))
-        .filter((cfg) => uniqueValuesFrom(visibleExperiments, cfg.key).length > 1);
-
       const baseHeaders = [
-        { key: 'rank', label: headerLabels.rank || '#', sortable: false, className: 'rank-header sort-disabled' },
         { key: 'exp_id', label: headerLabels.exp_id || 'Experiment ID' },
-        ...extraColumns.map((cfg) => ({ key: cfg.key, label: cfg.label })),
-        { key: 'algorithm', label: headerLabels.algorithm || 'Algorithm' },
-        { key: 'script', label: headerLabels.script || 'Script' },
+        ...(sortState.column === 'experiment_date'
+          ? [{ key: 'experiment_date', label: headerLabels.experiment_date || 'Date' }]
+          : []),
         { key: 'script_contributor', label: headerLabels.script_contributor || 'Contributors' },
+        { key: 'script', label: headerLabels.script || 'Script' },
+        { key: 'env_config', label: strings.filter_env_label || 'Env config' },
+        { key: 'task_config', label: strings.filter_task_label || 'Task config' },
         { key: 'alg_config', label: headerLabels.alg_config || 'Algorithm Config' },
+        { key: 'env_seed', label: strings.filter_env_seed_label || 'Env seed' },
         { key: 'torch_seed', label: headerLabels.torch_seed || 'Torch Seed' },
       ];
+      // Configuration and identity columns remain visible in every table view.
+      // Isolation only narrows metrics when one or more metric headers are selected.
+      const selectedMetricKeys = metricCols.filter((metric) => selectedColumnKeys.has(metric));
+      const metricIsolationActive = isolateSelected && selectedMetricKeys.length > 0;
+      const displayedBaseHeaders = baseHeaders;
+      const displayedMetricCols = metricIsolationActive ? selectedMetricKeys : metricCols;
 
       const table = document.createElement('table');
       const thead = document.createElement('thead');
       const headerRow = document.createElement('tr');
-      const sortState = { column: null, direction: 'desc' };
 
       function headerCell({ key, label, sortable = true, description = '', className = '' }) {
         const th = document.createElement('th');
-        th.textContent = label || '';
         th.dataset.key = key;
         th.dataset.label = label || '';
+        th.onclick = () => selectColumn(key);
+
+        const headerLabel = document.createElement('span');
+        headerLabel.className = 'header-label';
+        headerLabel.textContent = label || '';
+        th.appendChild(headerLabel);
 
         if (className) th.className = className;
 
         if (description) {
           th.classList.add('metric-header');
-          th.addEventListener('mouseenter', (evt) => showMetricTooltip(description, evt));
-          th.addEventListener('mousemove', positionMetricTooltip);
-          th.addEventListener('mouseleave', hideMetricTooltip);
+          headerLabel.addEventListener('mouseenter', (evt) => showMetricTooltip(description, evt));
+          headerLabel.addEventListener('mousemove', positionMetricTooltip);
+          headerLabel.addEventListener('mouseleave', hideMetricTooltip);
         }
 
         if (sortable) {
-          th.onclick = () => applySort(key);
+          th.tabIndex = 0;
+          th.addEventListener('keydown', (event) => {
+            if (event.target.closest('button')) return;
+            if (!['Enter', ' '].includes(event.key)) return;
+            event.preventDefault();
+            selectColumn(key);
+          });
+          const sortButton = document.createElement('button');
+          sortButton.type = 'button';
+          sortButton.className = 'sort-button';
+          sortButton.dataset.key = key;
+          sortButton.setAttribute('aria-pressed', 'false');
+          sortButton.setAttribute('aria-label', `Sort by ${label || key}`);
+          sortButton.title = `Sort by ${label || key}`;
           const indicator = document.createElement('span');
           indicator.className = 'sort-indicator';
-          th.appendChild(indicator);
+          indicator.textContent = '↕';
+          sortButton.appendChild(indicator);
+          sortButton.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            applySort(key);
+          });
+          sortButton.addEventListener('keydown', (event) => event.stopPropagation());
+          th.appendChild(sortButton);
         } else {
           th.classList.add('sort-disabled');
         }
@@ -1710,8 +3214,21 @@
         return th;
       }
 
-      baseHeaders.forEach((head) => headerRow.appendChild(headerCell(head)));
-      metricCols.forEach((metric) => {
+      function selectColumn(key) {
+        if (selectedColumnKeys.has(key)) {
+          selectedColumnKeys.delete(key);
+        } else {
+          selectedColumnKeys.add(key);
+        }
+        if (isolateSelected) {
+          renderTable();
+        } else {
+          updateColumnHighlight();
+        }
+      }
+
+      displayedBaseHeaders.forEach((head) => headerRow.appendChild(headerCell(head)));
+      displayedMetricCols.forEach((metric) => {
         headerRow.appendChild(
           headerCell({
             key: metric,
@@ -1726,18 +3243,14 @@
       table.appendChild(thead);
 
       const tbody = document.createElement('tbody');
-      const { best: bestMetrics, directions: metricDirections } = computeBestMetrics(visibleExperiments, metricCols);
+      const { best: bestMetrics, directions: metricDirections } = computeBestMetrics(visibleExperiments, displayedMetricCols);
 
       visibleExperiments.forEach((exp) => {
         const tr = document.createElement('tr');
         const expRowId = exp.exp_id || '';
         tr.dataset.expId = expRowId;
+        tr.dataset.experimentDate = String(exp.experiment_date || 0);
         if (selectedRowIds.has(expRowId)) tr.classList.add('row-selected');
-
-        const rankTd = document.createElement('td');
-        rankTd.className = 'rank-cell';
-        rankTd.dataset.value = '';
-        tr.appendChild(rankTd);
 
         const expId = exp.exp_id || naLabel;
         const expLink = exp.exp_link || exp.exp_path || '#';
@@ -1747,11 +3260,17 @@
         const expWrap = document.createElement('span');
         expWrap.className = 'exp-cell';
 
+        const rankIndex = document.createElement('span');
+        rankIndex.className = 'rank-index';
+        rankIndex.setAttribute('aria-hidden', 'true');
+        expWrap.appendChild(rankIndex);
+
         const expAnchor = document.createElement('a');
         expAnchor.href = expLink;
         expAnchor.target = '_blank';
         expAnchor.rel = 'noopener';
-        expAnchor.textContent = expId;
+        expAnchor.textContent = abbreviateExperimentId(expId);
+        expAnchor.setAttribute('aria-label', expId);
 
         expWrap.appendChild(expAnchor);
 
@@ -1782,29 +3301,12 @@
         expTd.appendChild(expWrap);
         tr.appendChild(expTd);
 
-        extraColumns.forEach((col) => {
-          const td = document.createElement('td');
-          const raw = exp[col.key];
-          const value = raw === null || raw === undefined || raw === '' ? naLabel : raw;
-          td.textContent = col.format ? col.format(value) : value;
-          td.dataset.value = raw ?? '';
-          if (col.key === 'env_config' && raw) {
-            attachConfigHover(td, `Env config · ${raw}.json`, exp.env_config_raw_url || '');
-          } else if (col.key === 'task_config' && raw) {
-            attachConfigHover(td, `Task config · ${raw}.json`, exp.task_config_raw_url || '');
-          }
-          tr.appendChild(td);
-        });
-
-        [
-          exp.algorithm || naLabel,
-          exp.script || naLabel,
-        ].forEach((value) => {
-          const td = document.createElement('td');
-          td.textContent = value;
-          td.dataset.value = value;
-          tr.appendChild(td);
-        });
+        if (sortState.column === 'experiment_date') {
+          const dateTd = document.createElement('td');
+          dateTd.textContent = formatExperimentDate(exp.experiment_date);
+          dateTd.dataset.value = exp.experiment_date || 0;
+          tr.appendChild(dateTd);
+        }
 
         const contributors = contributorsFor(exp);
         const contributorRaw = contributorSortValue(contributors);
@@ -1827,13 +3329,27 @@
         tr.appendChild(contributorTd);
 
         [
+          { key: 'script', value: exp.script || naLabel },
+          { key: 'env_config', value: exp.env_config || naLabel },
+          { key: 'task_config', value: exp.task_config || naLabel },
           { key: 'alg_config', value: exp.alg_config || naLabel },
+          { key: 'env_seed', value: exp.env_seed ?? naLabel },
           { key: 'torch_seed', value: exp.torch_seed ?? naLabel },
-        ].forEach((cell) => {
+        ].filter((cell) => displayedBaseHeaders.some((header) => header.key === cell.key)).forEach((cell) => {
           const td = document.createElement('td');
-          td.textContent = cell.value;
+          td.textContent = cell.displayValue ?? cell.value;
           td.dataset.value = cell.value;
-          if (cell.key === 'alg_config' && exp.alg_config) {
+          if (cell.key === 'env_config' && exp.env_config) {
+            const configFile = String(exp.env_config).endsWith('.json')
+              ? exp.env_config
+              : `${exp.env_config}.json`;
+            attachConfigHover(td, `Env config · ${configFile}`, exp.env_config_raw_url || '');
+          } else if (cell.key === 'task_config' && exp.task_config) {
+            const configFile = String(exp.task_config).endsWith('.json')
+              ? exp.task_config
+              : `${exp.task_config}.json`;
+            attachConfigHover(td, `Task config · ${configFile}`, exp.task_config_raw_url || '');
+          } else if (cell.key === 'alg_config' && exp.alg_config) {
             const algConfigFile = String(exp.alg_config).endsWith('.json')
               ? exp.alg_config
               : `${exp.alg_config}.json`;
@@ -1847,7 +3363,7 @@
           tr.appendChild(td);
         });
 
-        metricCols.forEach((metric) => {
+        displayedMetricCols.forEach((metric) => {
           const td = document.createElement('td');
           const raw = exp.metrics?.[metric];
           const value = Number(raw);
@@ -1896,13 +3412,26 @@
       wrap.className = 'table-wrap';
       wrap.appendChild(table);
       tableContainer.appendChild(wrap);
+      updateColumnHighlight();
+
+      function updateColumnHighlight() {
+        const headers = Array.from(headerRow.children);
+        const rows = Array.from(tbody.rows);
+        headers.forEach((header, columnIndex) => {
+          const isSelected = selectedColumnKeys.has(header.dataset.key);
+          header.classList.toggle('column-selected', isSelected);
+          rows.forEach((row) => {
+            const cell = row.children[columnIndex];
+            if (cell) cell.classList.toggle('column-selected', isSelected);
+          });
+        });
+      }
 
       function updateRankColumn() {
         const rows = Array.from(tbody.querySelectorAll('tr'));
         rows.forEach((row, idx) => {
-          const cell = row.children[0];
-          cell.textContent = String(idx + 1);
-          cell.dataset.value = String(idx + 1);
+          const rankIndex = row.querySelector('.rank-index');
+          if (rankIndex) rankIndex.textContent = `#${idx + 1}`;
           row.dataset.rank = String(idx + 1);
           const badge = row.querySelector('.rank-badge');
           if (!badge) return;
@@ -1924,6 +3453,7 @@
       function applySort(colKey, directionOverride) {
         if (colKey === 'rank') return;
 
+        const wasDateSort = sortState.column === 'experiment_date';
         if (directionOverride) {
           sortState.column = colKey;
           sortState.direction = directionOverride;
@@ -1934,46 +3464,90 @@
           sortState.direction = colKey === 'exp_id' ? 'asc' : 'desc';
         }
 
+        // Date is a contextual column: rebuild when switching to another sort
+        // so it disappears immediately, matching the Newest first interaction.
+        if (wasDateSort && colKey !== 'experiment_date') {
+          renderTable();
+          return true;
+        }
+
         const headers = Array.from(headerRow.children);
+        headers.forEach((header) => header.removeAttribute('aria-sort'));
         const colIndex = headers.findIndex((th) => th.dataset.key === colKey);
-        if (colIndex < 0) return;
-
         const rows = Array.from(tbody.querySelectorAll('tr'));
-        rows.sort((a, b) => {
-          const av = a.children[colIndex].dataset.value ?? a.children[colIndex].textContent;
-          const bv = b.children[colIndex].dataset.value ?? b.children[colIndex].textContent;
-          const anum = Number(av);
-          const bnum = Number(bv);
+        if (colKey === 'experiment_date') {
+          rows.sort((a, b) => {
+            const av = Number(a.dataset.experimentDate || 0);
+            const bv = Number(b.dataset.experimentDate || 0);
+            return sortState.direction === 'asc' ? av - bv : bv - av;
+          });
+        } else {
+          if (colIndex < 0) return false;
+          rows.sort((a, b) => {
+            const av = a.children[colIndex].dataset.value ?? a.children[colIndex].textContent;
+            const bv = b.children[colIndex].dataset.value ?? b.children[colIndex].textContent;
+            const anum = Number(av);
+            const bnum = Number(bv);
 
-          if (!Number.isNaN(anum) && !Number.isNaN(bnum) && av !== '' && bv !== '') {
-            return sortState.direction === 'asc' ? anum - bnum : bnum - anum;
-          }
+            if (!Number.isNaN(anum) && !Number.isNaN(bnum) && av !== '' && bv !== '') {
+              return sortState.direction === 'asc' ? anum - bnum : bnum - anum;
+            }
 
-          return sortState.direction === 'asc'
-            ? String(av).localeCompare(String(bv))
-            : String(bv).localeCompare(String(av));
-        });
+            return sortState.direction === 'asc'
+              ? String(av).localeCompare(String(bv))
+              : String(bv).localeCompare(String(av));
+          });
+        }
 
         tbody.innerHTML = '';
         rows.forEach((row) => tbody.appendChild(row));
         updateRankColumn();
 
-        headerRow.querySelectorAll('.sort-indicator').forEach((el) => {
-          el.textContent = '';
+        headerRow.querySelectorAll('.sort-button').forEach((button) => {
+          button.classList.remove('is-active');
+          button.setAttribute('aria-pressed', 'false');
+          const indicator = button.querySelector('.sort-indicator');
+          if (indicator) indicator.textContent = '↕';
+          const label = button.closest('th')?.dataset.label || 'column';
+          button.setAttribute('aria-label', `Sort by ${label}`);
+          button.title = `Sort by ${label}`;
         });
 
-        const activeHeader = headerRow.children[colIndex];
-        const indicator = activeHeader.querySelector('.sort-indicator');
-        if (indicator) {
-          indicator.textContent = sortState.direction === 'asc'
-            ? (strings.sort_indicator_asc || '^')
-            : (strings.sort_indicator_desc || 'v');
+        if (colIndex >= 0) {
+          const activeHeader = headerRow.children[colIndex];
+          activeHeader.setAttribute(
+            'aria-sort',
+            sortState.direction === 'asc' ? 'ascending' : 'descending'
+          );
+          const activeButton = activeHeader.querySelector('.sort-button');
+          if (activeButton) {
+            activeButton.classList.add('is-active');
+            activeButton.setAttribute('aria-pressed', 'true');
+            const label = activeHeader.dataset.label || 'column';
+            activeButton.setAttribute('aria-label', `Reverse sort by ${label}`);
+            activeButton.title = `Reverse sort by ${label}`;
+            const indicator = activeButton.querySelector('.sort-indicator');
+            if (indicator) {
+              indicator.textContent = sortState.direction === 'asc'
+                ? (strings.sort_indicator_asc || '^')
+                : (strings.sort_indicator_desc || 'v');
+            }
+          }
         }
+        updateDateSortButton();
+        return true;
       }
 
       updateRankColumn();
 
-      if (metricCols.includes('CAV_advantage')) {
+      const availableSorts = new Set([
+        'experiment_date',
+        ...baseHeaders.filter((header) => header.sortable !== false).map((header) => header.key),
+        ...metricCols,
+      ]);
+      if (sortState.column && availableSorts.has(sortState.column)) {
+        applySort(sortState.column, sortState.direction);
+      } else if (metricCols.includes('CAV_advantage')) {
         applySort('CAV_advantage', 'desc');
       } else if (metricCols.includes('t_CAV')) {
         applySort('t_CAV', 'asc');
@@ -2000,7 +3574,10 @@
     }
 
     function buildFilterSlug() {
-      return sanitizeSlug(filterConfig.map(filterSlugPart).join('_'));
+      return sanitizeSlug([
+        `network_${selectedNetwork || unknownNetwork}`,
+        ...filterConfig.map(filterSlugPart),
+      ].join('_'));
     }
 
     function csvEscape(value) {
@@ -2037,7 +3614,461 @@
       URL.revokeObjectURL(url);
     }
 
+    function studyStatusLabel(status) {
+      const value = String(status || '');
+      return value ? `${value[0].toUpperCase()}${value.slice(1)}` : '';
+    }
+
+    function renderStudyFilters() {
+      studyStatusFilters.innerHTML = '';
+      const counts = new Map();
+      studiesData.forEach((study) => {
+        counts.set(study.status, (counts.get(study.status) || 0) + 1);
+      });
+      const options = [
+        { key: 'all', label: 'All', count: studiesData.length },
+        ...['supported', 'falsified', 'inconclusive', 'reported', 'pending']
+          .filter((status) => counts.has(status))
+          .map((status) => ({
+            key: status,
+            label: studyStatusLabel(status),
+            count: counts.get(status),
+          })),
+      ];
+
+      options.forEach((option) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'study-filter-btn';
+        button.classList.toggle('is-active', option.key === activeStudyStatus);
+        button.setAttribute('aria-pressed', String(option.key === activeStudyStatus));
+        button.textContent = `${option.label} ${option.count}`;
+        button.addEventListener('click', () => {
+          activeStudyStatus = option.key;
+          renderStudiesPage();
+        });
+        studyStatusFilters.appendChild(button);
+      });
+    }
+
+    function appendStudyInline(container, value) {
+      const pattern = /(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\([^)]+\))/g;
+      let cursor = 0;
+      let match;
+      while ((match = pattern.exec(value)) !== null) {
+        if (match.index > cursor) {
+          container.appendChild(document.createTextNode(value.slice(cursor, match.index)));
+        }
+        const token = match[0];
+        if (token.startsWith('**')) {
+          const strong = document.createElement('strong');
+          strong.textContent = token.slice(2, -2);
+          container.appendChild(strong);
+        } else if (token.startsWith('`')) {
+          const code = document.createElement('code');
+          code.textContent = token.slice(1, -1);
+          container.appendChild(code);
+        } else {
+          const linkMatch = token.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+          const label = linkMatch ? linkMatch[1] : token;
+          const url = linkMatch ? linkMatch[2] : '';
+          if (/^https?:\/\//i.test(url)) {
+            const anchor = document.createElement('a');
+            anchor.href = url;
+            anchor.target = '_blank';
+            anchor.rel = 'noopener';
+            anchor.textContent = label;
+            container.appendChild(anchor);
+          } else {
+            container.appendChild(document.createTextNode(label));
+          }
+        }
+        cursor = pattern.lastIndex;
+      }
+      if (cursor < value.length) {
+        container.appendChild(document.createTextNode(value.slice(cursor)));
+      }
+    }
+
+    function splitStudyTableRow(line) {
+      return line.trim().replace(/^\||\|$/g, '').split('|').map((cell) => cell.trim());
+    }
+
+    function renderStudyDocument(markdown) {
+      studyDocumentContent.innerHTML = '';
+      const lines = String(markdown || '').replace(/\r/g, '').split('\n');
+      let index = 0;
+
+      while (index < lines.length) {
+        const line = lines[index];
+        if (!line.trim()) {
+          index += 1;
+          continue;
+        }
+
+        const heading = line.match(/^(#{1,4})\s+(.+)$/);
+        if (heading) {
+          const element = document.createElement(`h${heading[1].length}`);
+          appendStudyInline(element, heading[2]);
+          studyDocumentContent.appendChild(element);
+          index += 1;
+          continue;
+        }
+
+        if (line.trim().startsWith('```')) {
+          const pre = document.createElement('pre');
+          const code = document.createElement('code');
+          const codeLines = [];
+          index += 1;
+          while (index < lines.length && !lines[index].trim().startsWith('```')) {
+            codeLines.push(lines[index]);
+            index += 1;
+          }
+          code.textContent = codeLines.join('\n');
+          pre.appendChild(code);
+          studyDocumentContent.appendChild(pre);
+          index += 1;
+          continue;
+        }
+
+        if (
+          line.trim().startsWith('|')
+          && index + 1 < lines.length
+          && /^\s*\|?\s*:?-+/.test(lines[index + 1])
+        ) {
+          const table = document.createElement('table');
+          const head = document.createElement('thead');
+          const headRow = document.createElement('tr');
+          splitStudyTableRow(line).forEach((value) => {
+            const cell = document.createElement('th');
+            appendStudyInline(cell, value);
+            headRow.appendChild(cell);
+          });
+          head.appendChild(headRow);
+          table.appendChild(head);
+          const body = document.createElement('tbody');
+          index += 2;
+          while (index < lines.length && lines[index].trim().startsWith('|')) {
+            const row = document.createElement('tr');
+            splitStudyTableRow(lines[index]).forEach((value) => {
+              const cell = document.createElement('td');
+              appendStudyInline(cell, value);
+              row.appendChild(cell);
+            });
+            body.appendChild(row);
+            index += 1;
+          }
+          table.appendChild(body);
+          studyDocumentContent.appendChild(table);
+          continue;
+        }
+
+        const listMatch = line.match(/^\s*([-*]|\d+\.)\s+(.+)$/);
+        if (listMatch) {
+          const ordered = /\d+\./.test(listMatch[1]);
+          const list = document.createElement(ordered ? 'ol' : 'ul');
+          while (index < lines.length) {
+            const itemMatch = lines[index].match(/^\s*([-*]|\d+\.)\s+(.+)$/);
+            if (!itemMatch || /\d+\./.test(itemMatch[1]) !== ordered) break;
+            const item = document.createElement('li');
+            const checkbox = itemMatch[2].match(/^\[([ xX])\]\s+(.+)$/);
+            if (checkbox) {
+              const mark = document.createElement('span');
+              mark.className = 'study-document-check';
+              mark.setAttribute('aria-hidden', 'true');
+              mark.textContent = checkbox[1].toLowerCase() === 'x' ? '✓' : '';
+              item.appendChild(mark);
+              appendStudyInline(item, checkbox[2]);
+            } else {
+              appendStudyInline(item, itemMatch[2]);
+            }
+            list.appendChild(item);
+            index += 1;
+          }
+          studyDocumentContent.appendChild(list);
+          continue;
+        }
+
+        const paragraphLines = [line.trim()];
+        index += 1;
+        while (
+          index < lines.length
+          && lines[index].trim()
+          && !/^(#{1,4})\s+/.test(lines[index])
+          && !/^\s*([-*]|\d+\.)\s+/.test(lines[index])
+          && !lines[index].trim().startsWith('|')
+          && !lines[index].trim().startsWith('```')
+        ) {
+          paragraphLines.push(lines[index].trim());
+          index += 1;
+        }
+        const paragraph = document.createElement('p');
+        appendStudyInline(paragraph, paragraphLines.join(' '));
+        studyDocumentContent.appendChild(paragraph);
+      }
+    }
+
+    let studyDocumentTrigger = null;
+
+    function openStudyDocument(study, type, trigger) {
+      const isProposal = type === 'proposal';
+      studyDocumentTrigger = trigger;
+      studyReviewTabs.hidden = true;
+      studyReviewTabs.innerHTML = '';
+      studyDocumentContent.removeAttribute('role');
+      studyDocumentContent.removeAttribute('aria-labelledby');
+      studyDocumentKicker.textContent = isProposal ? 'Study proposal' : 'Final report';
+      studyDocumentTitle.textContent = study.title;
+      studyDocumentSource.href = isProposal ? study.proposal_url : study.report_url;
+      studyDocumentSource.textContent = isProposal
+        ? 'View proposal source on GitHub ↗'
+        : 'View final report source on GitHub ↗';
+      renderStudyDocument(isProposal ? study.proposal_text : study.report_text);
+      studyDocumentDialog.showModal();
+      studyDocumentDialog.querySelector('.study-document-scroll').scrollTop = 0;
+    }
+
+    function selectStudyReview(study, index) {
+      const review = study.reviews[index];
+      if (!review) return;
+      Array.from(studyReviewTabs.children).forEach((tab, tabIndex) => {
+        tab.setAttribute('aria-selected', String(tabIndex === index));
+        tab.tabIndex = tabIndex === index ? 0 : -1;
+      });
+      studyDocumentSource.href = review.url;
+      studyDocumentSource.textContent = 'View review source on GitHub ↗';
+      if (study.reviews.length > 1) {
+        studyDocumentContent.setAttribute('role', 'tabpanel');
+        studyDocumentContent.setAttribute('aria-labelledby', studyReviewTabs.children[index].id);
+      } else {
+        studyDocumentContent.removeAttribute('role');
+        studyDocumentContent.removeAttribute('aria-labelledby');
+      }
+      renderStudyDocument(review.text);
+      studyDocumentDialog.querySelector('.study-document-scroll').scrollTop = 0;
+    }
+
+    function openStudyReviews(study, trigger) {
+      const reviews = Array.isArray(study.reviews) ? study.reviews : [];
+      if (!reviews.length) return;
+      studyDocumentTrigger = trigger;
+      studyDocumentKicker.textContent = reviews.length === 1
+        ? 'Independent review'
+        : 'Independent reviews';
+      studyDocumentTitle.textContent = study.title;
+      studyReviewTabs.innerHTML = '';
+      reviews.forEach((review, index) => {
+        const tab = document.createElement('button');
+        tab.type = 'button';
+        tab.className = 'study-review-tab';
+        tab.id = `study-review-tab-${index}`;
+        tab.setAttribute('role', 'tab');
+        tab.setAttribute('aria-controls', 'study-document-content');
+        tab.textContent = `Review ${index + 1}`;
+        tab.addEventListener('click', () => selectStudyReview(study, index));
+        tab.addEventListener('keydown', (event) => {
+          if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+          event.preventDefault();
+          const direction = event.key === 'ArrowRight' ? 1 : -1;
+          const nextIndex = (index + direction + reviews.length) % reviews.length;
+          selectStudyReview(study, nextIndex);
+          studyReviewTabs.children[nextIndex].focus();
+        });
+        studyReviewTabs.appendChild(tab);
+      });
+      studyReviewTabs.hidden = reviews.length < 2;
+      selectStudyReview(study, 0);
+      studyDocumentDialog.showModal();
+    }
+
+    function createStudyDocumentButton(study, type, label) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = type === 'report'
+        ? 'study-document-button report'
+        : 'study-document-button';
+      button.textContent = label;
+      button.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        openStudyDocument(study, type, button);
+      });
+      return button;
+    }
+
+    function createStudyCard(study) {
+      const article = document.createElement('article');
+      article.className = 'study-card';
+
+      const isNewStudy = (() => {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(study.report_date || '')) return false;
+        const [year, month, day] = study.report_date.split('-').map(Number);
+        const reportDate = Date.UTC(year, month - 1, day);
+        const now = new Date();
+        const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+        const daysSinceReport = Math.round((today - reportDate) / 86400000);
+        return daysSinceReport >= 0 && daysSinceReport <= 3;
+      })();
+      if (isNewStudy) {
+        article.classList.add('has-new-badge');
+        const newBadge = document.createElement('span');
+        newBadge.className = 'study-new-badge';
+        newBadge.textContent = 'NEW';
+        newBadge.setAttribute('role', 'status');
+        newBadge.setAttribute('aria-label', 'Newly published study');
+        article.appendChild(newBadge);
+      }
+
+      const link = document.createElement('a');
+      link.className = 'study-card-link';
+      link.href = study.link || '#';
+      link.target = '_blank';
+      link.rel = 'noopener';
+      link.setAttribute('aria-label', `Open study: ${study.title}`);
+
+      const cover = document.createElement('div');
+      const hasCover = Boolean(study.cover_url);
+      cover.className = hasCover ? 'study-cover' : 'study-cover is-fallback';
+      const image = document.createElement('img');
+      image.className = 'study-cover-image';
+      image.src = hasCover ? study.cover_url : 'urb.png';
+      image.alt = '';
+      image.loading = 'lazy';
+      image.addEventListener('error', () => {
+        if (!cover.classList.contains('is-fallback')) {
+          cover.classList.add('is-fallback');
+          image.src = 'urb.png';
+        } else {
+          image.remove();
+        }
+      });
+      cover.appendChild(image);
+
+      const status = document.createElement('span');
+      status.className = `study-status ${study.status}`;
+      status.textContent = studyStatusLabel(study.status);
+      cover.appendChild(status);
+      const reviewCount = Number(study.review_count || 0);
+
+      let contributorLink = null;
+      if (study.contributor_id) {
+        const contributor = resolveContributor({
+          contributor_id: study.contributor_id,
+          name: study.contributor_name || '',
+        });
+        contributorLink = document.createElement(contributor.url ? 'a' : 'span');
+        contributorLink.className = 'study-contributor-link';
+        contributorLink.title = `Study contributor: ${contributorName(contributor)}`;
+        if (contributor.url) {
+          contributorLink.href = contributor.url;
+          contributorLink.target = '_blank';
+          contributorLink.rel = 'noopener';
+          contributorLink.setAttribute(
+            'aria-label',
+            `Open ${contributorName(contributor)} on GitHub`
+          );
+        }
+        const avatar = createContributorAvatar({
+          ...contributor,
+          avatar: contributorAvatarUrl(contributor.avatar, 128),
+        });
+        contributorLink.appendChild(avatar);
+      }
+
+      const body = document.createElement('div');
+      body.className = 'study-card-body';
+
+      const meta = document.createElement('div');
+      meta.className = 'study-card-meta';
+      const date = document.createElement('span');
+      date.textContent = study.report_date ? `REPORT · ${study.report_date}` : 'FINAL REPORT';
+      meta.appendChild(date);
+
+      const title = document.createElement('h2');
+      title.className = 'study-card-title';
+      title.textContent = study.title;
+
+      const summary = document.createElement('p');
+      summary.className = 'study-card-summary';
+      summary.textContent = study.summary;
+
+      body.appendChild(meta);
+      body.appendChild(title);
+      body.appendChild(summary);
+
+      if (study.scope) {
+        const scope = document.createElement('div');
+        scope.className = 'study-scope';
+        scope.textContent = study.scope;
+        body.appendChild(scope);
+      }
+
+      const footer = document.createElement('div');
+      footer.className = 'study-card-footer';
+      const reviews = document.createElement('button');
+      reviews.type = 'button';
+      reviews.className = reviewCount > 0
+        ? 'study-document-button study-review-button'
+        : 'study-document-button study-review-button missing';
+      reviews.textContent = `${reviewCount} review${reviewCount === 1 ? '' : 's'}`;
+      reviews.disabled = reviewCount === 0;
+      if (reviewCount > 0) {
+        reviews.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          openStudyReviews(study, reviews);
+        });
+      }
+      const documentActions = document.createElement('div');
+      documentActions.className = 'study-document-actions';
+      documentActions.appendChild(createStudyDocumentButton(study, 'proposal', 'Proposal'));
+      documentActions.appendChild(createStudyDocumentButton(study, 'report', 'Final report'));
+      footer.appendChild(documentActions);
+      footer.appendChild(reviews);
+      body.appendChild(footer);
+
+      article.appendChild(cover);
+      article.appendChild(body);
+      article.appendChild(link);
+      if (contributorLink) article.appendChild(contributorLink);
+      return article;
+    }
+
+    function renderStudiesPage() {
+      const total = studiesData.length;
+      studiesCountEl.textContent = `${total} completed stud${total === 1 ? 'y' : 'ies'}`;
+      studiesToolbar.hidden = total === 0;
+      studyGrid.innerHTML = '';
+      renderStudyFilters();
+
+      if (!total) {
+        studiesEmpty.textContent = 'No studies are available.';
+        studiesEmpty.hidden = false;
+        return;
+      }
+
+      const query = studySearchInput.value.trim().toLowerCase();
+      const visible = studiesData.filter((study) => {
+        if (activeStudyStatus !== 'all' && study.status !== activeStudyStatus) return false;
+        if (!query) return true;
+        const searchable = [
+          study.title,
+          study.hypothesis,
+          study.summary,
+          study.conclusion,
+          study.scope,
+          study.status,
+        ].join(' ').toLowerCase();
+        return searchable.includes(query);
+      });
+
+      visible.forEach((study) => studyGrid.appendChild(createStudyCard(study)));
+      studiesEmpty.textContent = 'No studies match this search and conclusion.';
+      studiesEmpty.hidden = visible.length > 0;
+    }
+
     isolateBtn.addEventListener('click', () => {
+      if (!isolateSelected && !selectedRowIds.size && !selectedColumnKeys.size) return;
       isolateSelected = !isolateSelected;
       updateIsolateButton();
       renderTable();
@@ -2051,21 +4082,103 @@
       rebuildFilters({ preserveSelections: true });
     });
 
+    dateSortBtn.addEventListener('click', () => {
+      sortState.column = 'experiment_date';
+      sortState.direction = 'desc';
+      renderTable();
+    });
+
     deselectBtn.addEventListener('click', () => {
       selectedRowIds.clear();
+      selectedColumnKeys.clear();
       if (isolateSelected) {
         renderTable();
         return;
       }
       tableContainer.querySelectorAll('tbody tr').forEach((row) => row.classList.remove('row-selected'));
+      tableContainer.querySelectorAll('.column-selected').forEach((cell) => {
+        cell.classList.remove('column-selected');
+      });
     });
 
     downloadBtn.addEventListener('click', downloadCsv);
+    studySearchInput.addEventListener('input', renderStudiesPage);
+    document.querySelectorAll('[data-study-dialog-close]').forEach((button) => {
+      button.addEventListener('click', () => studyDocumentDialog.close());
+    });
+    studyDocumentDialog.addEventListener('click', (event) => {
+      if (event.target === studyDocumentDialog) studyDocumentDialog.close();
+    });
+    studyDocumentDialog.addEventListener('close', () => {
+      if (studyDocumentTrigger) studyDocumentTrigger.focus();
+    });
 
-    controlsHint.textContent = strings.controls_hint || '';
-    statsPill.textContent = strings.stats_loading || '';
+    function showView(view, updateUrl = false) {
+      const activeView = ['home', 'leaderboard', 'studies'].includes(view)
+        ? view
+        : 'home';
+      const showHome = activeView === 'home';
+      const showLeaderboard = activeView === 'leaderboard';
+      const showStudies = activeView === 'studies';
+      viewSwitch.dataset.view = activeView;
+      homeTab.classList.toggle('is-active', showHome);
+      leaderboardTab.classList.toggle('is-active', showLeaderboard);
+      studiesTab.classList.toggle('is-active', showStudies);
+      homeTab.setAttribute('aria-selected', String(showHome));
+      leaderboardTab.setAttribute('aria-selected', String(showLeaderboard));
+      studiesTab.setAttribute('aria-selected', String(showStudies));
+      homeView.hidden = !showHome;
+      leaderboardView.hidden = !showLeaderboard;
+      leaderboardExtras.hidden = showHome;
+      studiesView.hidden = !showStudies;
+      homeTab.tabIndex = showHome ? 0 : -1;
+      leaderboardTab.tabIndex = showLeaderboard ? 0 : -1;
+      studiesTab.tabIndex = showStudies ? 0 : -1;
+      document.body.classList.toggle('home-active', showHome);
+      document.title = showHome
+        ? 'URB'
+        : (showStudies ? 'URB Studies' : (strings.page_title || 'URB Leaderboard'));
+      if (updateUrl) {
+        const nextHash = `#${activeView}`;
+        if (window.location.hash !== nextHash) history.pushState(null, '', nextHash);
+      }
+    }
+
+    function viewFromHash() {
+      const view = window.location.hash.slice(1);
+      return ['home', 'leaderboard', 'studies'].includes(view) ? view : 'home';
+    }
+
+    function selectView(view) {
+      showView(view, true);
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    }
+
+    homeTab.addEventListener('click', () => selectView('home'));
+    leaderboardTab.addEventListener('click', () => selectView('leaderboard'));
+    studiesTab.addEventListener('click', () => selectView('studies'));
+    const viewTabs = [homeTab, leaderboardTab, studiesTab];
+    const viewNames = ['home', 'leaderboard', 'studies'];
+    viewTabs.forEach((tab, index) => {
+      tab.addEventListener('keydown', (event) => {
+        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+        event.preventDefault();
+        let nextIndex = index;
+        if (event.key === 'Home') nextIndex = 0;
+        if (event.key === 'End') nextIndex = viewTabs.length - 1;
+        if (event.key === 'ArrowLeft') nextIndex = (index - 1 + viewTabs.length) % viewTabs.length;
+        if (event.key === 'ArrowRight') nextIndex = (index + 1) % viewTabs.length;
+        selectView(viewNames[nextIndex]);
+        viewTabs[nextIndex].focus();
+      });
+    });
+    window.addEventListener('popstate', () => showView(viewFromHash()));
 
     rebuildFilters({ preserveSelections: false });
+    renderStudiesPage();
+    showView(viewFromHash());
+
+__HOME_SCRIPT__
   </script>
 </body>
 </html>
