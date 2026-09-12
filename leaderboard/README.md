@@ -25,8 +25,7 @@ Default output:
 - `--results-dir`: source directory with run folders (default: `results`)
 - `--output-dir`: output site directory (default: `docs/leaderboard`)
 - `--studies-dir`: source directory containing studies (default: `studies`)
-- `--repo-url`: optional GitHub URL prefix for experiment links, e.g. `https://github.com/COeXISTENCE-PROJECT/URB/tree/main/`
-: if omitted, the generator infers it from `title_link_url` in `leaderboard_strings.json`
+- `--repo-url`: optional GitHub URL prefix for experiment links, e.g. `https://github.com/COeXISTENCE-PROJECT/URB/tree/main/`; when omitted, it is inferred from `title_link_url` in `leaderboard_strings.json`
 - `--local-link-prefix`: relative fallback prefix for links when `--repo-url` is not provided (default: `..`)
 
 ## Included behavior
@@ -34,8 +33,10 @@ Default output:
 - Indexes completed run folders with finite `t_test` and `t_CAV` metrics
 - Shows studies with a proposal, experiment record, and final report; missing reviews are marked
 - Sortable metric columns
-- Filtering/grouping by experiment type, env config, task config, and network
-- Collapsing reruns with identical non-seed settings into averaged rows
+- Network tabs, plus filters for environment config, task config, environment seed, and optional project
+- Collapsing reruns with identical non-seed settings into averaged rows after filtering, so
+  selecting a seed produces the correctly averaged subgroup
+- Hover details listing the concrete seeds behind a collapsed `varies` value
 - Sorting by experiment date, using the result's first Git commit when available
 - Metric descriptions as column tooltips
 - CSV export of the visible table

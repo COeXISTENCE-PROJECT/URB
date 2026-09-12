@@ -19,6 +19,8 @@
   "filter_env_seed_label": "Env seed",
   "filter_task_label": "Task config",
   "filter_network_label": "Traffic network",
+  "filter_project_label": "Project",
+  "filter_project_other": "Other",
   "filter_action_all": "All",
   "filter_action_none": "None",
   "isolate_label": "Isolate selected",

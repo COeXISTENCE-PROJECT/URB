@@ -1797,6 +1797,37 @@
       max-width: 38vw;
     }
 
+    .seed-card {
+      width: max-content;
+      max-width: min(320px, 70vw);
+    }
+
+    .seed-card .hover-card-title {
+      margin-bottom: 7px;
+    }
+
+    .seed-values {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .seed-value {
+      padding: 4px 7px;
+      border: 1px solid var(--accent-border);
+      border-radius: 7px;
+      background: var(--accent-soft);
+      color: #174d41;
+      font-family: 'IBM Plex Mono', 'Consolas', monospace;
+      font-size: 12px;
+      line-height: 1;
+    }
+
+    .seed-varies {
+      border-bottom: 1px dotted #7e8b95;
+      cursor: help;
+    }
+
     .contributor-list {
       display: flex;
       flex-direction: column;
@@ -1921,7 +1952,8 @@
       font-weight: 600;
     }
 
-    td.metric-best[data-best="min"] {
+    td.metric-best[data-best="min"],
+    td.metric-best[data-best="abs-min"] {
       background: #ecf3fb;
       color: #1c4b74;
       font-weight: 600;
@@ -2053,7 +2085,8 @@
 
       .preview-card,
       .config-card,
-      .contributor-card {
+      .contributor-card,
+      .seed-card {
         max-width: calc(100vw - 28px);
       }
     }
@@ -2242,6 +2275,11 @@ __HOME_CONTENT__
     <div class="contributor-list" id="contributor-list"></div>
   </div>
 
+  <div class="hover-card seed-card" id="seed-card">
+    <div class="hover-card-title" id="seed-card-title">Seeds</div>
+    <div class="seed-values" id="seed-values"></div>
+  </div>
+
   <div class="metric-tooltip" id="metric-tooltip"></div>
   </div>
 
@@ -2313,6 +2351,9 @@ __HOME_CONTENT__
     const contributorCard = document.getElementById('contributor-card');
     const contributorTitle = document.getElementById('contributor-title');
     const contributorList = document.getElementById('contributor-list');
+    const seedCard = document.getElementById('seed-card');
+    const seedCardTitle = document.getElementById('seed-card-title');
+    const seedValues = document.getElementById('seed-values');
     const metricTooltip = document.getElementById('metric-tooltip');
 
     const metricDescriptions = strings.metric_descriptions || {};
@@ -2338,16 +2379,17 @@ __HOME_CONTENT__
       { emoji: '🔥', label: 'Third place' },
     ];
 
-    const collapsedData = leaderboardData.experiments || [];
     const rawData = leaderboardData.raw_experiments || leaderboardData.experiments || [];
     const studiesData = leaderboardData.studies || [];
+    const otherProjectLabel = strings.filter_project_other || 'Other';
+    const hasProjects = rawData.some((exp) => Boolean(String(exp.project ?? '').trim()));
 
     leaderboardRunCountEl.textContent = formatString(strings.stats_pill || '{count} runs indexed', {
       count: rawData.length,
     });
 
     let useCollapsedFolds = true;
-    let experiments = [];
+    let rawExperiments = [];
     let filterConfig = [];
     let filterState = {};
     let networkTabs = [];
@@ -2376,8 +2418,10 @@ __HOME_CONTENT__
         ...exp,
         env_config: exp.env_config || unknownEnv,
         env_seed: exp.env_seed ?? naLabel,
+        torch_seed: exp.torch_seed ?? naLabel,
         task_config: exp.task_config || unknownTask,
         network: exp.network || unknownNetwork,
+        project: hasProjects ? (String(exp.project ?? '').trim() || otherProjectLabel) : '',
       }));
     }
 
@@ -2391,7 +2435,7 @@ __HOME_CONTENT__
     }
 
     function sortValues(key, values) {
-      if (key === 'env_seed') {
+      if (key === 'env_seed' || key === 'torch_seed') {
         return values.sort((a, b) => {
           const aNum = Number(a);
           const bNum = Number(b);
@@ -2403,11 +2447,18 @@ __HOME_CONTENT__
           return String(a).localeCompare(String(b));
         });
       }
+      if (key === 'project') {
+        return values.sort((a, b) => {
+          if (a === otherProjectLabel) return 1;
+          if (b === otherProjectLabel) return -1;
+          return String(a).localeCompare(String(b));
+        });
+      }
       return values.sort((a, b) => String(a).localeCompare(String(b)));
     }
 
     function buildFilterConfig(items) {
-      return [
+      const config = [
         {
           key: 'env_config',
           label: strings.filter_env_label || 'Env config',
@@ -2424,6 +2475,16 @@ __HOME_CONTENT__
           values: sortValues('task_config', uniqueValuesFrom(items, 'task_config')),
         },
       ];
+      if (hasProjects) {
+        const projectValues = uniqueValuesFrom(items, 'project');
+        if (!projectValues.includes(otherProjectLabel)) projectValues.push(otherProjectLabel);
+        config.unshift({
+          key: 'project',
+          label: strings.filter_project_label || 'Project',
+          values: sortValues('project', projectValues),
+        });
+      }
+      return config;
     }
 
     function buildNetworkTabs(items) {
@@ -2580,13 +2641,106 @@ __HOME_CONTENT__
       });
     }
 
+    function splitVersionedId(expId) {
+      const match = String(expId || '').match(/^(.*)_v(\d+)$/);
+      return match
+        ? { base: match[1], version: Number(match[2]) }
+        : { base: String(expId || ''), version: null };
+    }
+
+    function pickFoldAnchor(group) {
+      return [...group].sort((a, b) => {
+        const aId = splitVersionedId(a.exp_id);
+        const bId = splitVersionedId(b.exp_id);
+        const aHasVersion = aId.version === null ? 0 : 1;
+        const bHasVersion = bId.version === null ? 0 : 1;
+        return aHasVersion - bHasVersion
+          || (aId.version ?? -1) - (bId.version ?? -1)
+          || String(a.exp_id).localeCompare(String(b.exp_id));
+      })[0];
+    }
+
+    function foldDisplayId(group, anchor) {
+      const bases = new Set(group.map((exp) => splitVersionedId(exp.exp_id).base));
+      return bases.size === 1 ? Array.from(bases)[0] : anchor.exp_id;
+    }
+
+    function averageFoldMetrics(group, anchorMetrics) {
+      const metricKeys = new Set();
+      group.forEach((exp) => {
+        Object.keys(exp.metrics || {}).forEach((metric) => metricKeys.add(metric));
+      });
+
+      const averaged = {};
+      metricKeys.forEach((metric) => {
+        const values = [];
+        group.forEach((exp) => {
+          const raw = exp.metrics?.[metric];
+          if (raw === undefined || raw === null || raw === '') return;
+          const value = Number(raw);
+          if (Number.isFinite(value)) values.push(value);
+        });
+        if (values.length) {
+          averaged[metric] = values.reduce((sum, value) => sum + value, 0) / values.length;
+        } else {
+          averaged[metric] = anchorMetrics?.[metric] ?? '';
+        }
+      });
+      return averaged;
+    }
+
+    function foldSeedValues(group, key) {
+      const unique = new Map();
+      group.forEach((exp) => {
+        const value = exp[key];
+        if (value === undefined || value === null || value === '') return;
+        unique.set(String(value), value);
+      });
+      return sortValues(key, Array.from(unique.values()));
+    }
+
+    function collapseFilteredExperiments(items) {
+      const groups = new Map();
+      items.forEach((exp) => {
+        const groupKey = exp.fold_group || exp.exp_id;
+        if (!groups.has(groupKey)) groups.set(groupKey, []);
+        groups.get(groupKey).push(exp);
+      });
+
+      return Array.from(groups.values(), (group) => {
+        if (group.length === 1) return { ...group[0], fold_count: 1 };
+
+        const anchor = pickFoldAnchor(group);
+        const merged = {
+          ...anchor,
+          exp_id: foldDisplayId(group, anchor),
+          metrics: averageFoldMetrics(group, anchor.metrics || {}),
+          fold_count: group.length,
+          fold_members: group.map((exp) => exp.exp_id),
+          experiment_date: Math.max(...group.map((exp) => Number(exp.experiment_date) || 0)),
+        };
+
+        ['env_seed', 'torch_seed'].forEach((key) => {
+          const values = foldSeedValues(group, key);
+          merged[key] = values.length > 1 ? 'varies' : (values[0] ?? naLabel);
+          const valuesKey = `${key}_values`;
+          if (values.length > 1) {
+            merged[valuesKey] = values;
+          } else {
+            delete merged[valuesKey];
+          }
+        });
+        return merged;
+      });
+    }
+
     function rebuildFilters({ preserveSelections = true } = {}) {
       const previousState = preserveSelections ? filterState : null;
       const previousConfig = preserveSelections ? filterConfig : [];
       const previousNetwork = preserveSelections ? selectedNetwork : null;
-      experiments = normalizeExperiments(useCollapsedFolds ? collapsedData : rawData);
-      filterConfig = buildFilterConfig(experiments);
-      networkTabs = buildNetworkTabs(normalizeExperiments(rawData));
+      rawExperiments = normalizeExperiments(rawData);
+      filterConfig = buildFilterConfig(rawExperiments);
+      networkTabs = buildNetworkTabs(rawExperiments);
       selectedNetwork = networkTabs.some((tab) => tab.name === previousNetwork)
         ? previousNetwork
         : (networkTabs[0]?.name || null);
@@ -2620,10 +2774,11 @@ __HOME_CONTENT__
     }
 
     function baseFilteredExperiments() {
-      return experiments.filter((exp) =>
+      const filteredRaw = rawExperiments.filter((exp) =>
         exp.network === selectedNetwork &&
         filterConfig.every((cfg) => filterState[cfg.key].has(exp[cfg.key]))
       );
+      return useCollapsedFolds ? collapseFilteredExperiments(filteredRaw) : filteredRaw;
     }
 
     function filteredExperiments() {
@@ -2769,6 +2924,7 @@ __HOME_CONTENT__
     function showContributorPreview(contributors, evt) {
       hidePreview();
       hideConfigPreview();
+      hideSeedPreview();
       contributorList.innerHTML = '';
       contributorTitle.textContent = contributors.length === 1 ? 'Contributor' : 'Contributors';
 
@@ -2807,6 +2963,37 @@ __HOME_CONTENT__
       node.addEventListener('mouseenter', (evt) => showContributorPreview(contributors, evt));
       node.addEventListener('mousemove', (evt) => positionHoverCard(contributorCard, evt));
       node.addEventListener('mouseleave', hideContributorPreview);
+    }
+
+    function showSeedPreview(label, values, evt) {
+      hidePreview();
+      hideConfigPreview();
+      hideContributorPreview();
+      seedCardTitle.textContent = label;
+      seedValues.innerHTML = '';
+      values.forEach((value) => {
+        const item = document.createElement('span');
+        item.className = 'seed-value';
+        item.textContent = value;
+        seedValues.appendChild(item);
+      });
+      seedCard.classList.add('visible');
+      positionHoverCard(seedCard, evt);
+    }
+
+    function hideSeedPreview() {
+      seedCard.classList.remove('visible');
+    }
+
+    function attachSeedHover(node, label, values) {
+      node.addEventListener('mouseenter', (evt) => showSeedPreview(label, values, evt));
+      node.addEventListener('mousemove', (evt) => positionHoverCard(seedCard, evt));
+      node.addEventListener('mouseleave', hideSeedPreview);
+      node.addEventListener('focus', () => {
+        const rect = node.getBoundingClientRect();
+        showSeedPreview(label, values, { clientX: rect.right, clientY: rect.bottom });
+      });
+      node.addEventListener('blur', hideSeedPreview);
     }
 
     function playApplause(node, emoji = '👏', options = {}) {
@@ -2910,6 +3097,7 @@ __HOME_CONTENT__
     function showImagePreview(title, alt, candidates, evt) {
       hideContributorPreview();
       hideConfigPreview();
+      hideSeedPreview();
       previewCandidates = candidates || [];
       previewCandidateIndex = 0;
       if (!previewCandidates.length) {
@@ -2980,6 +3168,7 @@ __HOME_CONTENT__
     async function showConfigPreview(title, rawUrl, evt) {
       hidePreview();
       hideContributorPreview();
+      hideSeedPreview();
       activeConfigToken += 1;
       const token = activeConfigToken;
       configCard.classList.add('visible');
@@ -3022,6 +3211,7 @@ __HOME_CONTENT__
     }
 
     function showMetricTooltip(text, evt) {
+      hideSeedPreview();
       metricTooltip.innerHTML = text;
       metricTooltip.classList.add('visible');
       positionMetricTooltip(evt);
@@ -3063,7 +3253,7 @@ __HOME_CONTENT__
       const key = String(metricKey || '').toLowerCase();
       const description = String(metricDescriptions[metricKey] || '').toLowerCase();
 
-      if (key === 'diff_sumo_routerl') return 'max';
+      if (key === 'diff_sumo_routerl') return 'abs-min';
       if (key.includes('advantage') || key.includes('effect_of')) return 'max';
       if (key.includes('winrate')) return 'max';
       if (key.includes('speed')) return 'max';
@@ -3092,7 +3282,7 @@ __HOME_CONTENT__
         metrics.forEach((metric) => {
           const raw = exp.metrics?.[metric];
           const value = Number(raw);
-          if (raw === null || raw === undefined || raw === '' || Number.isNaN(value)) return;
+          if (raw === null || raw === undefined || raw === '' || !Number.isFinite(value)) return;
 
           if (!(metric in best)) {
             best[metric] = value;
@@ -3101,6 +3291,8 @@ __HOME_CONTENT__
 
           if (directions[metric] === 'min') {
             if (value < best[metric]) best[metric] = value;
+          } else if (directions[metric] === 'abs-min') {
+            if (Math.abs(value) < Math.abs(best[metric])) best[metric] = value;
           } else {
             if (value > best[metric]) best[metric] = value;
           }
@@ -3111,6 +3303,7 @@ __HOME_CONTENT__
     }
 
     function renderTable() {
+      hideSeedPreview();
       tableContainer.innerHTML = '';
       updateDateSortButton();
       const visibleExperiments = filteredExperiments();
@@ -3337,8 +3530,28 @@ __HOME_CONTENT__
           { key: 'torch_seed', value: exp.torch_seed ?? naLabel },
         ].filter((cell) => displayedBaseHeaders.some((header) => header.key === cell.key)).forEach((cell) => {
           const td = document.createElement('td');
-          td.textContent = cell.displayValue ?? cell.value;
           td.dataset.value = cell.value;
+          const seedValueList = exp[`${cell.key}_values`];
+          if (
+            cell.value === 'varies'
+            && ['env_seed', 'torch_seed'].includes(cell.key)
+            && Array.isArray(seedValueList)
+            && seedValueList.length > 1
+          ) {
+            const trigger = document.createElement('span');
+            trigger.className = 'seed-varies';
+            trigger.textContent = 'varies';
+            trigger.tabIndex = 0;
+            trigger.setAttribute('aria-label', `${cell.key === 'env_seed' ? 'Environment' : 'Torch'} seeds: ${seedValueList.join(', ')}`);
+            attachSeedHover(
+              trigger,
+              cell.key === 'env_seed' ? 'Environment seeds' : 'Torch seeds',
+              seedValueList
+            );
+            td.appendChild(trigger);
+          } else {
+            td.textContent = cell.displayValue ?? cell.value;
+          }
           if (cell.key === 'env_config' && exp.env_config) {
             const configFile = String(exp.env_config).endsWith('.json')
               ? exp.env_config
@@ -3377,10 +3590,12 @@ __HOME_CONTENT__
             raw !== null &&
             raw !== undefined &&
             raw !== '' &&
-            !Number.isNaN(value)
+            Number.isFinite(value)
           ) {
-            const epsilon = 1e-9 * Math.max(1, Math.abs(bestValue));
-            if (Math.abs(value - bestValue) <= epsilon) {
+            const comparisonValue = metricDirections[metric] === 'abs-min' ? Math.abs(value) : value;
+            const comparisonBest = metricDirections[metric] === 'abs-min' ? Math.abs(bestValue) : bestValue;
+            const epsilon = 1e-9 * Math.max(1, Math.abs(comparisonBest));
+            if (Math.abs(comparisonValue - comparisonBest) <= epsilon) {
               td.classList.add('metric-best');
               td.dataset.best = metricDirections[metric] || '';
             }

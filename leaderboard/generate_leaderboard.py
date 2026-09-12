@@ -27,7 +27,6 @@ METRIC_FILENAMES = [
 ]
 REQUIRED_LEADERBOARD_METRICS = ["t_test", "t_CAV"]
 
-VERSIONED_ID_RE = re.compile(r"^(?P<base>.+)_v(?P<version>\d+)$")
 GITHUB_USERNAME_RE = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$")
 
 REQUIRED_STRING_KEYS = [
@@ -51,6 +50,8 @@ REQUIRED_STRING_KEYS = [
     "filter_env_seed_label",
     "filter_task_label",
     "filter_network_label",
+    "filter_project_label",
+    "filter_project_other",
     "filter_action_all",
     "filter_action_none",
     "isolate_label",
@@ -94,6 +95,7 @@ REQUIRED_TYPE_LABELS = ["normal", "open", "cond_open"]
 
 COLLAPSE_KEY_FIELDS = [
     "exp_type",
+    "project",
     "env_config",
     "task_config",
     "network",
@@ -110,6 +112,7 @@ COLLAPSE_VARIABLE_FIELDS = {
 
 COLLAPSE_KEY_CONFIG_FIELDS = {
     "exp_type",
+    "project",
     "env_config",
     "task_config",
     "network",
@@ -121,21 +124,6 @@ COLLAPSE_KEY_CONFIG_FIELDS = {
     "algorithm_config",
     "algorithm_configuration",
 }
-
-LEGACY_CONTRIBUTOR_FIELDS = (
-    "script_contributor",
-    "script_contributor_username",
-    "script_contributor_avatar",
-    "script_contributor_url",
-    "algorithm_config_contributor",
-    "algorithm_config_contributor_username",
-    "algorithm_config_contributor_avatar",
-    "algorithm_config_contributor_url",
-    "result_contributor",
-    "result_contributor_username",
-    "result_contributor_avatar",
-    "result_contributor_url",
-)
 
 
 def read_metrics(exp_dir: Path) -> Optional[Dict[str, str]]:
@@ -152,10 +140,9 @@ def read_metrics(exp_dir: Path) -> Optional[Dict[str, str]]:
 
     with metrics_path.open(newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
-        rows = list(reader)
-        if not rows:
+        first_row = next(reader, None)
+        if first_row is None:
             return None
-        first_row = rows[0]
         header_order = reader.fieldnames or list(first_row.keys())
         return {"data": first_row, "header": header_order}
 
@@ -178,41 +165,6 @@ def read_config(exp_dir: Path) -> Optional[Dict]:
         return None
     with config_path.open(encoding="utf-8") as f:
         return json.load(f)
-
-
-def split_versioned_id(exp_id: str) -> Tuple[str, Optional[int]]:
-    match = VERSIONED_ID_RE.match(exp_id)
-    if not match:
-        return exp_id, None
-    return match.group("base"), int(match.group("version"))
-
-
-def average_metrics(experiments: Sequence[Dict], anchor_metrics: Dict[str, str]) -> Dict[str, object]:
-    metric_keys = set()
-    for exp in experiments:
-        metric_keys.update((exp.get("metrics") or {}).keys())
-
-    averaged: Dict[str, object] = {}
-    for key in metric_keys:
-        values: List[float] = []
-        for exp in experiments:
-            value = (exp.get("metrics") or {}).get(key)
-            if value is None or value == "":
-                continue
-            try:
-                parsed = float(value)
-            except (TypeError, ValueError):
-                continue
-            if not math.isfinite(parsed):
-                continue
-            values.append(parsed)
-        if values:
-            averaged[key] = sum(values) / len(values)
-        elif key in anchor_metrics:
-            averaged[key] = anchor_metrics[key]
-        else:
-            averaged[key] = ""
-    return averaged
 
 
 def merged_metric_order(experiments: Sequence[Dict]) -> List[str]:
@@ -247,64 +199,15 @@ def collapse_key(exp: Dict) -> Tuple[str, ...]:
     return fields + (str(exp.get("_collapse_signature") or ""),)
 
 
-def pick_anchor(group: List[Dict]) -> Dict:
-    def sort_key(item: Dict) -> Tuple[int, int, str]:
-        _, version = split_versioned_id(item["exp_id"])
-        has_version = 1 if version is not None else 0
-        version_value = version if version is not None else -1
-        return (has_version, version_value, item["exp_id"])
-
-    return sorted(group, key=sort_key)[0]
-
-
-def display_id_for_group(group: List[Dict], anchor: Dict) -> str:
-    bases = {split_versioned_id(exp["exp_id"])[0] for exp in group}
-    if len(bases) == 1:
-        return next(iter(bases))
-    return anchor["exp_id"]
-
-
-def merge_seed_fields(merged: Dict, group: List[Dict]) -> None:
-    env_seeds = {exp.get("env_seed") for exp in group if exp.get("env_seed") not in (None, "")}
-    torch_seeds = {exp.get("torch_seed") for exp in group if exp.get("torch_seed") not in (None, "")}
-
-    if len(env_seeds) > 1:
-        merged["env_seed"] = "varies"
-    elif env_seeds and merged.get("env_seed") in (None, ""):
-        merged["env_seed"] = next(iter(env_seeds))
-
-    if len(torch_seeds) > 1:
-        merged["torch_seed"] = "varies"
-    elif torch_seeds and merged.get("torch_seed") in (None, ""):
-        merged["torch_seed"] = next(iter(torch_seeds))
-
-
-def collapse_repeated_experiments(experiments: List[Dict]) -> List[Dict]:
+def assign_fold_groups(experiments: List[Dict]) -> None:
     grouped: Dict[Tuple[str, ...], List[Dict]] = {}
     for exp in experiments:
         grouped.setdefault(collapse_key(exp), []).append(exp)
 
-    collapsed: List[Dict] = []
-    for key in sorted(grouped.keys()):
-        group = sorted(grouped[key], key=lambda item: item["exp_id"])
-        if len(group) == 1:
-            single = dict(group[0])
-            single["fold_count"] = 1
-            collapsed.append(single)
-            continue
-
-        anchor = pick_anchor(group)
-        merged = dict(anchor)
-        merged["exp_id"] = display_id_for_group(group, anchor)
-        merged["metrics"] = average_metrics(group, anchor.get("metrics") or {})
-        merged["metric_order"] = merged_metric_order(group)
-        merged["fold_count"] = len(group)
-        merged["fold_members"] = [exp["exp_id"] for exp in group]
-        merged["experiment_date"] = max(exp.get("experiment_date", 0) for exp in group)
-        merge_seed_fields(merged, group)
-        collapsed.append(merged)
-
-    return collapsed
+    for group_index, key in enumerate(sorted(grouped.keys())):
+        fold_group = f"g{group_index}"
+        for exp in grouped[key]:
+            exp["fold_group"] = fold_group
 
 
 def normalized_path_parts(raw_path: str) -> List[str]:
@@ -414,14 +317,6 @@ def contributor_info_from_git(
     info = (contributor_name, contributor_username)
     cache[rel_file] = info
     return info
-
-
-def script_contributor_info_from_git(
-    script_file: Path,
-    repo_root: Path,
-    cache: Dict[str, Tuple[str, str]],
-) -> Tuple[str, str]:
-    return contributor_info_from_git(script_file, repo_root, cache)
 
 
 def resolve_repo_algorithm_config_file(
@@ -546,8 +441,6 @@ def compact_experiment_records(experiments: Sequence[Dict]) -> None:
             contributor.pop("username", None)
             contributor.pop("avatar", None)
             contributor.pop("url", None)
-        for field in LEGACY_CONTRIBUTOR_FIELDS:
-            exp.pop(field, None)
         exp.pop("metric_order", None)
 
 
@@ -894,6 +787,7 @@ def collect_experiments(results_dir: Path) -> List[Dict]:
             or config.get("algorithm_configuration")
             or ""
         )
+        project = str(config.get("project") or "").strip()
         algorithm_config_file = resolve_repo_algorithm_config_file(
             algorithm_config_group,
             alg_config,
@@ -908,31 +802,6 @@ def collect_experiments(results_dir: Path) -> List[Dict]:
             result_config_path,
             int(result_config_file.stat().st_mtime),
         )
-        script_contributor, script_contributor_username = (
-            script_contributor_info_from_git(script_file, repo_root, contributor_cache)
-            if script_file
-            else ("", "")
-        )
-        algorithm_config_contributor, algorithm_config_contributor_username = (
-            contributor_info_from_git(algorithm_config_file, repo_root, contributor_cache)
-            if algorithm_config_file
-            else ("", "")
-        )
-        result_contributor, result_contributor_username = contributor_info_from_git(
-            result_config_file,
-            repo_root,
-            contributor_cache,
-        )
-        script_contributor_avatar = github_avatar_url(script_contributor_username)
-        script_contributor_url = github_profile_url(script_contributor_username)
-        algorithm_config_contributor_avatar = github_avatar_url(
-            algorithm_config_contributor_username
-        )
-        algorithm_config_contributor_url = github_profile_url(
-            algorithm_config_contributor_username
-        )
-        result_contributor_avatar = github_avatar_url(result_contributor_username)
-        result_contributor_url = github_profile_url(result_contributor_username)
         alg_config_label = str(alg_config or "unknown")
         if alg_config_label != "unknown" and not alg_config_label.endswith(".json"):
             alg_config_label = f"{alg_config_label}.json"
@@ -965,24 +834,13 @@ def collect_experiments(results_dir: Path) -> List[Dict]:
                 "exp_id": exp_dir.name,
                 "exp_path": str(exp_dir.as_posix()),
                 "exp_type": config.get("exp_type", "normal"),
+                "project": project or None,
                 "env_config": config.get("env_config"),
                 "task_config": config.get("task_config"),
                 "network": config.get("network"),
                 "algorithm": algorithm,
                 "algorithm_config_group": algorithm_config_group,
                 "script": script_name,
-                "script_contributor": script_contributor,
-                "script_contributor_username": script_contributor_username,
-                "script_contributor_avatar": script_contributor_avatar,
-                "script_contributor_url": script_contributor_url,
-                "algorithm_config_contributor": algorithm_config_contributor,
-                "algorithm_config_contributor_username": algorithm_config_contributor_username,
-                "algorithm_config_contributor_avatar": algorithm_config_contributor_avatar,
-                "algorithm_config_contributor_url": algorithm_config_contributor_url,
-                "result_contributor": result_contributor,
-                "result_contributor_username": result_contributor_username,
-                "result_contributor_avatar": result_contributor_avatar,
-                "result_contributor_url": result_contributor_url,
                 "contributors": contributors,
                 "alg_config": alg_config,
                 "env_seed": config.get("env_seed"),
@@ -1213,21 +1071,18 @@ def main(args: Optional[Sequence[str]] = None) -> None:
     template = template.replace("__HOME_STYLES__", home_styles)
     template = template.replace("__HOME_SCRIPT__", home_script)
     raw_experiments = collect_experiments(parsed.results_dir)
-    experiments = collapse_repeated_experiments(raw_experiments)
+    assign_fold_groups(raw_experiments)
     metric_order = merged_metric_order(raw_experiments)
-    for exp in raw_experiments + experiments:
+    for exp in raw_experiments:
         exp.pop("_collapse_signature", None)
-    contributor_pool = build_contributor_pool([raw_experiments, experiments])
+    contributor_pool = build_contributor_pool([raw_experiments])
     compact_experiment_records(raw_experiments)
-    compact_experiment_records(experiments)
 
     repo_url = parsed.repo_url or infer_default_repo_url(strings)
     repo_root = Path(__file__).resolve().parent.parent
     build_experiment_links(raw_experiments, repo_url, parsed.local_link_prefix)
-    build_experiment_links(experiments, repo_url, parsed.local_link_prefix)
     raw_repo_base = infer_raw_repo_base(repo_url)
     attach_hover_urls(raw_experiments, raw_repo_base)
-    attach_hover_urls(experiments, raw_repo_base)
     network_images = build_network_image_urls(
         repo_root,
         raw_repo_base,
@@ -1245,7 +1100,6 @@ def main(args: Optional[Sequence[str]] = None) -> None:
         "contributors": contributor_pool,
         "studies": studies,
         "metric_order": metric_order,
-        "experiments": experiments,
         "raw_experiments": raw_experiments,
         "strings": strings,
     }
