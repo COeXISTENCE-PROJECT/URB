@@ -15,7 +15,7 @@
 </p>
 
 <p align="center">
-  <a href="https://coexistence-project.github.io/URB/">
+  <a href="https://urbenchmark.com">
     <img alt="Official website" src="docs/official_leaderboard_badge.svg" width="294"/>
   </a>
 </p>
