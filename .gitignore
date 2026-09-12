@@ -183,11 +183,17 @@ agents.csv
 combined_data.csv
 VectorMetrics.csv
 losses.csv
+results/*/metrics/plots/
+results/*/models/
 
-# Ignore nothing in the networks directory, since it contains the agents.csv
 !networks/*
 networks/.DS_Store
 networks/*/.DS_Store
 
 docs/leaderboard/
 server_scripts/
+
+studies/*/review/PROMPT.md
+studies/*/review/REVIEW.md
+!studies/_template/*
+!studies/_template/**

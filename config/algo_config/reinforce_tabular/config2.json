@@ -1,0 +1,8 @@
+{
+    "training_eps": 5000,
+
+    "lr": 0.2,
+    "baseline_lr": 0.5,
+    "entropy_coef": 0.2,
+    "bin_width": 100.0
+}
