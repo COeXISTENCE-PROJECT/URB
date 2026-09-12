@@ -27,7 +27,7 @@ jobs:
           fi
           paths=$(
             git diff --diff-filter=A --name-only "$BASE_SHA" "$GITHUB_SHA" -- 'studies/**' |
-            awk -F/ '$2 !~ /^[_\.]/ {print $1 "/" $2}' |
+            awk -F/ 'NF >= 3 && $2 !~ /^[_\.]/ {print $1 "/" $2}' |
             sort -u |
             while read -r directory; do
               if ! git cat-file -e "$BASE_SHA:$directory" 2>/dev/null; then
