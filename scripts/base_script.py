@@ -29,6 +29,7 @@ if __name__ == "__main__":
     raise NotImplementedError("This script is a template and should not be run directly. Please use the appropriate script for your experiment.")
     parser = argparse.ArgumentParser()
     parser.add_argument('--id', type=str, required=True)
+    parser.add_argument('--project', type=str, default=None)
     parser.add_argument('--alg-conf', type=str, required=True)
     parser.add_argument('--env-conf', type=str, default="config1")
     parser.add_argument('--task-conf', type=str, required=True)
@@ -118,6 +119,8 @@ if __name__ == "__main__":
     # Dump exp config to records
     exp_config_path = os.path.join(records_folder, "exp_config.json")
     dump_config = params.copy()
+    if args.project is not None:
+        dump_config["project"] = args.project
     dump_config["network"] = network
     dump_config["env_seed"] = env_seed
     dump_config["env_config"] = env_config

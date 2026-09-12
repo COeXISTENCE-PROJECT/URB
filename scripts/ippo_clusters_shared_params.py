@@ -225,6 +225,7 @@ class SharedPPO(BaseLearningModel):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--id', type=str, required=True)
+    parser.add_argument('--project', type=str, default=None)
     parser.add_argument('--env-conf', type=str, default="clusters")
     parser.add_argument('--task-conf', type=str, required=True)
     parser.add_argument('--alg-conf', type=str, required=True)
@@ -347,6 +348,8 @@ if __name__ == "__main__":
     # Dump exp config to records
     exp_config_path = os.path.join(records_folder, "exp_config.json")
     dump_config = params.copy()
+    if args.project is not None:
+        dump_config["project"] = args.project
 
     # Load pre-generated clustered routes and their per-OD action masks.
     configured_number_of_paths = number_of_paths

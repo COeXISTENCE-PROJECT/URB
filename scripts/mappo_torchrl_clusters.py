@@ -75,6 +75,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--shuffle', action='store_true', default=False) # shuffle the clusters to break the action space structure
     parser.add_argument('--id', type=str, required=True)
+    parser.add_argument('--project', type=str, default=None)
     parser.add_argument('--alg-conf', type=str, default="config1")
     parser.add_argument('--env-conf', type=str, default="clusters-sumo-obs")
     parser.add_argument('--task-conf', type=str, default="config1")
@@ -195,6 +196,8 @@ if __name__ == "__main__":
     # Dump exp config to records
     exp_config_path = os.path.join(records_folder, "exp_config.json")
     dump_config = params.copy()
+    if args.project is not None:
+        dump_config["project"] = args.project
     dump_config["network"] = network
     dump_config["env_seed"] = env_seed
     dump_config["torch_seed"] = torch_seed

@@ -28,6 +28,7 @@ from utils           import clear_SUMO_files
 from utils           import model_snapshot_path
 from utils           import print_agent_counts
 from utils           import run_metrics_analysis
+from utils           import script_path_for_config
 from utils           import should_save_model_snapshot
 
 from clustered_routes import AVMaskWrapper, ClusteredRoutesLoader, resolve_route_set
@@ -139,6 +140,7 @@ class Network(nn.Module):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--id', type=str, required=True)
+    parser.add_argument('--project', type=str, default=None)
     parser.add_argument('--env-conf', type=str, default="clusters")
     parser.add_argument('--task-conf', type=str, required=True)
     parser.add_argument('--alg-conf', type=str, required=True)
@@ -255,6 +257,8 @@ if __name__ == "__main__":
             
     exp_config_path = os.path.join(records_folder, "exp_config.json")
     dump_config = params.copy()
+    if args.project is not None:
+        dump_config["project"] = args.project
 
     # Clustered routes: load action masks and generating paths.csv and route.rou.xml from the pregenerated routes
     create_paths_flag = True
@@ -289,7 +293,7 @@ if __name__ == "__main__":
     dump_config["env_config"] = env_config
     dump_config["task_config"] = task_config
     dump_config["alg_config"] = alg_config
-    dump_config["script"] = os.path.abspath(__file__)
+    dump_config["script"] = script_path_for_config(__file__)
     dump_config["algorithm"] = ALGORITHM
     dump_config["num_agents"] = num_agents
     dump_config["num_machines"] = num_machines

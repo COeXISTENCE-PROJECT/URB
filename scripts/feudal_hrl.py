@@ -325,6 +325,7 @@ class FeudalAgent(BaseLearningModel):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--id", type=str, required=True)
+    parser.add_argument("--project", type=str, default=None)
     parser.add_argument("--env-conf", type=str, default="config1")
     parser.add_argument("--task-conf", type=str, required=True)
     parser.add_argument("--alg-conf", type=str, required=True)
@@ -425,6 +426,8 @@ if __name__ == "__main__":
 
     exp_config_path = os.path.join(records_folder, "exp_config.json")
     dump_config = params.copy()
+    if args.project is not None:
+        dump_config["project"] = args.project
     dump_config.update(
         {
             "network": network,

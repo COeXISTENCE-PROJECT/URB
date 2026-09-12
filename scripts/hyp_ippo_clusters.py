@@ -289,6 +289,7 @@ class PPO(BaseLearningModel):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--id', type=str, required=True)
+    parser.add_argument('--project', type=str, default=None)
     parser.add_argument('--env-conf', type=str, default="config1")
     parser.add_argument('--task-conf', type=str, required=True)
     parser.add_argument('--alg-conf', type=str, required=True)
@@ -390,6 +391,8 @@ if __name__ == "__main__":
     total_episodes = human_learning_episodes + training_eps + test_eps
 
     dump_config = params.copy()
+    if args.project is not None:
+        dump_config["project"] = args.project
 
     # Load pre-generated clustered routes and their per-OD action masks.
     configured_number_of_paths = number_of_paths
