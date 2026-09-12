@@ -12,7 +12,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 RESULTS_DIR = REPO_ROOT / "results"
 
 
-def experiment_path_id(value):
+def experiment_id(value):
     if not value or Path(value).name != value or value in {".", ".."}:
         raise argparse.ArgumentTypeError("experiment IDs must be directory names")
     return value
@@ -35,6 +35,7 @@ def main():
     parser.add_argument("--shuffle", action="store_true", default=None)
     parser.add_argument("--skip-metrics", action="store_true", default=False)
     parser.add_argument("--save-model-every", type=int, default=None, metavar="N")
+    parser.add_argument("--project", default=None)
     args = parser.parse_args()
 
     source_dir = RESULTS_DIR / args.experiment_id
@@ -49,8 +50,11 @@ def main():
     config_path = source_dir / "exp_config.json"
     if not config_path.is_file():
         parser.error(f"experiment has no exp_config.json: {source_dir}")
-    with config_path.open(encoding="utf-8") as file:
-        config = json.load(file)
+    try:
+        with config_path.open(encoding="utf-8") as file:
+            config = json.load(file)
+    except (OSError, json.JSONDecodeError) as error:
+        parser.error(f"could not read {config_path}: {error}")
 
     saved_script = config.get("script")
     if not saved_script:
@@ -83,6 +87,7 @@ def main():
         ("--model", "baseline_model", args.model),
         ("--route-set", "route_set", args.route_set),
         ("--save-model-every", "save_model_every", args.save_model_every),
+        ("--project", "project", args.project),
     )
     for flag, config_key, override in options:
         value = override if override is not None else config.get(config_key)

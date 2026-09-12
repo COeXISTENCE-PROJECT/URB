@@ -28,17 +28,23 @@ def main():
     if destination_dir.exists() or destination_dir.is_symlink():
         parser.error(f"new experiment ID already exists: {destination_dir}")
 
+    config_path = destination_dir / "exp_config.json"
+    source_config_path = source_dir / "exp_config.json"
+    config = None
+    if source_config_path.is_file():
+        try:
+            with source_config_path.open(encoding="utf-8") as file:
+                config = json.load(file)
+        except (OSError, json.JSONDecodeError) as error:
+            parser.error(f"could not read {source_config_path}: {error}")
+
     source_dir.rename(destination_dir)
 
-    config_path = destination_dir / "exp_config.json"
-    if config_path.is_file():
-        with config_path.open(encoding="utf-8") as file:
-            config = json.load(file)
-        if "exp_id" in config:
-            config["exp_id"] = args.new_experiment_id
-            with config_path.open("w", encoding="utf-8") as file:
-                json.dump(config, file, indent=4)
-                file.write("\n")
+    if config is not None and "exp_id" in config:
+        config["exp_id"] = args.new_experiment_id
+        with config_path.open("w", encoding="utf-8") as file:
+            json.dump(config, file, indent=4)
+            file.write("\n")
 
     print(f"Renamed {args.old_experiment_id} to {args.new_experiment_id}.")
 
