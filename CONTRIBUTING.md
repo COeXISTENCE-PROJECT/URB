@@ -4,7 +4,7 @@ Thank you for your interest in contributing to URB.
 
 This repository accepts:
 - **Benchmark coverage extensions**, which add new experimental components,
-- **Leaderboard contributions**, new results to be ranked in our leaderboard, and
+- **Leaderboard contributions**, new results to be ranked in our leaderboard,
 - **Study contributions**, focused tests of research hypotheses using URB, and
 - **Software changes**, which improve the framework itself.
 
@@ -28,7 +28,7 @@ Examples include:
 If your contribution falls into this category, please follow the repository structure described below.
 
 ### 2. Leaderboard contributions
-These contributions include new results (palced under `results/` with a unique experiment identifier) to be ranked in our leaderboard.
+These contributions include new results placed under `results/` with a unique experiment identifier for the leaderboard.
 
 These can be obtained from existing methods and parameterizations, or with a new addition of a method or a parameterization. The addition of new tasks may be subject to further considerations to keep the contributor efforts more focused.
 
@@ -119,6 +119,8 @@ For study contributions, please also state:
 For software changes, please state:
 - what part of the software was changed, and
 - whether the change affects existing behavior.
+
+New study and result directories are checked automatically against the website indexer. Added or modified experiment scripts are tested individually; maintainers can also run the complete script suite through the manual **Test all scripts** workflow.
 
 ---
 

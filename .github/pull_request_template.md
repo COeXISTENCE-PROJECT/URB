@@ -58,10 +58,11 @@ If ticked, please add a brief justification here.
 ## Checklist
 
 > [!TIP]
-> Ensuring the following requirements satisfied will help reviewers and maintainers process this PR faster.
+> Satisfying the following requirements will help reviewers and maintainers process this PR faster.
 
 - [ ] I placed new files in the appropriate directory
 - [ ] I ensured that changes are made consistent with the existing benchmark structure
+- [ ] If this PR adds leaderboard results, each result includes `exp_config.json` and complete benchmark metrics
 - [ ] If this PR adds a study, I followed the Studies guidelines and included a completed independent review
 - [ ] I updated relevant documentation if needed
 - [ ] I kept the PR scope focused
