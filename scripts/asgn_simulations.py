@@ -40,7 +40,9 @@ from clustered_routes import (
     resolve_route_set,
     validate_clustered_route_set,
 )
+from utils import add_model_snapshot_argument
 from utils import clear_SUMO_files
+from utils import warn_model_snapshots_unsupported
 
 
 def _get_agents_valid_actions(all_agents, action_masks, num_actions):
@@ -633,7 +635,9 @@ if __name__ == "__main__":
         help="Named route-set subdirectory. Uses the network default when omitted.",
     )
     parser.add_argument('--sumo-output', action='store_true', default=False)
+    add_model_snapshot_argument(parser)
     args = parser.parse_args()
+    warn_model_snapshots_unsupported(args.save_model_every)
 
     exp_id          = args.id
     task_config     = args.task_conf

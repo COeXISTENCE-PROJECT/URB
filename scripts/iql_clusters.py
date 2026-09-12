@@ -23,8 +23,13 @@ from routerl         import TrafficEnvironment
 from tqdm            import tqdm
 
 from baseline_models import BaseLearningModel
+from utils           import add_model_snapshot_argument
 from utils           import clear_SUMO_files
+from utils           import model_snapshot_path
 from utils           import print_agent_counts
+from utils           import run_metrics_analysis
+from utils           import script_path_for_config
+from utils           import should_save_model_snapshot
 
 from clustered_routes import AVMaskWrapper, ClusteredRoutesLoader, resolve_route_set
 
@@ -135,6 +140,7 @@ class Network(nn.Module):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--id', type=str, required=True)
+    parser.add_argument('--project', type=str, default=None)
     parser.add_argument('--env-conf', type=str, default="clusters")
     parser.add_argument('--task-conf', type=str, required=True)
     parser.add_argument('--alg-conf', type=str, required=True)
@@ -148,6 +154,8 @@ if __name__ == "__main__":
         help="Named route-set subdirectory. Uses the network default when omitted.",
     )
     parser.add_argument("--shuffle", action="store_true", default=False)
+    parser.add_argument('--skip-metrics', action='store_true', default=False)
+    add_model_snapshot_argument(parser)
     args = parser.parse_args()
     ALGORITHM = "iql"
     exp_id = args.id
@@ -159,6 +167,8 @@ if __name__ == "__main__":
     torch_seed = args.torch_seed
     requested_route_set = args.route_set
     shuffle = args.shuffle
+    save_model_every = args.save_model_every
+    
     print("### STARTING EXPERIMENT ###")
     print(f"Algorithm: {ALGORITHM.upper()}")
     print(f"Experiment ID: {exp_id}")
@@ -169,6 +179,7 @@ if __name__ == "__main__":
     print(f"Task config: {task_config}")
     print(f"Requested route set: {requested_route_set or 'network default'}")
     print(f"Shuffle: {shuffle}")
+    print(f"Metrics will {'NOT ' if args.skip_metrics else ''}be computed after the experiment.\n")
 
     os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
     logging.getLogger("matplotlib").setLevel(logging.ERROR)
@@ -246,6 +257,8 @@ if __name__ == "__main__":
             
     exp_config_path = os.path.join(records_folder, "exp_config.json")
     dump_config = params.copy()
+    if args.project is not None:
+        dump_config["project"] = args.project
 
     # Clustered routes: load action masks and generating paths.csv and route.rou.xml from the pregenerated routes
     create_paths_flag = True
@@ -280,13 +293,15 @@ if __name__ == "__main__":
     dump_config["env_config"] = env_config
     dump_config["task_config"] = task_config
     dump_config["alg_config"] = alg_config
-    dump_config["script"] = os.path.abspath(__file__)
+    dump_config["script"] = script_path_for_config(__file__)
     dump_config["algorithm"] = ALGORITHM
     dump_config["num_agents"] = num_agents
     dump_config["num_machines"] = num_machines
     dump_config["use_clustered_routes"] = use_clustered_routes
     dump_config["use_action_masks"] = action_masks is not None
     dump_config["shuffle"] = shuffle
+    if save_model_every is not None:
+        dump_config["save_model_every"] = save_model_every
 
     with open(exp_config_path, 'w', encoding='utf-8') as f:
         json.dump(dump_config, f, indent=4)
@@ -380,6 +395,22 @@ if __name__ == "__main__":
                 action = agent_lookup[agent_id].model.act(observation)
                 
             env.step(action)
+
+        completed_episode = episode + 1
+        if should_save_model_snapshot(completed_episode, training_eps, save_model_every):
+            torch.save(
+                {
+                    "training_episode": completed_episode,
+                    "models": {
+                        str(agent.id): {
+                            "q_network": agent.model.q_network.state_dict(),
+                            "epsilon": agent.model.epsilon,
+                        }
+                        for agent in env.machine_agents
+                    },
+                },
+                model_snapshot_path(records_folder, completed_episode, "pt"),
+            )
             
         if episode % plot_every == 0:
             env.plot_results()
@@ -409,4 +440,7 @@ if __name__ == "__main__":
     losses_pd = pd.DataFrame([{"id": agent.id, "losses": agent.model.loss} for agent in env.machine_agents])
     losses_pd.to_csv(os.path.join(records_folder, "losses.csv"), index=False)
     env.stop_simulation()
+    
     clear_SUMO_files(os.path.join(records_folder, "SUMO_output"), os.path.join(records_folder, "episodes"), remove_additional_files=True)
+    if not args.skip_metrics:
+        run_metrics_analysis(exp_id, results_folder="../results")

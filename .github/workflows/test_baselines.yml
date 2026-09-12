@@ -5,15 +5,28 @@ on:
     branches:
       - '**'
     paths:
-      - "scripts/**"
+      - "scripts/baselines.py"
+      - "scripts/baselines_clusters.py"
+      - "scripts/clustered_routes.py"
+      - "scripts/utils.py"
       - "config/**"
-      - "baseline_methods/**"
-      - "metrics/**"
+      - "baseline_models/**"
+      - "analysis/**"
       - "tests/test_baselines.py"
       - ".github/workflows/test_baselines.yml"
   pull_request:
     branches:
       - '**'
+    paths:
+      - "scripts/baselines.py"
+      - "scripts/baselines_clusters.py"
+      - "scripts/clustered_routes.py"
+      - "scripts/utils.py"
+      - "config/**"
+      - "baseline_models/**"
+      - "analysis/**"
+      - "tests/test_baselines.py"
+      - ".github/workflows/test_baselines.yml"
   workflow_dispatch:
 
 jobs:
@@ -49,4 +62,3 @@ jobs:
 
       - name: Run script tests
         run: python -m pytest -rs tests/test_baselines.py
-          

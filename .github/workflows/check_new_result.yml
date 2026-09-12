@@ -1,0 +1,62 @@
+name: Check new leaderboard result
+
+on:
+  push:
+    branches: [main]
+    paths: ["results/**"]
+  pull_request:
+    branches: [main]
+    paths: ["results/**"]
+
+jobs:
+  check:
+    if: github.repository == 'COeXISTENCE-PROJECT/URB'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Find new results
+        id: changed
+        env:
+          BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [[ "$BASE_SHA" =~ ^0+$ ]]; then
+            BASE_SHA=$(git hash-object -t tree /dev/null)
+          fi
+          paths=$(
+            git diff --diff-filter=A --name-only "$BASE_SHA" "$GITHUB_SHA" -- 'results/**' |
+            awk -F/ '$2 !~ /^[_\.]/ {print $1 "/" $2}' |
+            sort -u |
+            while read -r directory; do
+              if ! git cat-file -e "$BASE_SHA:$directory" 2>/dev/null; then
+                echo "$directory"
+              fi
+            done
+          )
+          if [[ -n "$paths" ]]; then
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          fi
+          {
+            echo "paths<<EOF"
+            echo "$paths"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-python@v5
+        if: steps.changed.outputs.has_changes == 'true'
+        with:
+          python-version: "3.11"
+
+      - name: Install test dependency
+        if: steps.changed.outputs.has_changes == 'true'
+        run: python -m pip install pytest
+
+      - name: Check leaderboard indexing
+        if: steps.changed.outputs.has_changes == 'true'
+        env:
+          URB_NEW_RESULTS: ${{ steps.changed.outputs.paths }}
+        run: python -m pytest -q tests/test_result_indexing.py

@@ -1,11 +1,60 @@
-import xml.etree.ElementTree as ET
-import os
+import argparse
 import csv
+import os
 import subprocess
 import sys
+import xml.etree.ElementTree as ET
 from typing import Optional
 
 
+def add_model_snapshot_argument(parser: argparse.ArgumentParser) -> None:
+    """Add the common optional policy-snapshot argument to an experiment script."""
+
+    def positive_int(value: str) -> int:
+        parsed = int(value)
+        if parsed <= 0:
+            raise argparse.ArgumentTypeError("must be a positive integer")
+        return parsed
+
+    parser.add_argument(
+        "--save-model-every",
+        type=positive_int,
+        default=None,
+        metavar="N",
+        help="Save policy snapshots every N AV-training episodes and at the final episode.",
+    )
+
+
+def should_save_model_snapshot(
+    completed_episode: int,
+    training_episodes: int,
+    save_model_every: Optional[int],
+) -> bool:
+    """Return whether a policy snapshot is due after this training episode."""
+    return save_model_every is not None and (
+        completed_episode % save_model_every == 0
+        or completed_episode == training_episodes
+    )
+
+
+def model_snapshot_path(
+    records_folder: str,
+    completed_episode: int,
+    extension: str,
+) -> str:
+    """Return a standard path for one whole-population policy snapshot."""
+    models_folder = os.path.join(records_folder, "models")
+    os.makedirs(models_folder, exist_ok=True)
+    return os.path.join(
+        models_folder,
+        f"training_ep_{completed_episode:06d}.{extension.lstrip('.')}",
+    )
+
+
+def warn_model_snapshots_unsupported(save_model_every: Optional[int]) -> None:
+    """Explain when a script accepts but does not implement policy snapshots."""
+    if save_model_every is not None:
+        print("Warning: --save-model-every is not supported by this script and will be ignored.")
 
 
 class CSVLossLogger:
@@ -266,5 +315,3 @@ def run_metrics_analysis(exp_id: str, results_folder: str = "../results", verbos
         )
         return False
     return True
-
-
