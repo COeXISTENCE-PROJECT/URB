@@ -5,6 +5,10 @@ import argparse
 import json
 import xml.etree.ElementTree as ET
 
+import matplotlib
+
+matplotlib.use("Agg")
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -273,7 +277,7 @@ def load_episode(results_path: str, episode: int, verbose: bool) -> pd.DataFrame
 
 def collect_to_single_CSV(
     path: str, save_path: str = "metrics.csv", verbose: bool = False
-) -> pd.DataFrame:
+) -> None:
     """
     Collect results of the experiment to the single CSV file.
 
@@ -281,41 +285,77 @@ def collect_to_single_CSV(
         path (str): The path to the results folder, 'episodes' and 'SUMO_output' should be a subdirectories.
         save_path (str): The path to the output file.
         verbose (bool): If True, print the loading progress.
-    Returns:
-        pd.DataFrame: A DataFrame containing the episode data. This dataframe has one row for each episode and all columns from the SUMO and RouteRL files.
     """
 
     # ----- Get the episodes ids from the episodes folder -----
     episodes_path = os.path.join(path, "episodes")
     episodes = get_episodes(episodes_path)
 
-    dfs = []
-
     if verbose:
         print(f"Loading {len(episodes)} episodes...")
 
     # ----- Each episode is loaded and merged into a single row DataFrame -----
-    for i in tqdm(episodes) if verbose else episodes:
-        episode_df = load_episode(path, i, verbose)
-        if not episode_df.empty:
-           dfs.append(episode_df)
+    columns = []
+    known_columns = set()
+    loaded_episodes = 0
+    temp_path = f"{save_path}.tmp"
+    expanded_path = f"{temp_path}.expanded"
+
+    try:
+        for i in tqdm(episodes) if verbose else episodes:
+            episode_df = load_episode(path, i, verbose)
+            if episode_df.empty:
+                continue
+
+            new_columns = [
+                column for column in episode_df.columns
+                if column not in known_columns
+            ]
+            if new_columns:
+                columns.extend(new_columns)
+                known_columns.update(new_columns)
+
+                # Match pandas.concat: earlier episodes receive NaN for columns
+                # that first appear in a later episode.
+                if loaded_episodes:
+                    for chunk_number, chunk in enumerate(
+                        pd.read_csv(temp_path, chunksize=10)
+                    ):
+                        chunk.reindex(columns=columns).to_csv(
+                            expanded_path,
+                            mode="w" if chunk_number == 0 else "a",
+                            index=False,
+                            header=chunk_number == 0,
+                            float_format="%.2f",
+                        )
+                    os.replace(expanded_path, temp_path)
+
+            episode_df = episode_df.reindex(columns=columns)
+            episode_df["episode"] = episode_df["episode"].astype("int32")
+            episode_df.to_csv(
+                temp_path,
+                mode="w" if loaded_episodes == 0 else "a",
+                index=False,
+                header=loaded_episodes == 0,
+                float_format="%.2f",
+            )
+            loaded_episodes += 1
+
+        if loaded_episodes == 0:
+            if verbose:
+                print("No data loaded from any episodes.")
+            return
+
+        os.replace(temp_path, save_path)
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+        if os.path.exists(expanded_path):
+            os.remove(expanded_path)
 
     if verbose:
-        print(f"Loaded {len(dfs)} episodes.")
-        print(f"Final shape of the DataFrame: {pd.concat(dfs, axis=0, ignore_index=True).shape if dfs else (0,0)}")
-
-        
-    if not dfs:
-        if verbose:
-            print("No data loaded from any episodes. Returning empty DataFrame.")
-        return pd.DataFrame()
-    
-    df = pd.concat(dfs, axis=0, ignore_index=True)
-    df["episode"] = df["episode"].astype("int32")
-
-    df.to_csv(save_path, index=False, float_format="%.2f")    
-
-    return df
+        print(f"Loaded {loaded_episodes} episodes.")
+        print(f"Final shape of the DataFrame: ({loaded_episodes}, {len(columns)})")
 
 
 def plot_vector_values(df: pd.DataFrame, path: str, title: str, ylabel: str) -> None:
@@ -474,7 +514,13 @@ def extract_metrics(path, config, verbose=False):
     # ----- Config validation -----
 
     try:
-        df = pd.read_csv(path)
+        # Observation payloads are not used by any metric and may contain
+        # mixed Python/string representations. Avoid loading these very wide
+        # columns into memory during batch post-processing.
+        df = pd.read_csv(
+            path,
+            usecols=lambda column: not column.endswith("_observation"),
+        )
     except Exception as e:
         if verbose:
             print(f"Error reading CSV file at {path}: {e}")
@@ -803,7 +849,10 @@ if __name__ == "__main__":
         computed_training_eps = 0   
 
     metric_config = {
-        "algorithm": exp_config["algorithm"],
+        # Older baseline result folders did not record this field. It is not
+        # currently used when calculating metrics, so keep those results
+        # analyzable while new launchers record it explicitly.
+        "algorithm": exp_config.get("algorithm", "unknown"),
 
         "human_learning_episodes": exp_config["human_learning_episodes"],
         "training_eps": computed_training_eps,

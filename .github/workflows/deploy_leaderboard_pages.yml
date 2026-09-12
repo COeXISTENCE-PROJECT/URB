@@ -6,8 +6,10 @@ on:
       - main
     paths:
       - "results/**"
+      - "studies/**"
       - "leaderboard/**"
       - "docs/urb.png"
+      - "docs/urb_car.png"
       - ".github/workflows/deploy_leaderboard_pages.yml"
   workflow_dispatch:
 

@@ -1,19 +1,16 @@
-## 📊 Calculating Metrics and indicators  
+# Calculating metrics
 
-Each experiment outputs set of raw records, which are then processed with the script in this folder for a set of performance indicators which we report and several additional metrics that track the quality of the solution and its impact to the system.
+Experiment scripts produce raw records that `metrics.py` turns into benchmark metrics and plots.
 
-#### Usage
-
-To use the analysis script, you have to provide in the command line the following command:
+## Usage
 
 ```bash
-python analysis/metrics.py --id <exp_id> --verbose <verbose> --results-folder <results-folder> --skip-collecting <skip-collecting>
+python analysis/metrics.py --id <exp_id> [--results-folder <results-folder>] [--verbose True] [--skip-collecting True]
 ```
 
-that will collect the results from the experiment with identifier ```<exp_id>``` and save them in the folder ```<exp_id>/metrics/```. The ```--verbose``` flag is optional and if set to ```True``` will print additional information about the analysis process. Flag ```--results-folder``` is optional and if set to ```True``` will use the folder ```<results-folder>``` instead of the default one ```results/```. The flag ```--skip-collecting``` is optional and if set to ```True``` will skip collecting the results from the experiment into single ```.csv``` file. This operation has to be done only once, so if you are running the analysis script more than once, you can skip this step.
+By default this reads from `results/<exp_id>/` and writes to its `metrics/` directory. `--results-folder` selects another results root, `--verbose True` prints more detail, and `--skip-collecting True` reuses previously collected episode data.
 
-#### Reported indicators
----
+## Reported indicators
 
 The core metric is the travel time $t$, which is both the core term of the utility for human drivers (rational utility maximizers) and of the CAVs reward.
 We report the average travel time for the system $\hat{t}$, human drivers $\hat{t}\_{HDV}$, and autonomous vehicles $\hat{t}\_{CAV}$. We record each during the training, testing phase and for 50 days before CAVs are introduced to the system ( $\hat{t}^{train}, \hat{t}^{test}$, $\hat{t}^{pre}$). Using these values, we introduce: 
@@ -27,8 +24,7 @@ To better understand the causes of the changes in travel time, we track the _Ave
 We measure the _Cost of training_, expressed as the average of: $\sum_{\tau \in train}(t^\tau_a - \hat{t}^{pre}_a)$ over all agents $a$, i.e. the cumulated disturbance that CAV cause during the training period. We define $c\_{CAV}$ and $c\_{HDV}$ accordingly.
 We call an experiment _won_ by CAVs if their policy was on average faster than human drivers' behaviour. A final _winrate_ is a percentage of runs that were won by CAVs.
 
-#### Units of measurement
----
+## Units of measurement
 
 All the metrics are expressed in the following units:
 - Time: minutes

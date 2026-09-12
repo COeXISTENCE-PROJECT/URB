@@ -16,7 +16,7 @@
 
 <p align="center">
   <a href="https://coexistence-project.github.io/URB/">
-    <img alt="Official leaderboard" src="docs/official_leaderboard_badge.svg" width="294"/>
+    <img alt="Official website" src="docs/official_leaderboard_badge.svg" width="294"/>
   </a>
 </p>
 
@@ -64,7 +64,7 @@ An example `URB` experiment can be defined as:
 
 ## 🏙️ Traffic network and demand data
 
-With this repository, `URB` comes with 6 traffic networks and associated demand data to experiment with. Two examples:
+This repository includes seven traffic networks with associated demand data. Two examples:
 
 | ![Gretz Armainvilliers](networks/gretz_armainvilliers/gretz_armainvilliers_network.png) | ![Nangis](networks/nangis/nangis_network.png) |
 |------------------------|-----------------------|
@@ -95,25 +95,25 @@ Make sure you have SUMO installed in your system. This procedure should be carri
 
 #### Cloning repository
 
-Clone the **URB** repository from github by
+Clone the **URB** repository from GitHub:
 
 ```bash
 git clone https://github.com/COeXISTENCE-PROJECT/URB.git
 ```
 
-#### Creating enviroment for URB
+#### Creating an environment for URB
 
-- **Option 1** (Recommended): Create a virtual enviroment with `venv`:
+- **Option 1** (Recommended): Create a virtual environment with `venv`:
 
 ```bash
-python3.13.1 -m venv .venv
+python3 -m venv venv
 ```
 
 and then install dependencies by:
 
 ```bash
 cd URB
-pip install --force-reinstall --no-cache-dir -r requirements.txt
+venv/bin/python -m pip install -r requirements.txt
 ```
 
 - **Option 2** (Alternative): Use conda environment with `conda`:
@@ -137,19 +137,22 @@ pip install --force-reinstall --no-cache-dir -r requirements.txt
 To use **URB** while using RL algorithm, you have to provide in the command line the following command:
 
 ```bash
-python scripts/<script_name> --id <exp_id> --alg-conf <hyperparam_id> --env-conf <env_conf_id> --task-conf <task_id> --net <net_name> --env-seed <env_seed> --torch-seed <torch_seed>
+python scripts/<script_name> --id <exp_id> --alg-conf <hyperparam_id> --env-conf <env_conf_id> --task-conf <task_id> --net <net_name> --env-seed <env_seed> --torch-seed <torch_seed> [--project <name>] [--skip-metrics] [--save-model-every N]
 ```
 
 where
 
-- ```<scipt_name>``` is the script you wish to run, available scripts are ```ippo_torchrl```, ```iql_torchrl```, ```mappo_torchrl```, ```vdn_torchrl```, ```qmix_torchrl```, ```iql```, ```ippo```, and ```hyp_ippo```,
+- ```<script_name>``` is the experiment script to run; see [`scripts/readme.md`](scripts/readme.md) for the available methods,
 - ```<exp_id>``` is your own experiment identifier, for instance ```random_ing```, 
 - ```<hyperparam_id>``` is the hyperparameterization identifier, it must correspond to a `.json` filename (without extension) in [`config/algo_config`](config/algo_config/). Provided scripts automatically select the algorithm-specific subfolder in this directory.
 - ```<env_conf_id>``` is the environment configuration identifier. It must correspond to a `.json` filename (without extension) in [`config/env_config`](config/env_config/). It is used to parameterize environment-specific processes, such as path generation, disk operations, etc. It is **optional** and by default is set to `config1`.
 - ```<task_id>``` is the task configuration identifier. It must correspond to a `.json` filename (without extension) in [`config/task_config`](config/task_config/). It is used to parameterize the simulated scenario, such as portion of AVs, duration of human learning, AV behavior, etc.
-- ```<net_name>``` is the name of the network you wish to use. Must be one of the folder names in ```networks/``` i.e. ```ingolstadt_custom```, ```nangis```, ```nemours```, ```provins``` or ```saint_arnoult```,
+- ```<net_name>``` is the name of a network directory under [`networks/`](networks/),
 - ```<env_seed>``` is reproducibility random seed for the traffic environment, default seed is set to be 42,
-- ```<torch_seed>``` is reproducibility random seed for PyTorch, it is **optional** and by default is set to 42.
+- ```<torch_seed>``` controls model-side randomness. It is optional and defaults to 42.
+- `--project <name>` optionally records a project label in `exp_config.json`; omitting it leaves the saved configuration unchanged.
+- `--skip-metrics` is optional. When present, the experiment saves its raw outputs but does not calculate metrics at the end of the run.
+- `--save-model-every N` is optional. Supported learning scripts save policy snapshots every `N` completed AV-training episodes and always after the final training episode. Snapshots are written to `results/<exp_id>/models/` and are intended for evaluation or analysis, not exact training resumption. Non-learning and TorchRL scripts accept this flag but ignore it with a warning.
 
 For example, the following command runs an experiment using:
 - QMIX algorithm, hyperparameterized by `config/algo_config/qmix_torchrl/config3.json`, 
@@ -205,23 +208,36 @@ python scripts/greedy.py --id ing_greedy --alg-conf config1 --task-conf config2 
 ```
 <br>
 
+## 🛠️ URB tools
+
+The tools in [`tools/`](tools/) reuse and organize experiment results:
+
+```bash
+# Reuse an experiment's saved configuration, changing only the environment seed
+venv/bin/python tools/rerun.py old_exp new_exp --env-seed 43
+
+# Rename an experiment without overwriting an existing result
+venv/bin/python tools/rename.py old_exp new_exp
+```
+
+`rerun.py` reads `results/old_exp/exp_config.json`; command-line options override saved values. Both tools refuse to overwrite an existing result. See [`tools/README.md`](tools/README.md) for all supported overrides.
 
 ## 📊 Calculating metrics and indicators  
 
-Each experiment outputs set of raw records, which are then processed with the script in this folder for a set of performance indicators which we report and several additional metrics that track the quality of the solution and its impact to the system.
+Each experiment produces raw records that `analysis/metrics.py` turns into benchmark metrics and plots.
 
-All experiment scripts in `scripts/` now automatically run `analysis/metrics.py` at the end of execution.
-Manual execution is still supported as described below.
+Experiment scripts automatically run `analysis/metrics.py` at the end of execution by default.
+Pass `--skip-metrics` to skip this step, for example when metrics will be calculated later on a machine with more memory. Manual execution is still supported as described below.
 
 #### Usage
 
 To use the analysis script, you have to provide in the command line the following command:
 
 ```bash
-python analysis/metrics.py --id <exp_id> --verbose <verbose> --results-folder <results-folder> --skip-clearing <skip-clearing> --skip-collecting <skip-collecting>
+python analysis/metrics.py --id <exp_id> [--results-folder <results-folder>] [--verbose True] [--skip-collecting True]
 ```
 
-that will collect the results from the experiment with identifier ```<exp_id>``` and save them in the folder ```<exp_id>/metrics/```. The ```--verbose``` flag is optional and if set to ```True``` will print additional information about the analysis process. Flag ```--results-folder``` is optional and if set to ```True``` will use the folder ```<results-folder>``` instead of the default one ```results/```. The flags ```--skip-clearing``` and ```--skip-collecting``` are optional and if set to ```True``` will skip clearing and collecting the results from the experiment, respectively. Those operations have to be done only once, so if you are running the analysis script multiple times, you can skip them.
+This processes `<exp_id>` and writes its metrics under `results/<exp_id>/metrics/`. `--results-folder` selects another results root, `--verbose True` prints more detail, and `--skip-collecting True` reuses previously collected episode data.
 
 Loss values from learning scripts are saved in a unified CSV format at:
 `results/<exp_id>/losses/losses.csv`
@@ -260,6 +276,11 @@ Users can extend possible experiment configurations by adding:
 * Algorithm hyperparameterization in [`config/algo_config`](config/algo_config/),
 * Experiment setting in [`config/env_config`](config/env_config/), and
 * New tasks in [`config/task_config`](config/task_config/).
+
+### Research studies
+
+Focused, falsifiable research hypotheses can be organized under [`studies/`](studies/README.md).
+Studies connect experiment plans, literature, exact URB runs, evidence, and conclusions.
 
 ---
 

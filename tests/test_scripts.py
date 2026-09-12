@@ -32,6 +32,14 @@ print(f"[DEBUG] Looking for Python scripts in {SCRIPTS_DIR.resolve()}")
 print(f"[DEBUG] Found {len(python_scripts)} Python scripts (excluding {len(excluded_scripts)} scripts).")
 python_scripts = [script for script in python_scripts if script.name not in excluded_scripts]
 
+selected_scripts = {
+    Path(path).name
+    for path in os.environ.get("URB_TEST_SCRIPTS", "").splitlines()
+    if path.strip()
+}
+if selected_scripts:
+    python_scripts = [script for script in python_scripts if script.name in selected_scripts]
+
 @pytest.fixture(scope="session", autouse=True)
 def check_sumo_installed():
     sumo_executable = shutil.which("sumo")
