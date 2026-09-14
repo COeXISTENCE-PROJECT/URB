@@ -183,6 +183,11 @@ agents.csv
 combined_data.csv
 VectorMetrics.csv
 losses.csv
+losses.txt
+cluster_choice_diagnostics.csv
+ppo_update_diagnostics.csv
+relative_progress_agent_mean.png
+relative_progress.png
 results/*/metrics/plots/
 results/*/models/
 
