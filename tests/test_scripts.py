@@ -12,7 +12,7 @@ excluded_scripts = [
     "base_script.py",
     "greedy_utils.py",
     "manager.py",
-    "controller.py",
+    "controller.py"
 
     # Baselines use test_baselines.py
     "baselines.py",
@@ -28,8 +28,12 @@ excluded_scripts = [
     "centralized_wrapper.py",
 ]
 
+special_scripts = ["iql_arh.py"]
+
 print(f"[DEBUG] Looking for Python scripts in {SCRIPTS_DIR.resolve()}")
 print(f"[DEBUG] Found {len(python_scripts)} Python scripts (excluding {len(excluded_scripts)} scripts).")
+print(f"[DEBUG] Special scripts: {special_scripts}")
+
 python_scripts = [script for script in python_scripts if script.name not in excluded_scripts]
 
 selected_scripts = {
@@ -60,15 +64,27 @@ def test_python_script_execution(script_path):
     try:
         script_filename = script_path.name
         print(script_filename)
-        result = subprocess.run(
-            ["python", script_filename,
-             "--id", f"test_{script_filename}", 
-             "--alg-conf", "test", 
-             "--env-conf", "test", 
-             "--task-conf", "test", 
-             "--net", "saint_arnoult"],
-            capture_output=True, text=True, check=True, cwd=script_path.parent
-        )
-        print(f"[DEBUG] Successfully executed {script_path}")
+        if script_filename not in special_scripts:
+            result = subprocess.run(
+                ["python", script_filename,
+                "--id", f"test_{script_filename}", 
+                "--alg-conf", "test", 
+                "--env-conf", "test", 
+                "--task-conf", "test", 
+                "--net", "saint_arnoult"],
+                capture_output=True, text=True, check=True, cwd=script_path.parent
+            )
+            print(f"[DEBUG] Successfully executed {script_path}")
+        elif script_filename == "iql_arh.py":
+            result = subprocess.run(
+                ["python", script_filename,
+                "--id", f"test_{script_filename}", 
+                "--alg-conf", "test", 
+                "--env-conf", "test", 
+                "--task-conf", "test", 
+                "--net", "ingolstadt21"],
+                capture_output=True, text=True, check=True, cwd=script_path.parent
+            )
+            print(f"[DEBUG] Successfully executed {script_path}")
     except subprocess.CalledProcessError as e:
         pytest.fail(f"[FAIL] Script {script_path} failed to execute: {e.stderr}")
