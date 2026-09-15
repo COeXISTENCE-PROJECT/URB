@@ -179,7 +179,7 @@ det.add.xml
 route.rou.xml
 routes.csv
 detector/
-agents.csv
+results/*/agents.csv
 combined_data.csv
 VectorMetrics.csv
 losses.csv
