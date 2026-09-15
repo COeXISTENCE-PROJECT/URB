@@ -574,17 +574,14 @@ def extract_metrics(path, config, verbose=False):
 
     params = {"avg_times_pre": avg_times_pre}
 
-    # ----- Add benchmark columns -----
-    if not AV_only:
-        before_mutation = add_benchmark_columns(before_mutation, params)
-
-    if not after_mutation.empty:   
-        after_mutation = add_benchmark_columns(after_mutation, params)
-
-    if not training_frames.empty:
-        training_frames = add_benchmark_columns(training_frames, params)
-    if not testing_frames.empty:
-        testing_frames = add_benchmark_columns(testing_frames, params)
+    # Calculate changes before slicing so the first post-mutation episode is
+    # compared with the final pre-mutation episode, rather than with NaN.
+    df = add_benchmark_columns(df, params)
+    periods = slice_episodes(df, config)
+    testing_frames = periods["testing_frames"]
+    before_mutation = periods["before_mutation"]
+    after_mutation = periods["after_mutation"]
+    training_frames = periods["training_frames"]
 
     # ----- Calculate metrics (Average travel times) -----
 

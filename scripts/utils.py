@@ -153,7 +153,7 @@ def clear_SUMO_files(sumo_path, ep_path, remove_additional_files=False):
         # check if file exists
         file_path = os.path.join(sumo_path, f"{file_name}_{episode}.xml")
         if os.path.exists(file_path):
-            # read xml file and check if <vehicle loaded=0>
+            # Ignore a connection that was opened but reset before any vehicle departed.
             try:
                 tree = ET.parse(file_path)
             except ET.ParseError:
@@ -161,7 +161,7 @@ def clear_SUMO_files(sumo_path, ep_path, remove_additional_files=False):
                 break
             root = tree.getroot()
             vehicle = root.find("vehicles")
-            if vehicle is not None and vehicle.attrib.get("loaded") == "0":
+            if vehicle is not None and vehicle.attrib.get("inserted") == "0":
                 # remove the file
                 os.remove(file_path)
             else:
