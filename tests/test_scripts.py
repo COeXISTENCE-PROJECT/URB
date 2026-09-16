@@ -12,7 +12,7 @@ excluded_scripts = [
     "base_script.py",
     "greedy_utils.py",
     "manager.py",
-    "controller.py"
+    "controller.py",
 
     # Baselines use test_baselines.py
     "baselines.py",
