@@ -467,11 +467,11 @@ if __name__ == "__main__":
         agent_parameters = {
             "new_machines_after_mutation": num_machines, 
             "human_parameters": {
-                "model": human_model,
-                "alpha": human_alpha,
-                "beta": human_beta,
-                "beta_randomness": human_beta_randomness,
-                "deterministic": human_deterministic,
+                "model" : human_model,
+                "alpha" : human_alpha,
+                "beta" : human_beta,
+                "beta_randomness" : human_beta_randomness,
+                "deterministic" : human_deterministic,
             },
             "machine_parameters" : {
                 "behavior" : av_behavior,
