@@ -11,6 +11,7 @@ from pettingzoo.utils.wrappers import BaseWrapper
 DEFAULT_ROUTE_SETS_BY_NETWORK = {
     "ingolstadt_custom": "default-pre-integration",
     "ingolstadt_custom2": "default-pre-integration",
+    "ingolstadt21": "default-kmeans-4",
     "saint_arnoult": "saint_arnoult-default-kmeans-4",
     "provins": "provins-default-kmeans-4",
 }
@@ -113,8 +114,10 @@ class ClusteredRoutesLoader:
         self.df = pd.read_csv(self.clustering_csv_path)
         self._build_route_index()
 
-        print(f"[ClusteredRoutesLoader] Loaded {len(self.routes_by_od)} OD pairs "
-              f"with {self.num_clusters} routes each")
+        print(
+            f"[ClusteredRoutesLoader] Loaded {len(self.routes_by_od)} OD pairs "
+            f"across {self.num_clusters} action slots"
+        )
 
     def _build_route_index(self):
         """Build lookup dictionaries for routes."""
@@ -143,7 +146,7 @@ class ClusteredRoutesLoader:
         self.od_pairs = list(self.routes_by_od.keys()) 
 
     def get_number_of_paths(self) -> int:
-        """Get number of route options per agent (= number of clusters)."""
+        """Get the global action-space size (= number of clusters)."""
         return self.num_clusters
 
     def create_masks(self, origins, destinations):
@@ -185,7 +188,10 @@ class ClusteredRoutesLoader:
         if missing:
             print(f"[ClusteredRoutesLoader] WARNING - {len(missing)} mask edges not found in OD lists: {missing[:5]}...")
 
-        print(f"[ClusteredRoutesLoader] Loaded action masks for {len(action_masks)} agents from {self.masks_csv_path}")
+        print(
+            f"[ClusteredRoutesLoader] Loaded action masks for "
+            f"{len(action_masks)} OD pairs from {self.masks_csv_path}"
+        )
         return action_masks
 
     def export_to_paths_csv(self, output_path: str, origins: list[str], destinations: list[str]):

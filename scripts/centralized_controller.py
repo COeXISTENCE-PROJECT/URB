@@ -32,12 +32,18 @@ from centralized_wrapper import (
     TripInfoWithETASumoEncoder,
 )
 
+from utils import add_model_snapshot_argument
 from utils import clear_SUMO_files
+from utils import model_snapshot_path
+from utils import run_metrics_analysis
+from utils import script_path_for_config
+from utils import should_save_model_snapshot
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--shuffle', action='store_true', default=False) # shuffle the clusters to break the action space structure
     parser.add_argument('--id', type=str, required=True)
+    parser.add_argument('--project', type=str, default=None)
     parser.add_argument('--alg-conf', type=str, default="config1")
     parser.add_argument('--env-conf', type=str, default="clusters-sumo-obs")
     parser.add_argument('--task-conf', type=str, default="config1")
@@ -50,7 +56,10 @@ if __name__ == "__main__":
         default=None,
         help="Named route-set subdirectory. Uses the network default when omitted.",
     )
+    parser.add_argument('--skip-metrics', action='store_true', default=False)
+    add_model_snapshot_argument(parser)
     args = parser.parse_args()
+    
     ALGORITHM = "centralized"
     exp_id = args.id
     alg_config = args.alg_conf
@@ -60,7 +69,9 @@ if __name__ == "__main__":
     env_seed = args.env_seed
     torch_seed = args.torch_seed
     shuffle = args.shuffle
+    save_model_every = args.save_model_every
     route_set = resolve_route_set(network, args.route_set)
+    
     print("### STARTING EXPERIMENT ###")
     print(f"Algorithm: {ALGORITHM.upper()}")
     print(f"Experiment ID: {exp_id}")
@@ -72,6 +83,7 @@ if __name__ == "__main__":
     print(f"Task config: {task_config}")
     print(f"Route set: {route_set or 'none'}")
     print(f"Shuffle: {shuffle}")
+    print(f"Metrics will {'NOT ' if args.skip_metrics else ''}be computed after the experiment.\n")
 
     os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
@@ -174,6 +186,8 @@ if __name__ == "__main__":
     # Dump exp config to records
     exp_config_path = os.path.join(records_folder, "exp_config.json")
     dump_config = params.copy()
+    if args.project is not None:
+        dump_config["project"] = args.project
     dump_config["network"] = network
     dump_config["env_seed"] = env_seed
     dump_config["torch_seed"] = torch_seed
@@ -183,12 +197,10 @@ if __name__ == "__main__":
     dump_config["num_agents"] = num_agents
     dump_config["num_machines"] = num_machines
     dump_config["algorithm"] = ALGORITHM
+    dump_config["script"] = script_path_for_config(__file__)
     dump_config["step_diagnostics_every"] = step_diagnostics_every
-
-    # Save checkpoints for later model analysis
-    checkpoint_every = max(1, num_training_episodes // 10)
-    checkpoints_dir = os.path.join(records_folder, "checkpoints")
-    os.makedirs(checkpoints_dir, exist_ok=True)
+    if save_model_every is not None:
+        dump_config["save_model_every"] = save_model_every
 
     # Clustered routes: load action masks and generating paths.csv and route.rou.xml from the pregenerated routes
     use_clustered_routes = params.get("use_clustered_routes", False)
@@ -794,14 +806,19 @@ if __name__ == "__main__":
             ppo.learn()
             after_updates = getattr(ppo, "update_count", 0)
 
-            # Save model checkpoint (only for evaluation - for training resume would need: optimizer state (Adam),
-            # random number states, ...)
-            if (episode_idx + 1) % checkpoint_every == 0 or episode_idx + 1 == num_training_episodes:
-                checkpoint_path = os.path.join(
-                    checkpoints_dir,
-                    f"checkpoint_ep{episode_idx + 1}.pt",
+            completed_episode = episode_idx + 1
+            if should_save_model_snapshot(
+                completed_episode,
+                num_training_episodes,
+                save_model_every,
+            ):
+                torch.save(
+                    {
+                        "training_episode": completed_episode,
+                        "model": ppo.policy_net.state_dict(),
+                    },
+                    model_snapshot_path(records_folder, completed_episode, "pt"),
                 )
-                torch.save(ppo.policy_net.state_dict(), checkpoint_path)
 
             if after_updates > before_updates:
                 update_diag = getattr(ppo, "last_update_diag", {}).copy()
@@ -892,6 +909,8 @@ if __name__ == "__main__":
             os.path.join(records_folder, "episodes"),
             remove_additional_files=True,
         )
+        if not args.skip_metrics:
+            run_metrics_analysis(exp_id, results_folder="../results")
 
         update_diag_path = os.path.join(records_folder, "ppo_update_diagnostics.csv")
         pd.DataFrame(update_diag_rows).to_csv(update_diag_path, index=False)

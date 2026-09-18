@@ -29,6 +29,7 @@ from torchrl.objectives.value import GAE
 from torchrl.objectives import ClipPPOLoss, ValueEstimators
 from tqdm import tqdm
 
+from utils import add_model_snapshot_argument
 from utils import AppendODEmbedding
 from utils import clear_SUMO_files
 from utils import get_od_ids_for_group
@@ -36,17 +37,23 @@ from utils import print_agent_counts
 from utils import run_metrics_analysis
 from utils import save_loss_records
 from utils import script_path_for_config
+from utils import warn_model_snapshots_unsupported
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--id', type=str, required=True)
+    parser.add_argument('--project', type=str, default=None)
     parser.add_argument('--alg-conf', type=str, required=True)
     parser.add_argument('--env-conf', type=str, default="config1")
     parser.add_argument('--task-conf', type=str, required=True)
     parser.add_argument('--net', type=str, required=True)
     parser.add_argument('--env-seed', type=int, default=42)
     parser.add_argument('--torch-seed', type=int, default=42)
+    parser.add_argument('--skip-metrics', action='store_true', default=False)
+    add_model_snapshot_argument(parser)
     args = parser.parse_args()
+    warn_model_snapshots_unsupported(args.save_model_every)
+    
     ALGORITHM = "mappo_torchrl"
     exp_id = args.id
     alg_config = args.alg_conf
@@ -55,6 +62,7 @@ if __name__ == "__main__":
     network = args.net
     env_seed = args.env_seed
     torch_seed = args.torch_seed
+    
     print("### STARTING EXPERIMENT ###")
     print(f"Algorithm: {ALGORITHM.upper()}")
     print(f"Experiment ID: {exp_id}")
@@ -64,6 +72,7 @@ if __name__ == "__main__":
     print(f"Algorithm config: {alg_config}")
     print(f"Environment config: {env_config}")
     print(f"Task config: {task_config}")
+    print(f"Metrics will {'NOT ' if args.skip_metrics else ''}be computed after the experiment.\n")
 
     os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
     
@@ -131,6 +140,8 @@ if __name__ == "__main__":
     # Dump exp config to records
     exp_config_path = os.path.join(records_folder, "exp_config.json")
     dump_config = params.copy()
+    if args.project is not None:
+        dump_config["project"] = args.project
     dump_config["network"] = network
     dump_config["env_seed"] = env_seed
     dump_config["torch_seed"] = torch_seed
@@ -437,4 +448,5 @@ if __name__ == "__main__":
     env.stop_simulation()
 
     clear_SUMO_files(os.path.join(records_folder, "SUMO_output"), os.path.join(records_folder, "episodes"), remove_additional_files=True)
-    run_metrics_analysis(exp_id, results_folder="../results")
+    if not args.skip_metrics:
+        run_metrics_analysis(exp_id, results_folder="../results")

@@ -1,0 +1,8 @@
+{
+    "training_eps": 600,
+    "eps_init": 0.5,
+    "eps_decay": 0.9996281632295767,
+    "eps_min": 0.05,
+    "lr": 0.2,
+    "bin_width": 100.0
+}

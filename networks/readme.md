@@ -1,11 +1,7 @@
-### Networks and demand patterns
-----
+# Networks and demand patterns
 
-**U**rban **R**outing **B**enchmark can be executed on a wide set of networks coupled with demand patterns.
+URB runs on SUMO networks paired with demand patterns. The network directories shipped here are directly usable by the experiment scripts.
 
-We deliver:
-* [RouteRL](https://github.com/COeXISTENCE-PROJECT/RouteRL) networks
-* some [RESCO](https://github.com/Pi-Star-Lab/RESCO) networks - those on which routing is possible
-* set of 25 small cuts from Ile-de-France - based on the synthetic agent based model.
+They include RouteRL networks, routing-compatible [RESCO](https://github.com/Pi-Star-Lab/RESCO) networks, and small real-world road-network extracts with synthetic demand.
 
-You can `urb` on your cusom `OSM` downloaded or hand-made `SUMO` network with a demand pattern taken from custom source. For compatibility consult [RouteRL documentation](https://coexistence-project.github.io/RouteRL/)
+Custom OpenStreetMap-derived or hand-built SUMO networks can also be used when supplied with compatible demand data. See the [RouteRL documentation](https://coexistence-project.github.io/RouteRL/) for the expected format.

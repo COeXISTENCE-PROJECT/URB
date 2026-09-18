@@ -24,10 +24,13 @@ from tqdm import tqdm
 
 from baseline_models import BaseLearningModel
 from clustered_routes import ClusteredRoutesLoader, resolve_route_set
+from utils           import add_model_snapshot_argument
 from utils           import clear_SUMO_files
+from utils           import model_snapshot_path
 from utils           import print_agent_counts
 from utils           import run_metrics_analysis
 from utils           import script_path_for_config
+from utils           import should_save_model_snapshot
 
 class AgentFeatureEmbedder(nn.Module):
     def __init__(self, agents_df, embed_dim, device="cpu"):
@@ -286,6 +289,7 @@ class PPO(BaseLearningModel):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--id', type=str, required=True)
+    parser.add_argument('--project', type=str, default=None)
     parser.add_argument('--env-conf', type=str, default="config1")
     parser.add_argument('--task-conf', type=str, required=True)
     parser.add_argument('--alg-conf', type=str, required=True)
@@ -299,6 +303,8 @@ if __name__ == "__main__":
         help="Named route-set subdirectory. Uses the network default when omitted.",
     )
     parser.add_argument("--shuffle", action="store_true", default=False)
+    parser.add_argument('--skip-metrics', action='store_true', default=False)
+    add_model_snapshot_argument(parser)
     args = parser.parse_args()
 
     ALGORITHM = "hyp_ippo"
@@ -311,6 +317,7 @@ if __name__ == "__main__":
     torch_seed = args.torch_seed
     requested_route_set = args.route_set
     shuffle = args.shuffle
+    save_model_every = args.save_model_every
 
     print("### STARTING EXPERIMENT ###")
     print(f"Algorithm: {ALGORITHM.upper()}")
@@ -323,6 +330,7 @@ if __name__ == "__main__":
     print(f"Task config: {task_config}")
     print(f"Requested route set: {requested_route_set or 'network default'}")
     print(f"Shuffle: {shuffle}")
+    print(f"Metrics will {'NOT ' if args.skip_metrics else ''}be computed after the experiment.\n")
     
     os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
     logging.getLogger("matplotlib").setLevel(logging.ERROR)
@@ -383,6 +391,8 @@ if __name__ == "__main__":
     total_episodes = human_learning_episodes + training_eps + test_eps
 
     dump_config = params.copy()
+    if args.project is not None:
+        dump_config["project"] = args.project
 
     # Load pre-generated clustered routes and their per-OD action masks.
     configured_number_of_paths = number_of_paths
@@ -458,6 +468,8 @@ if __name__ == "__main__":
         "observation_type": observation_type,
         "path_gen_workers": path_gen_workers_value,
     })
+    if save_model_every is not None:
+        dump_config["save_model_every"] = save_model_every
 
     with open(os.path.join(records_folder, "exp_config.json"), "w") as f:
         json.dump(dump_config, f, indent=4)
@@ -522,12 +534,6 @@ if __name__ == "__main__":
         mutation_start_percentile=-1
     )
     print_agent_counts(env)
-    
-    models_folder = os.path.join(records_folder, "saved_models")
-    os.makedirs(models_folder, exist_ok=True)
-
-    post_mutation_path = os.path.join(models_folder, "model_post_mutation.pth")
-    print(f"Model zapisany po mutacji: {post_mutation_path}")
     
     obs_size = env.observation_space(env.possible_agents[0]).shape[0]
     action_size = env.machine_agents[0].action_space_size
@@ -601,6 +607,17 @@ if __name__ == "__main__":
 
             env.step(action)
 
+        completed_episode = episode + 1
+        if should_save_model_snapshot(completed_episode, training_eps, save_model_every):
+            torch.save(
+                {
+                    "training_episode": completed_episode,
+                    "hypernet": hypernet.state_dict(),
+                    "agent_embeddings": agent_embeddings.state_dict(),
+                },
+                model_snapshot_path(records_folder, completed_episode, "pt"),
+            )
+
         if episode % plot_every == 0:
             env.plot_results()
 
@@ -632,4 +649,5 @@ if __name__ == "__main__":
         os.path.join(records_folder, "episodes"),
         remove_additional_files=True
     )
-    run_metrics_analysis(exp_id, results_folder="../results")
+    if not args.skip_metrics:
+        run_metrics_analysis(exp_id, results_folder="../results")

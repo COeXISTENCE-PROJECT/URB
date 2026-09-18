@@ -49,13 +49,18 @@ from tqdm import tqdm
 
 from clustered_routes import ClusteredRoutesLoader, resolve_route_set
 
+from utils import add_model_snapshot_argument
 from utils import clear_SUMO_files
+from utils import script_path_for_config
+from utils import run_metrics_analysis
+from utils import warn_model_snapshots_unsupported
 from baseline_models import get_baseline
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--shuffle', action='store_true', default=False)
     parser.add_argument('--id', type=str, required=True)
+    parser.add_argument('--project', type=str, default=None)
     parser.add_argument('--alg-conf', type=str, default="config1")
     parser.add_argument('--env-conf', type=str, default="clusters")
     parser.add_argument('--task-conf', type=str, default="config1")
@@ -68,7 +73,11 @@ if __name__ == "__main__":
         default=None,
         help="Named route-set subdirectory. Uses the network default when omitted.",
     )
+    parser.add_argument('--skip-metrics', action='store_true', default=False)
+    add_model_snapshot_argument(parser)
     args = parser.parse_args()
+    warn_model_snapshots_unsupported(args.save_model_every)
+    
     ALGORITHM = "baseline"
     exp_id = args.id
     alg_config = args.alg_conf
@@ -79,6 +88,7 @@ if __name__ == "__main__":
     baseline_model = args.model
     requested_route_set = args.route_set
     shuffle = args.shuffle
+    
     print("### STARTING EXPERIMENT ###")
     print(f"Experiment ID: {exp_id}")
     print(f"Network: {network}")
@@ -157,6 +167,8 @@ if __name__ == "__main__":
     # Dump exp config to records
     exp_config_path = os.path.join(records_folder, "exp_config.json")
     dump_config = params.copy()
+    if args.project is not None:
+        dump_config["project"] = args.project
     dump_config["network"] = network
     dump_config["env_seed"] = env_seed
     dump_config["env_config"] = env_config
@@ -165,6 +177,8 @@ if __name__ == "__main__":
     dump_config["baseline_model"] = baseline_model
     dump_config["num_agents"] = num_agents
     dump_config["num_machines"] = num_machines
+    dump_config["script"] = script_path_for_config(__file__)
+    dump_config["algorithm"] = ALGORITHM
 
     # Clustered routes: load action masks and generate paths.csv, route.rou.xml from the pregenerated routes
     create_paths_flag = True
@@ -338,3 +352,5 @@ if __name__ == "__main__":
     env.stop_simulation()
 
     clear_SUMO_files(os.path.join(records_folder, "SUMO_output"), os.path.join(records_folder, "episodes"), remove_additional_files=True)
+    if not args.skip_metrics:
+        run_metrics_analysis(exp_id, results_folder="../results")
