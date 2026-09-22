@@ -80,6 +80,19 @@
     "avg_time_lost": "\\(\\bar{\\Delta t}\\) Average time lost after mutation across all agents (minutes).",
     "avg_human_time_lost": "\\(\\bar{\\Delta t}_{HDV}\\) Average human-driver time lost after mutation (minutes).",
     "avg_CAV_time_lost": "\\(\\bar{\\Delta t}_{CAV}\\) Average CAV time lost after mutation (minutes).",
-    "diff_sumo_routerl": "\\(t_{SUMO} - \\hat{t}^{test}\\) SUMO mean trip duration minus RouteRL test travel time."
+    "diff_sumo_routerl": "\\(t_{SUMO} - \\hat{t}^{test}\\) SUMO mean trip duration minus RouteRL test travel time.",
+    "tt_std_pre": "Standard deviation of travel times of all vehicles before CAV introduction.",
+    "tt_std_test": "Standard deviation of travel times of all vehicles in the testing phase.",
+    "tt_std_ratio": "tt_std_test / tt_std_pre",
+    "tt_gini_pre": "Gini coefficient of travel times of all vehicles before CAV introduction.",
+    "tt_gini_test": "Gini coefficient of travel times of all vehicles in the testing phase.",
+    "tt_gini_ratio": "tt_gini_test / tt_gini_pre",
+    "tstt_pre": "Sum of all vehicles travel times per episode before CAV introduction.",
+    "tstt_test": "Sum of all vehicles travel times per episode in the testing phase.",
+    "utilitarian_fairness_ratio": "tstt_test / tstt_pre",
+    "harsanyian_fairness_ratio": "t_test / t_pre",
+    "max_tt_pre": "Maximum travel time in the system before CAV introduction.",
+    "max_tt_test": "Maximum travel time in the system in the testing phase.",
+    "rawlsian_fairness_ratio": "max_tt_test / max_tt_pre"
   }
 }

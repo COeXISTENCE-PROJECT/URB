@@ -2674,16 +2674,24 @@ __HOME_CONTENT__
       const averaged = {};
       metricKeys.forEach((metric) => {
         const values = [];
+        let hasMissingValue = false;
         group.forEach((exp) => {
           const raw = exp.metrics?.[metric];
-          if (raw === undefined || raw === null || raw === '') return;
+          if (raw === undefined || raw === null || raw === '') {
+            hasMissingValue = true;
+            return;
+          }
           const value = Number(raw);
-          if (Number.isFinite(value)) values.push(value);
+          if (Number.isFinite(value)) {
+            values.push(value);
+          } else {
+            hasMissingValue = true;
+          }
         });
-        if (values.length) {
+        if (!hasMissingValue && values.length === group.length) {
           averaged[metric] = values.reduce((sum, value) => sum + value, 0) / values.length;
         } else {
-          averaged[metric] = anchorMetrics?.[metric] ?? '';
+          averaged[metric] = '';
         }
       });
       return averaged;
@@ -3250,23 +3258,26 @@ __HOME_CONTENT__
     });
 
     function metricPreference(metricKey) {
-      const key = String(metricKey || '').toLowerCase();
-      const description = String(metricDescriptions[metricKey] || '').toLowerCase();
+      const key = String(metricKey || '');
+      const absMinMetrics = new Set(['diff_sumo_routerl']);
+      const minMetrics = new Set([
+        't_pre', 't_test', 't_train', 't_CAV', 't_HDV_pre',
+        't_HDV_test', 'avg_mileage_pre', 'avg_mileage_test',
+        'cost_of_learning', 'cost_of_learning_humans', 'cost_of_learning_CAVs',
+        'avg_time_lost', 'avg_human_time_lost', 'avg_CAV_time_lost',
+        'tt_std_pre', 'tt_std_test', 'tt_std_ratio', 'tt_gini_pre',
+        'tt_gini_test', 'tt_gini_ratio', 'tstt_pre', 'tstt_test',
+        'utilitarian_fairness_ratio', 'harsanyian_fairness_ratio',
+        'max_tt_pre', 'max_tt_test', 'rawlsian_fairness_ratio',
+      ]);
+      const maxMetrics = new Set([
+        'CAV_advantage', 'Effect_of_change', 'Effect_of_remaining',
+        'avg_speed_pre', 'avg_speed_test', 'winrate',
+      ]);
 
-      if (key === 'diff_sumo_routerl') return 'abs-min';
-      if (key.includes('advantage') || key.includes('effect_of')) return 'max';
-      if (key.includes('winrate')) return 'max';
-      if (key.includes('speed')) return 'max';
-      if (description.includes('ratio')) return 'max';
-      if (description.includes('favors cav')) return 'max';
-
-      if (key.startsWith('t_')) return 'min';
-      if (key.includes('cost')) return 'min';
-      if (key.includes('time_lost')) return 'min';
-      if (key.includes('mileage')) return 'min';
-      if (description.includes('travel time')) return 'min';
-      if (description.includes('cost')) return 'min';
-
+      if (absMinMetrics.has(key)) return 'abs-min';
+      if (minMetrics.has(key)) return 'min';
+      if (maxMetrics.has(key)) return 'max';
       return 'max';
     }
 
