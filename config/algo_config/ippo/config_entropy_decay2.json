@@ -1,0 +1,15 @@
+{
+    "training_eps" : 4000,
+
+    "batch_size" : 16,
+    "update_every" : 1,
+    "lr" : 0.0003,
+    "num_epochs" : 3,
+    "num_hidden" : 1,
+    "widths" : [64, 64],
+    "clip_eps" : 0.2,
+    "normalize_advantage" : true,
+    "entropy_coef" : 0.2,
+    "entropy_decay": 0.985,
+    "entropy_min": 0.001
+}
