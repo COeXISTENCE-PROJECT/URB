@@ -1,7 +1,7 @@
 {
     "smooth_by" : 10,
     "plot_choices" : "basic",
-    "save_every" : 5,
+    "save_every" : 10,
     "plot_every" : 50,
 
     "use_clustered_routes": true,
