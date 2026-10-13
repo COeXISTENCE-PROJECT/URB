@@ -1,4 +1,4 @@
-routerl==2.0.0
+routerl-nightly
 janux==1.1.0
 path-clustering @ git+https://github.com/Blato122/path-clustering.git@v1.1.0
 matplotlib>=3.9.3
