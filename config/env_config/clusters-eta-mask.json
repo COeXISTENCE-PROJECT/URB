@@ -8,6 +8,7 @@
     "number_of_paths" : 4,
     "path_gen_beta" : -5,
     "num_samples" : 10,
+    "path_gen_workers": 3,
 
     "observations": "trip_info_eta_mask_norm"
 }
