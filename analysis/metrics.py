@@ -574,17 +574,14 @@ def extract_metrics(path, config, verbose=False):
 
     params = {"avg_times_pre": avg_times_pre}
 
-    # ----- Add benchmark columns -----
-    if not AV_only:
-        before_mutation = add_benchmark_columns(before_mutation, params)
-
-    if not after_mutation.empty:   
-        after_mutation = add_benchmark_columns(after_mutation, params)
-
-    if not training_frames.empty:
-        training_frames = add_benchmark_columns(training_frames, params)
-    if not testing_frames.empty:
-        testing_frames = add_benchmark_columns(testing_frames, params)
+    # Calculate changes before slicing so the first post-mutation episode is
+    # compared with the final pre-mutation episode, rather than with NaN.
+    df = add_benchmark_columns(df, params)
+    periods = slice_episodes(df, config)
+    testing_frames = periods["testing_frames"]
+    before_mutation = periods["before_mutation"]
+    after_mutation = periods["after_mutation"]
+    training_frames = periods["training_frames"]
 
     # ----- Calculate metrics (Average travel times) -----
 
@@ -616,6 +613,56 @@ def extract_metrics(path, config, verbose=False):
         t_pre = get_agent_avg_travel_time(before_mutation, all_ids)
 
         t_HDV_test = get_agent_avg_travel_time(testing_frames, human_ids)
+
+    # ----- Calculate metrics (Fairness measures) -----
+    def get_avg_daily_travel_time_std(df_slice, ids):
+        if df_slice.empty or not ids:
+            return np.nan
+
+        cols = [f"agent_{i}_travel_time" for i in ids
+                if f"agent_{i}_travel_time" in df_slice.columns]
+
+        if len(cols) < 2:
+            return np.nan
+
+        return df_slice[cols].std(axis=1).mean()
+
+    def get_avg_daily_gini(df_slice, ids):
+        cols = [f"agent_{i}_travel_time" for i in ids if f"agent_{i}_travel_time" in df_slice.columns]
+        if df_slice.empty or len(cols) < 2:
+            return np.nan
+        def gini(row):
+            x = np.sort(row.dropna().to_numpy(dtype=float))
+            n = len(x)
+            return np.sum((2 * np.arange(1, n + 1) - n - 1) * x) / (n * x.sum()) if n > 1 and x.sum() > 0 else np.nan
+        return df_slice[cols].apply(gini, axis=1).mean()
+
+    def get_avg_daily_tstt(df_slice, ids):
+        cols = [f"agent_{i}_travel_time" for i in ids
+                if f"agent_{i}_travel_time" in df_slice.columns]
+        if df_slice.empty or not cols:
+            return np.nan
+        return df_slice[cols].sum(axis=1).mean()
+
+    def get_avg_daily_max_travel_time(df_slice, ids):
+        cols = [f"agent_{i}_travel_time" for i in ids
+                if f"agent_{i}_travel_time" in df_slice.columns]
+        if df_slice.empty or not cols:
+            return np.nan
+        return df_slice[cols].max(axis=1).mean()
+
+    testing_last_100 = testing_frames.sort_values("episode").tail(100)
+    tt_std_pre = get_avg_daily_travel_time_std(before_mutation, all_ids)
+    tt_std_test = get_avg_daily_travel_time_std(testing_last_100, all_ids)
+
+    tt_gini_pre = get_avg_daily_gini(before_mutation, all_ids)
+    tt_gini_test = get_avg_daily_gini(testing_last_100, all_ids)
+
+    tstt_pre = get_avg_daily_tstt(before_mutation, all_ids)
+    tstt_test = get_avg_daily_tstt(testing_last_100, all_ids)
+
+    max_tt_pre = get_avg_daily_max_travel_time(before_mutation, all_ids)
+    max_tt_test = get_avg_daily_max_travel_time(testing_last_100, all_ids)
 
     def get_df_mean(df_slice, column):
         return df_slice[column].mean() if column in df_slice.columns and not df_slice.empty else np.nan
@@ -691,6 +738,24 @@ def extract_metrics(path, config, verbose=False):
     metrics["t_CAV"] = t_CAV
     metrics["t_HDV_pre"] = None if AV_only else t_HDV_pre
     metrics["t_HDV_test"] = None if AV_only else t_HDV_test
+
+    metrics["tt_std_pre"] = tt_std_pre
+    metrics["tt_std_test"] = tt_std_test
+    metrics["tt_std_ratio"] = safe_divide(tt_std_test, tt_std_pre)
+
+    metrics["tt_gini_pre"] = tt_gini_pre
+    metrics["tt_gini_test"] = tt_gini_test
+    metrics["tt_gini_ratio"] = safe_divide(tt_gini_test, tt_gini_pre)
+
+    metrics["tstt_pre"] = tstt_pre
+    metrics["tstt_test"] = tstt_test
+    metrics["utilitarian_fairness_ratio"] = safe_divide(tstt_test, tstt_pre)
+
+    metrics["harsanyian_fairness_ratio"] = safe_divide(t_test, t_pre)
+
+    metrics["max_tt_pre"] = max_tt_pre
+    metrics["max_tt_test"] = max_tt_test
+    metrics["rawlsian_fairness_ratio"] = safe_divide(max_tt_test, max_tt_pre)
 
     metrics["CAV_advantage"] = None if AV_only else safe_divide(t_HDV_test, t_CAV)
     metrics["Effect_of_change"] = None if AV_only else safe_divide(t_HDV_pre, t_CAV)
