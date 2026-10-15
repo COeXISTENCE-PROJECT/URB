@@ -829,6 +829,10 @@ def collect_experiments(results_dir: Path) -> List[Dict]:
             ),
         ]
 
+        if "t_HDV_pre" in metrics["header"]:
+            metrics["header"].remove("t_HDV_pre")
+            metrics["data"].pop("t_HDV_pre", None)
+
         experiments.append(
             {
                 "exp_id": exp_dir.name,
