@@ -67,6 +67,7 @@ class SharedPPO(BaseLearningModel):
         self.lr_decay = lr_decay
         self.lr_min = lr_min
         self.ema_alpha = ema_alpha
+        self.ema_baseline = None
         self.reward_ema = None
 
         self.policy_net = Network(
