@@ -22,7 +22,6 @@ import pandas as pd
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import wandb
 
 from routerl         import TrafficEnvironment
 from tqdm            import tqdm
@@ -354,14 +353,6 @@ if __name__ == "__main__":
     with open(exp_config_path, 'w', encoding='utf-8') as f:
         json.dump(dump_config, f, indent=4)
 
-    wandb.init(
-        # Set the wandb entity where your project will be logged (generally your team name).
-        entity="aintern26coexistence",
-        # Set the wandb project where this run will be logged.
-        project="PPO Enhancement",
-        name=exp_id,
-        config=dump_config
-    )
     
     # Initialize the environment
     env = TrafficEnvironment(
@@ -491,7 +482,6 @@ if __name__ == "__main__":
         metrics["train/reward_mean"] = float(np.mean(episode_rewards))
         metrics["train/travel_time_mean"] = float(np.mean(episode_travel_times)) if episode_travel_times else 0.0
             
-        wandb.log(metrics)
         
         if episode % plot_every == 0:
             env.plot_results()
@@ -522,16 +512,6 @@ if __name__ == "__main__":
                 
             env.step(action)
             
-        wandb.log(
-            {
-                "episode": human_learning_episodes + training_eps + episode,
-                "testing/reward_sum": float(np.sum(episode_rewards)),
-                "testing/reward_mean": float(np.mean(episode_rewards)),
-                "testing/travel_time_mean": float(np.mean(episode_travel_times)) if episode_travel_times else 0.0,
-                "testing/travel_time_sum": float(np.sum(episode_travel_times)) if episode_travel_times else 0.0,
-            },
-            step=human_learning_episodes + training_eps + episode,
-        )
         
         pbar.update()
     
@@ -557,4 +537,3 @@ if __name__ == "__main__":
     env.stop_simulation()
     clear_SUMO_files(os.path.join(records_folder, "SUMO_output"), os.path.join(records_folder, "episodes"), remove_additional_files=True)
     run_metrics_analysis(exp_id, results_folder="../results")
-    wandb.finish()
