@@ -1,4 +1,5 @@
 {
+    "desc": "",
     "ratio_machines": 0.9,
     "human_learning_episodes": 300,
     "test_eps": 100,
