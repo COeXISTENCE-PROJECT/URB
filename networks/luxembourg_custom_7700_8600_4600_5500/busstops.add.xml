@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<add>
+    <busStop id="116" lane="--32638#0_0" startPos="81.48" endPos="91.48" line=" AVL---_3 AVL---_CN_3" friendlyPos="true" />
+    <busStop id="117" lane="-32638#0_0" startPos="65.55" endPos="75.55" line=" AVL---_3 AVL---_CN_3" friendlyPos="true" />
+    <busStop id="245" lane="--32638#5_0" startPos="31.05" endPos="41.05" line=" AVL---_5 AVL---_6 AVL---_CN_3" friendlyPos="true" />
+    <busStop id="246" lane="-32638#5_0" startPos="33.08" endPos="43.08" line=" AVL---_5 AVL---_6 AVL---_CN_3" friendlyPos="true" />
+    <busStop id="247" lane="-30628#2_0" startPos="44.29" endPos="54.29" line=" AVL---_5 AVL---_6" friendlyPos="true" />
+    <busStop id="295" lane="--31818#22_0" startPos="51.78" endPos="61.78" line=" AVL---_3 AVL---_5 AVL---_6" friendlyPos="true" />
+    <busStop id="296" lane="-31818#22_0" startPos="81.36" endPos="91.36" line=" AVL---_3 AVL---_5 AVL---_6" friendlyPos="true" />
+    <busStop id="305" lane="--31196#1_0" startPos="18.55" endPos="28.55" line=" AVL---_5 AVL---_6" friendlyPos="true" />
+    <busStop id="306" lane="-31196#1_0" startPos="17.78" endPos="27.78" line=" AVL---_5 AVL---_6" friendlyPos="true" />
+    <busStop id="342" lane="-31818#16_0" startPos="26.97" endPos="36.97" line=" AVL---_5 AVL---_6 AVL---_CN_3" friendlyPos="true" />
+    <busStop id="343" lane="--31818#16_0" startPos="29.71" endPos="39.71" line=" AVL---_5 AVL---_6 AVL---_CN_3" friendlyPos="true" />
+    <busStop id="402" lane="-31818#14_0" startPos="45.93" endPos="55.93" line=" AVL---_5 AVL---_6" friendlyPos="true" />
+    <busStop id="403" lane="--31818#14_0" startPos="144.64" endPos="154.64" line=" AVL---_5 AVL---_6" friendlyPos="true" />
+    <busStop id="472" lane="--32638#6_0" startPos="43.22" endPos="53.22" line=" AVL---_5 AVL---_6 AVL---_CN_3" friendlyPos="true" />
+    <busStop id="473" lane="-32638#6_0" startPos="157.39" endPos="167.39" line=" AVL---_5 AVL---_6 AVL---_CN_3" friendlyPos="true" />
+    <busStop id="500" lane="-32638#10_0" startPos="26.86" endPos="36.86" line=" AVL---_CN_3" friendlyPos="true" />
+    <busStop id="501" lane="--32638#10_0" startPos="38.71" endPos="48.71" line=" AVL---_CN_3" friendlyPos="true" />
+    <busStop id="504" lane="--30694#5_0" startPos="10.12" endPos="18.40" line=" AVL---_3" friendlyPos="true" />
+    <busStop id="505" lane="-30694#5_0" startPos="8.62" endPos="18.40" line=" AVL---_3" friendlyPos="true" />
+    <busStop id="548" lane="-31818#15_0" startPos="61.12" endPos="71.12" line=" AVL---_5 AVL---_6" friendlyPos="true" />
+    <busStop id="549" lane="--31818#15_0" startPos="79.48" endPos="89.48" line=" AVL---_5 AVL---_6" friendlyPos="true" />
+    <busStop id="558" lane="--30528#25_0" startPos="38.69" endPos="48.69" line=" AVL---_16" friendlyPos="true" />
+    <busStop id="559" lane="-30528#25_0" startPos="40.23" endPos="50.23" line=" AVL---_16" friendlyPos="true" />
+    <busStop id="88" lane="--31818#20_0" startPos="36.30" endPos="46.30" line=" AVL---_5 AVL---_6 AVL---_CN_3" friendlyPos="true" />
+    <busStop id="89" lane="-31818#20_0" startPos="34.43" endPos="44.43" line=" AVL---_5 AVL---_6 AVL---_CN_3" friendlyPos="true" />
+</add>
