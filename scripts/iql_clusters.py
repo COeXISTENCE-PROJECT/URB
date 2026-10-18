@@ -51,6 +51,7 @@ class DQN(BaseLearningModel):
 
         self.q_network = Network(state_size, action_space_size, num_hidden, widths).to(self.device)
         self.optimizer = optim.Adam(self.q_network.parameters(), lr=lr)
+        
         self.loss_fn = nn.MSELoss()
 
         self.loss = list()
@@ -203,11 +204,14 @@ if __name__ == "__main__":
     alg_params = json.load(open(f"../config/algo_config/{ALGORITHM}/{alg_config}.json"))
     env_params = json.load(open(f"../config/env_config/{env_config}.json"))
     task_params = json.load(open(f"../config/task_config/{task_config}.json"))
+
     params.update(alg_params)
     params.update(env_params)
     params.update(task_params)
+    
+    params["parameter_sharing"] = alg_params.get("parameter_sharing", False)    
     del params["desc"], env_params, task_params
-
+    
     # JanuX fallback for non-clustered configs
     use_clustered_routes = params.get("use_clustered_routes", False)
     route_set = (
@@ -368,16 +372,31 @@ if __name__ == "__main__":
     # Wrap env to support clustered routes
     if action_masks is not None:
         env = AVMaskWrapper(env, action_masks)
+    
+    # Assign policies to machine agents
+    if parameter_sharing:
+        action_sizes = {
+            agent.action_space_size
+            for agent in env.machine_agents
+        }
 
-    # Set policies for machine agents
+    shared_model = None
+    agent_lookup = {}     
     for idx in range(len(env.machine_agents)):
-        env.machine_agents[idx].model = DQN(env.machine_agents[idx].action_space_size+1, env.machine_agents[idx].action_space_size, 
+        agent = env.machine_agents[idx]
+        model = DQN(agent.action_space_size+1, agent.action_space_size, 
                                             device=device, eps_init=eps_init, eps_decay=eps_decay,
                                             eps_min=eps_min, buffer_size=buffer_size, batch_size=batch_size, lr=lr, 
                                             num_epochs=num_epochs, num_hidden=num_hidden, widths=widths)
-    agent_lookup = {str(agent.id): agent for agent in env.machine_agents}
-    
-    
+        if parameter_sharing:
+            if shared_model is None:
+                shared_model = model
+            else:
+                model.q_network = shared_model.q_network
+                model.optimizer = shared_model.optimizer
+        agent.model = model
+        agent_lookup[str(agent.id)] = agent
+
     ### Learning phase ###
     pbar.set_description("AV learning")
     os.makedirs(plots_folder, exist_ok=True)
