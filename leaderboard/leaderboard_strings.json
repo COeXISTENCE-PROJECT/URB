@@ -64,7 +64,6 @@
     "t_test": "\\(\\hat{t}^{test}\\) Average travel time in the testing phase (all agents, minutes).",
     "t_train": "\\(\\hat{t}^{train}\\) Average travel time in the training phase (all agents, minutes).",
     "t_CAV": "\\(\\hat{t}_{CAV}\\) Average CAV travel time in the testing phase (minutes).",
-    "t_HDV_pre": "\\(\\hat{t}^{pre}_{HDV}\\) Average human-driver travel time before CAV introduction (minutes).",
     "t_HDV_test": "\\(\\hat{t}^{test}_{HDV}\\) Average human-driver travel time in the testing phase (minutes).",
     "CAV_advantage": "\\(\\hat{t}^{test}_{HDV}/\\hat{t}_{CAV}\\) Relative CAV advantage; values > 1 favor CAVs.",
     "Effect_of_change": "\\(\\hat{t}^{pre}_{HDV}/\\hat{t}_{CAV}\\) Effect of changing from human-driving baseline to CAV policy.",
