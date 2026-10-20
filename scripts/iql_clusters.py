@@ -38,7 +38,7 @@ class DQN(BaseLearningModel):
     def __init__(self, state_size, action_space_size,
                  device="cpu", eps_init=0.99, eps_decay=0.998,
                  eps_min=0.0, buffer_size=256, batch_size=16, lr=0.003, 
-                 num_epochs=1, num_hidden=2, widths=[32, 64, 32]):
+                 num_epochs=1, num_hidden=2, widths=[32, 64, 32], od_one_hot=None):
         super().__init__()
         self.device = device
         self.action_space_size = action_space_size
@@ -48,6 +48,7 @@ class DQN(BaseLearningModel):
         self.memory = deque(maxlen=buffer_size)
         self.batch_size = batch_size
         self.num_epochs = num_epochs
+        self.od_one_hot = od_one_hot
 
         self.q_network = Network(state_size, action_space_size, num_hidden, widths).to(self.device)
         self.optimizer = optim.Adam(self.q_network.parameters(), lr=lr)
@@ -65,6 +66,8 @@ class DQN(BaseLearningModel):
             action_mask = None
 
         observation = np.asarray(observation)
+        if self.od_one_hot is not None:
+            observation = np.concatenate([observation, self.od_one_hot])
 
         if np.random.rand() < self.epsilon:
             if action_mask is not None:
@@ -208,10 +211,12 @@ if __name__ == "__main__":
     params.update(alg_params)
     params.update(env_params)
     params.update(task_params)
-    
-    params["parameter_sharing"] = alg_params.get("parameter_sharing", False)    
     del params["desc"], env_params, task_params
-    
+
+    # All AVs share one network and optimizer; optionally observe a one-hot of their OD pair
+    parameter_sharing = params.get("parameter_sharing", False)
+    od_encoding = params.get("od_encoding", False)
+
     # JanuX fallback for non-clustered configs
     use_clustered_routes = params.get("use_clustered_routes", False)
     route_set = (
@@ -304,6 +309,8 @@ if __name__ == "__main__":
     dump_config["use_clustered_routes"] = use_clustered_routes
     dump_config["use_action_masks"] = action_masks is not None
     dump_config["shuffle"] = shuffle
+    dump_config["parameter_sharing"] = parameter_sharing
+    dump_config["od_encoding"] = od_encoding
     if save_model_every is not None:
         dump_config["save_model_every"] = save_model_every
 
@@ -372,22 +379,29 @@ if __name__ == "__main__":
     # Wrap env to support clustered routes
     if action_masks is not None:
         env = AVMaskWrapper(env, action_masks)
-    
-    # Assign policies to machine agents
-    if parameter_sharing:
-        action_sizes = {
-            agent.action_space_size
-            for agent in env.machine_agents
-        }
 
+    # OD pair index for the one-hot appended to AV observations
+    od_index = None
+    if od_encoding:
+        od_pairs = sorted({(agent.origin, agent.destination) for agent in env.machine_agents})
+        od_index = {od: idx for idx, od in enumerate(od_pairs)}
+
+    # Assign policies to machine agents
     shared_model = None
-    agent_lookup = {}     
+    agent_lookup = {}
     for idx in range(len(env.machine_agents)):
         agent = env.machine_agents[idx]
-        model = DQN(agent.action_space_size+1, agent.action_space_size, 
+        state_size = agent.action_space_size + 1
+        od_one_hot = None
+        if od_index is not None:
+            state_size += len(od_index)
+            od_one_hot = np.zeros(len(od_index), dtype=np.float32)
+            od_one_hot[od_index[(agent.origin, agent.destination)]] = 1.0
+        model = DQN(state_size, agent.action_space_size,
                                             device=device, eps_init=eps_init, eps_decay=eps_decay,
-                                            eps_min=eps_min, buffer_size=buffer_size, batch_size=batch_size, lr=lr, 
-                                            num_epochs=num_epochs, num_hidden=num_hidden, widths=widths)
+                                            eps_min=eps_min, buffer_size=buffer_size, batch_size=batch_size, lr=lr,
+                                            num_epochs=num_epochs, num_hidden=num_hidden, widths=widths,
+                                            od_one_hot=od_one_hot)
         if parameter_sharing:
             if shared_model is None:
                 shared_model = model
