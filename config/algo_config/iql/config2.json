@@ -1,5 +1,6 @@
 {
     "training_eps" : 4000,
+
     "eps_init" : 1.0,
     "eps_decay" : 0.9992,
     "eps_min": 0.0,
@@ -9,6 +10,5 @@
     "num_epochs" : 1,
     "num_hidden" : 1,
     "widths" : [96, 64],
-    "update_every" : 1,
-    "parameter_sharing": true
+    "update_every" : 1
 }
