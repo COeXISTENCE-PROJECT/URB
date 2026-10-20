@@ -45,5 +45,6 @@
     "num_agents": 523,
     "num_machines": 209,
     "use_action_masks": true,
-    "shuffle": false
+    "shuffle": false,
+    "save_model_every": 500
 }

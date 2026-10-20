@@ -39,7 +39,7 @@
     "route_set": "provins-default-kmeans-4",
     "env_config": "clusters_eta",
     "task_config": "selfish_40",
-    "alg_config": "config2",
+    "alg_config": "config2_ps",
     "script": "scripts/iql_clusters.py",
     "algorithm": "iql",
     "num_agents": 523,
