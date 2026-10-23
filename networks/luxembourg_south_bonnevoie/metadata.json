@@ -1,0 +1,62 @@
+{
+  "name": "luxembourg_south_bonnevoie",
+  "description": "LuST crop luxembourg_south_bonnevoie",
+  "source": "LuST Scenario (Luxembourg SUMO Traffic)",
+  "generation": {
+    "tool": "build_lux_crop.py",
+    "entry_estimator": "vehroute",
+    "outside_insertion": "base_desired_best",
+    "tls_mode": "static",
+    "sim_preset": "lust_ref"
+  },
+  "bounding_box": {
+    "x_min": 7700.0,
+    "x_max": 8600.0,
+    "y_min": 4600.0,
+    "y_max": 5500.0,
+    "width_m": 900.0,
+    "height_m": 900.0
+  },
+  "time_window": {
+    "start_hour": 7.75,
+    "end_hour": 8.5,
+    "duration_minutes": 45,
+    "preload_hours": 1.0
+  },
+  "network_stats": {
+    "num_edges": 275,
+    "num_tls": 6,
+    "num_origins": 150,
+    "num_destinations": 128,
+    "num_edge_types": 4
+  },
+  "demand_stats": {
+    "num_agents": 2955,
+    "num_split_vehicles": 213,
+    "num_from_outside": 2729,
+    "num_bus_segments": 15
+  },
+  "od_filter": {
+    "od_pairs_total": 480,
+    "od_pairs_kept": 477,
+    "od_pairs_dropped": 3,
+    "agents_before": 2959,
+    "agents_after": 2955,
+    "path_count_distribution": {
+      "1": 2,
+      "2": 1,
+      "12": 477
+    }
+  },
+  "sumo_validation": {
+    "teleports": 0,
+    "jam": 0,
+    "yield": 0,
+    "wrongLane": 0,
+    "inserted": 2970,
+    "duration": 104.62,
+    "speed": 9.84,
+    "routeLength": 918.87,
+    "warnings": 1
+  }
+}
