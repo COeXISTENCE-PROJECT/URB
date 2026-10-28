@@ -10,6 +10,7 @@ if repo_root not in sys.path:
 
 from abc import ABC, abstractmethod
 from collections import deque
+from dataclasses import dataclass
 import random
 from typing import Sequence, Literal
 
@@ -32,6 +33,13 @@ TRANSITION_REWARD_MODES = (
     "transition_tt_fft",
     "transition_tt_fft_ad" # ad - arrival, departure
 )
+
+@dataclass
+class EpisodeRewardAssignment:
+    """Weighted AV decision rewards and a human reward for the final decision."""
+
+    decision_rewards: dict[int, float]
+    terminal_reward: float
 
 def _detach_hidden_state(hidden: PolicyHiddenState) -> PolicyHiddenState:
     """
@@ -787,13 +795,17 @@ class PPO(BaseLearningModel):
     def finish_episode(
         self,
         rewards_by_agent: dict[int, float],
-        missing_reward: float = -1.0,
+        missing_reward: float | None = -1.0,
+        *,
+        terminal_reward: float = 0.0,
     ) -> None:
         """
         Manages the end of a transition-reward episode.
 
         Assigns final arrival rewards to their original transitions.
-        Assigns a fallback penalty to transitions without an arrival record.
+        Adds the terminal reward to the final transition. With missing_reward=None,
+        requires an exact match between pending decisions and supplied rewards.
+        Otherwise, retains the fallback penalty for legacy callers.
         Marks the last transition as terminal.
         Produces episode diagnostics.
         Calls _finalize_episode().
@@ -805,6 +817,8 @@ class PPO(BaseLearningModel):
 
         step_agent_ids = {int(step["agent_id"]) for step in self._episode_steps}
         unmatched_arrivals = len(set(rewards_by_agent) - step_agent_ids)
+        if missing_reward is None and step_agent_ids != set(rewards_by_agent):
+            raise ValueError("Episode rewards must match the pending AV decisions")
         missing_steps = 0
         for step in self._episode_steps:
             agent_id = int(step["agent_id"])
@@ -820,6 +834,7 @@ class PPO(BaseLearningModel):
                 f"{unmatched_arrivals} arrivals were unmatched."
             )
 
+        self._episode_steps[-1]["reward"] += float(terminal_reward)
         self._episode_steps[-1]["done"] = True
 
         self.last_episode_diag = {
@@ -984,11 +999,14 @@ class CentralizedAVEnvWrapper(gym.Env):
         self.env = env
         self.action_masks = action_masks
         self.reward_mode = reward_mode
+        self._cost_measure(reward_mode)
         self.free_flow_times = env.get_free_flow_times(invalid_pad=1e9)
         self.agent_mask_map = {}
 
         if action_masks is None:
             raise RuntimeError("Centralized controller requires action_masks.")
+        if not env.machine_agents:
+            raise ValueError("Centralized controller requires at least one AV")
 
         missing_agents = []
         for agent in env.machine_agents:
@@ -1025,6 +1043,20 @@ class CentralizedAVEnvWrapper(gym.Env):
             "action_mask": spaces.MultiBinary(self.num_actions),
         })
 
+        self.num_humans = len(env.human_agents)
+        self._agent_kinds = {
+            int(agent.id): kind
+            for agents, kind in (
+                (env.machine_agents, kc.TYPE_MACHINE),
+                (env.human_agents, kc.TYPE_HUMAN),
+            )
+            for agent in agents
+        }
+        self._min_fft_by_od = {}
+        self._group_factors = None
+        self._get_group_factors()
+        self._arrival_reward_agent_ids = set()
+
     def _get_mask_for_od(self, origin, destination):
         mask = self.action_masks.get((int(origin), int(destination)))
         if mask is None:
@@ -1049,7 +1081,8 @@ class CentralizedAVEnvWrapper(gym.Env):
         super().reset(seed=seed)
         self.env.reset(seed=seed, options=options)
         self.num_steps = 0 #?
-        self._travel_times_cursor = len(self.env.travel_times_list)
+        self._travel_times_cursor = 0
+        self._arrival_reward_agent_ids.clear()
 
         agent = self.env.agent_selection
         observation = self._build_obs(agent)
@@ -1142,58 +1175,138 @@ class CentralizedAVEnvWrapper(gym.Env):
 
         return rewards
 
-    def _reward_from_record(self, record: dict, mode: str) -> float | None:
+    def _min_free_flow_time(self, origin: int, destination: int) -> float:
+        """Cache the minimum valid route FFT for an OD, in minutes."""
+        od = (origin, destination)
+        if od not in self._min_fft_by_od:
+            mask = self._get_mask_for_od(origin, destination)
+            free_flow_times = np.asarray(self.free_flow_times[od], dtype=np.float32)
+            valid_times = free_flow_times[mask]
+            valid_times = valid_times[
+                np.isfinite(valid_times) & (valid_times > 0.0) & (valid_times < 1e8)
+            ]
+            if valid_times.size == 0:
+                raise RuntimeError(f"No valid free-flow times for OD {od}")
+            self._min_fft_by_od[od] = float(valid_times.min())
+        return self._min_fft_by_od[od]
+
+    def _trip_cost(self, record: dict, measure: str) -> float | None:
+        """Return positive TT or absolute FFT delay, independently of behavior."""
         travel_time = record.get(kc.TRAVEL_TIME)
         if travel_time is None:
             return None
-
         travel_time = float(travel_time)
-        if mode == "transition_tt":
-            return -travel_time
+        if measure == "tt":
+            return travel_time
+        if measure != "fft_delay":
+            raise ValueError(f"Unknown cost measure: {measure}")
 
-        if mode in ("transition_tt_fft", "transition_tt_fft_ad"):
-            """
-            No division by the min fft so as not to make it relative:
-            Trip    Min FFT	    TT	    Absolute delay	Relative delay
-            Short	2 min	    4 min	-2	            -1.0
-            Long	10 min	    12 min	-2	            -0.2
-            Relative would make the latter seem like a better choice while
-            in reality they cause the same delay.
-            """
-            required_keys = (kc.AGENT_ORIGIN, kc.AGENT_DESTINATION, kc.ACTION)
-            if any(key not in record for key in required_keys):
-                return None
-
-            origin = int(record[kc.AGENT_ORIGIN])
-            destination = int(record[kc.AGENT_DESTINATION])
-            action = int(record[kc.ACTION])
-
-            mask = self._get_mask_for_od(origin, destination)
-            if action < 0 or action >= mask.shape[0] or not mask[action]:
-                raise RuntimeError(
-                    f"Recorded action {action} is invalid for OD ({origin}, {destination}) and mask {mask}"
-                )
-
-            free_flow_times = np.asarray(
-                self.free_flow_times[(origin, destination)],
-                dtype=np.float32,
+        required_keys = (kc.AGENT_ORIGIN, kc.AGENT_DESTINATION, kc.ACTION)
+        if any(key not in record for key in required_keys):
+            return None
+        origin = int(record[kc.AGENT_ORIGIN])
+        destination = int(record[kc.AGENT_DESTINATION])
+        action = int(record[kc.ACTION])
+        mask = self._get_mask_for_od(origin, destination)
+        if action < 0 or action >= mask.shape[0] or not mask[action]:
+            raise RuntimeError(
+                f"Recorded action {action} is invalid for OD ({origin}, {destination}) and mask {mask}"
             )
-            valid_free_flow_times = free_flow_times[mask]
-            valid_free_flow_times = valid_free_flow_times[
-                np.isfinite(valid_free_flow_times)
-                & (valid_free_flow_times > 0.0)
-                & (valid_free_flow_times < 1e8)
-            ]
-            if valid_free_flow_times.size == 0:
-                raise RuntimeError(
-                    f"No valid free-flow times for OD ({origin}, {destination})"
-                )
+        return max(travel_time - self._min_free_flow_time(origin, destination), 0.0)
 
-            min_fft = float(valid_free_flow_times.min())
-            delay_minutes = max(travel_time - min_fft, 0.0)
-            return -delay_minutes
+    def _get_group_factors(self) -> tuple[float, float]:
+        """Resolve shared RouteRL behavior into per-vehicle fleet contributions."""
+        if self._group_factors is None:
+            coefficients = np.asarray(
+                [agent.rewards_coefs for agent in self.env.machine_agents], dtype=float
+            )
+            if coefficients.shape != (self.num_machines, 4) or not np.isfinite(coefficients).all():
+                raise ValueError("Weighted rewards require four finite coefficients per AV")
+            if not np.all(coefficients == coefficients[0]):
+                raise ValueError("Weighted fleet rewards require the same behavior for all AVs")
+            a, b, c, d = coefficients[0]
+            num_all = self.num_machines + self.num_humans
+            av_factor = (a + b) / self.num_machines + d / num_all
+            human_factor = c / self.num_humans + d / num_all if self.num_humans else 0.0
+            self._group_factors = (float(av_factor), float(human_factor))
+        return self._group_factors
 
-        raise ValueError(mode)
+    def _trip_contribution(self, record: dict, measure: str) -> float:
+        """Apply signed group weights once to a valid AV or human trip cost."""
+        kind = record.get(kc.AGENT_KIND)
+        if kind not in (kc.TYPE_MACHINE, kc.TYPE_HUMAN):
+            raise ValueError(f"Unknown vehicle kind: {kind}")
+        travel_time = record.get(kc.TRAVEL_TIME)
+        if travel_time is None or not np.isfinite(float(travel_time)) or float(travel_time) < 0:
+            raise ValueError(f"Missing or invalid trip cost for agent {record.get(kc.AGENT_ID)}")
+        cost = self._trip_cost(record, measure)
+        if cost is None or not np.isfinite(cost) or cost < 0:
+            raise ValueError(f"Missing or invalid trip cost for agent {record.get(kc.AGENT_ID)}")
+        av_factor, human_factor = self._get_group_factors()
+        return cost * (av_factor if kind == kc.TYPE_MACHINE else human_factor)
+
+    @staticmethod
+    def _cost_measure(mode: str) -> str:
+        if mode in ("total_tt", "arrival_tt", "transition_tt"):
+            return "tt"
+        if mode in ("transition_tt_fft", "transition_tt_fft_ad"):
+            return "fft_delay"
+        raise ValueError(f"Unknown reward mode: {mode}")
+
+    @classmethod
+    def _transition_cost_measure(cls, mode: str) -> str:
+        if mode not in TRANSITION_REWARD_MODES:
+            raise ValueError(f"Expected a transition reward mode, got: {mode}")
+        return cls._cost_measure(mode)
+
+    def _trip_contributions(self, records, measure: str, *, require_complete=False) -> dict[int, float]:
+        """Validate records and use fixed-population weights for any delivery mode."""
+        contributions = {}
+        for record in records:
+            if not isinstance(record, dict) or kc.AGENT_ID not in record:
+                raise ValueError("Every trip record must contain an agent ID")
+            agent_id = int(record[kc.AGENT_ID])
+            if agent_id in contributions:
+                raise ValueError(f"Duplicate trip record for agent {agent_id}")
+            if agent_id not in self._agent_kinds or record.get(kc.AGENT_KIND) != self._agent_kinds[agent_id]:
+                raise ValueError(f"Unknown agent or inconsistent vehicle kind for agent {agent_id}")
+            contributions[agent_id] = self._trip_contribution(record, measure)
+        if require_complete:
+            missing = self._agent_kinds.keys() - contributions.keys()
+            if missing:
+                raise ValueError(f"Missing trip records for agents: {sorted(missing)}")
+        return contributions
+
+    def get_episode_reward_assignment(self, mode: str | None = None) -> EpisodeRewardAssignment:
+        """Allocate AV costs to decisions and human costs to the final decision.
+
+        Every vehicle needs a valid record (including RouteRL teleport penalties).
+        The combined mode splits the objective equally between this allocation
+        and arrival rewards, so it does not count the objective twice.
+        """
+        mode = self.reward_mode if mode is None else mode
+        measure = self._transition_cost_measure(mode)
+        contributions = self._trip_contributions(
+            self.env.last_episode_travel_times, measure, require_complete=True
+        )
+        share = 0.5 if mode == "transition_tt_fft_ad" else 1.0
+        decision_rewards = {
+            agent_id: share * value
+            for agent_id, value in contributions.items()
+            if self._agent_kinds[agent_id] == kc.TYPE_MACHINE
+        }
+        terminal_reward = share * sum(
+            value for agent_id, value in contributions.items()
+            if self._agent_kinds[agent_id] == kc.TYPE_HUMAN
+        )
+        return EpisodeRewardAssignment(decision_rewards, terminal_reward)
+
+    def _reward_from_record(self, record: dict, mode: str) -> float | None:
+        """Preserve the legacy unweighted, negative per-AV reward interface."""
+        if record.get(kc.TRAVEL_TIME) is None:
+            return None
+        cost = self._trip_cost(record, self._transition_cost_measure(mode))
+        return None if cost is None else -cost
 
     def close(self):
         self.env.stop_simulation()
@@ -1208,81 +1321,40 @@ class CentralizedAVEnvWrapper(gym.Env):
         )
 
     def _compute_reward(self, done):
+        """Deliver weighted fleet contributions at arrivals or episode end.
+
+        Transition modes attach their rewards after the episode. The combined
+        mode delivers half at arrivals and half through the episode assignment.
         """
-        Compute a mean AV reward (per step) using the configured reward mode.
-
-        Supported modes:
-        - total_tt: negative mean AV travel time
-
-        Currently "cooperative" within the AV group: reward = - mean AV travel time.
-        For "altruistic" / system-optimal: reward = - mean travel time of all vehicles, humans + AVs.
-
-        The existing MachineAgent.get_reward() is agent-personality-based: selfish, social, altruistic, malicious, etc.
-        It combines own travel time, machine-group travel time, human travel time, and all-agent travel time using behavior-specific coefficients.
-        That makes sense for decentralized agents, but it is confusing for a central controller.
-        """
-
-        # Transition-based rewards: make credit assignment easier.
-        # Arrival-based rewards are less sparse, but have credit-assignment problem:
-        # 1. action at step t
-        # 2. SUMO advances until next AV decision
-        # 3. some AVs arrive
-        # 4. reward from those arrivals is assigned to step t
-        # Those arriving AVs may be consequences of earlier actions, not the current action.
-        # So instead, log transitions and then assign the rewards to their actual steps.
-        # Transition rewards are assigned to their original AV decisions after the episode.
-        if self.reward_mode in TRANSITION_REWARD_MODES:
-            if self.reward_mode != "transition_tt_fft_ad": # "double" reward (arrival and departure) mode
+        measure = self._cost_measure(self.reward_mode)
+        if self.reward_mode in TRANSITION_REWARD_MODES and self.reward_mode != "transition_tt_fft_ad":
+            return 0.0
+        if self.reward_mode == "total_tt":
+            if not done:
                 return 0.0
+            contributions = self._trip_contributions(
+                self.env.last_episode_travel_times, measure, require_complete=True
+            )
+            return float(sum(contributions.values()))
 
-        # Arrival-based rewards: many smaller rewards during the episode, one per completed AV trip
-        # a vehicle departs when its start_time is reached -> SUMO runs until the next decision point ->
-        # _help_step() gets arrivals - AVs that reached their destinations -> _help_step() converts each arrival
-        # into a travel-time record -> that record is appended to travel_times_list -> later, _assign_rewards() uses
-        # the full list to assign the rewards after an episode has ended
-        if self.reward_mode in ("arrival_tt", "transition_tt_fft_ad"):
-            travel_times = getattr(self.env, "travel_times_list", [])
-            if self._travel_times_cursor > len(travel_times):
-                self._travel_times_cursor = len(travel_times)
-            records = travel_times[self._travel_times_cursor:]
-            if done and not records:
-                records = getattr(self.env, "last_episode_travel_times", [])
-            self._travel_times_cursor = len(travel_times)
-
-        # Episode-based rewards: one reward at the end of an episode, based on all AVs seen in the episode
-        elif not done:
-            return 0.0
-
-        elif self.reward_mode == "total_tt":
-            travel_times = getattr(self.env, "last_episode_travel_times", None)
-            if travel_times is None or len(travel_times) == 0:
-                travel_times = getattr(self.env, "travel_times_list", [])
-            records = travel_times
-
-        else:
-            raise ValueError(f"Unknown reward_mode: {self.reward_mode}")
-
-        av_rewards = []
-        for record in records:
-            if not self._is_machine_record(record):
-                continue
-
-            if self.reward_mode == "transition_tt_fft_ad":
-                reward = self._reward_from_record(record, self.reward_mode)
-                if reward is not None:
-                    av_rewards.append(float(reward))
-            else:
-                travel_time = record.get(kc.TRAVEL_TIME)
-                if travel_time is not None:
-                    av_rewards.append(float(travel_time))
-
-        if not av_rewards:
-            return 0.0
-
-        if self.reward_mode == "transition_tt_fft_ad":
-            return float(np.mean(av_rewards))
-
-        return -float(np.mean(av_rewards)) # minus!
+        # RouteRL clears the live list on the final step. Validate the full
+        # snapshot, then pay only arrivals not already rewarded earlier.
+        records = (
+            self.env.last_episode_travel_times if done
+            else self.env.travel_times_list[self._travel_times_cursor:]
+        )
+        contributions = self._trip_contributions(records, measure, require_complete=done)
+        if not done and self._arrival_reward_agent_ids.intersection(contributions):
+            raise ValueError("Duplicate trip record across arrival batches")
+        reward = sum(
+            value for agent_id, value in contributions.items()
+            if agent_id not in self._arrival_reward_agent_ids
+        )
+        self._arrival_reward_agent_ids.update(contributions)
+        if not done:
+            self._travel_times_cursor = len(self.env.travel_times_list)
+        share = 0.5 if self.reward_mode == "transition_tt_fft_ad" else 1.0
+        return float(share * reward)
 
     def _build_obs(self, agent):
         base_obs = self.env.observe(agent)
