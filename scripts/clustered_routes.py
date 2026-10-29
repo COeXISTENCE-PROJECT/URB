@@ -14,6 +14,7 @@ DEFAULT_ROUTE_SETS_BY_NETWORK = {
     "ingolstadt21": "default-kmeans-4",
     "saint_arnoult": "saint_arnoult-default-kmeans-4",
     "provins": "provins-default-kmeans-4",
+    "ingolstadt21_10_30": "default-kmeans-4"
 }
 
 
