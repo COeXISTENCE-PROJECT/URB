@@ -11,9 +11,9 @@ from pettingzoo.utils.wrappers import BaseWrapper
 DEFAULT_ROUTE_SETS_BY_NETWORK = {
     "ingolstadt_custom": "default-pre-integration",
     "ingolstadt_custom2": "default-pre-integration",
-    "ingolstadt21": "default-kmeans-4",
     "saint_arnoult": "saint_arnoult-default-kmeans-4",
     "provins": "provins-default-kmeans-4",
+    "ingolstadt21_10_30": "default-kmeans-4"
 }
 
 
