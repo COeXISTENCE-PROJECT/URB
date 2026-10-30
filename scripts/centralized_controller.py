@@ -16,6 +16,11 @@ from routerl import TrafficEnvironment
 from routerl.keychain import Keychain as kc
 from tqdm import tqdm
 
+from auto_routed_humans import (
+    install_auto_routed_humans,
+    prepare_imported_human_demand,
+    sample_human_routes,
+)
 from clustered_routes import (
     ClusteredRoutesLoader,
     resolve_route_set,
@@ -153,6 +158,7 @@ if __name__ == "__main__":
         raise ValueError("step_diagnostics_every must be at least 1")
 
     custom_network_folder = f"../networks/{network}"
+    use_imported_humans = network == "ingolstadt21"
 
     # Check if we were told to use a specific high-speed scratch directory
     base_results_dir = os.environ.get("RESULTS_BASE_DIR", "../results")
@@ -169,7 +175,8 @@ if __name__ == "__main__":
 
     # Copy agents.csv from custom_network_folder to records_folder
     agents_csv_path = os.path.join(custom_network_folder, "agents.csv")
-    num_agents = len(pd.read_csv(agents_csv_path))
+    agents_df = pd.read_csv(agents_csv_path)
+    num_agents = len(agents_df)
     if os.path.exists(agents_csv_path):
         os.makedirs(records_folder, exist_ok=True)
         new_agents_csv_path = os.path.join(records_folder, "agents.csv")
@@ -237,6 +244,24 @@ if __name__ == "__main__":
             "Fallback to unclustered JanuX routes is not supported in this controller."
         )
 
+    if use_imported_humans:
+        route_catalogs, background_ids, simulation_timesteps = prepare_imported_human_demand(
+            custom_network_folder, records_folder, agents_df, action_masks
+        )
+        if should_humans_adapt:
+            print("Warning: should_humans_adapt is ignored for ingolstadt21; imported humans never learn.")
+        should_humans_adapt = False
+        phase_names[0] = "Auto-routed human baseline"
+        dump_config.update({
+            "human_learning": False,
+            "human_routing": "per_agent_imported_distribution",
+            "should_humans_adapt": False,
+            "demand_routes_file": f"networks/{network}/demand_routes.csv",
+            "background_traffic_file": f"networks/{network}/background_buses.rou.xml",
+            "background_bus_count": len(background_ids),
+            "simulation_timesteps": simulation_timesteps,
+        })
+
     dump_config["use_clustered_routes"] = use_clustered_routes # intent
     dump_config["use_action_masks"] = action_masks is not None # reality
     dump_config["route_set"] = route_set
@@ -256,6 +281,8 @@ if __name__ == "__main__":
     }
     if human_auto_routing_key is not None:
         simulator_parameters[human_auto_routing_key] = bool(params.get(human_auto_routing_key, False))
+    if use_imported_humans:
+        simulator_parameters[kc.SIMULATION_TIMESTEPS] = simulation_timesteps
 
     # Initiate the traffic environment
     env = TrafficEnvironment(
@@ -308,6 +335,10 @@ if __name__ == "__main__":
     • Human agents           : {len(env.human_agents)}
     • AV agents              : {len(env.machine_agents)}
     """)
+
+    if use_imported_humans:
+        install_auto_routed_humans(env, route_catalogs, background_ids)
+        env.human_learning = False
 
     env.start()
     env.reset()
@@ -439,8 +470,12 @@ if __name__ == "__main__":
 
     # Human learning
     pre_mutation_episode_travel_times = []
+    routing_episode = 0
     pbar = tqdm(total=human_learning_episodes, desc="Human learning")
     for episode in range(human_learning_episodes):
+        if use_imported_humans:
+            sample_human_routes(env, route_catalogs, action_masks, env_seed, routing_episode)
+            routing_episode += 1
         env.step()
         pre_mutation_episode_travel_times.append(
             travel_times_by_agent(latest_episode_records())
@@ -643,6 +678,7 @@ if __name__ == "__main__":
         episode_idx,
         reward,
         reward_by_agent,
+        terminal_reward,
         mask,
         policy_diag,
     ):
@@ -657,7 +693,9 @@ if __name__ == "__main__":
             "start_time": float(info["start_time"]),
             "action": int(info["action"]),
             "step_reward": float(reward),
+            "terminal_reward": float(terminal_reward),
             "num_assigned_rewards_this_step": int(len(assigned_rewards)),
+            "assigned_reward_sum_this_step": float(sum(assigned_rewards)),
             "assigned_reward_mean_this_step": (
                 float(np.mean(assigned_rewards)) if assigned_rewards else np.nan
             ),
@@ -737,6 +775,9 @@ if __name__ == "__main__":
         # TRAINING PHASE
         for episode_idx in range(num_training_episodes):
             obs, info = central_env.reset()
+            if use_imported_humans:
+                sample_human_routes(env, route_catalogs, action_masks, env_seed, routing_episode)
+                routing_episode += 1
             ppo.reset_episode()
             done = False
 
@@ -758,6 +799,7 @@ if __name__ == "__main__":
 
                 obs, reward, terminated, truncated, info = central_env.step(action)
                 done = terminated or truncated
+                terminal_reward = 0.0
 
                 if reward_mode in TRANSITION_REWARD_MODES:
                     routed_agent_id = int(info["agent_id"])
@@ -771,13 +813,13 @@ if __name__ == "__main__":
                     reward_by_agent = {}
 
                     if done:
-                        reward_by_agent = central_env.get_episode_av_rewards(reward_mode)
-                        missing_reward = -float(
-                            getattr(env.simulator, "simulation_length", 60.0)
-                        ) / 60.0
+                        assignment = central_env.get_episode_reward_assignment()
+                        reward_by_agent = assignment.decision_rewards
+                        terminal_reward = assignment.terminal_reward
                         ppo.finish_episode(
                             rewards_by_agent=reward_by_agent,
-                            missing_reward=missing_reward,
+                            missing_reward=None,
+                            terminal_reward=terminal_reward,
                         )
                 else:
                     reward_by_agent = {}
@@ -790,6 +832,7 @@ if __name__ == "__main__":
                         episode_idx=episode_idx,
                         reward=reward,
                         reward_by_agent=reward_by_agent,
+                        terminal_reward=terminal_reward,
                         mask=mask,
                         policy_diag=policy_diag,
                     )
@@ -839,6 +882,9 @@ if __name__ == "__main__":
         ppo.deterministic = False #True
         for episode_idx in range(test_eps):
             obs, info = central_env.reset()
+            if use_imported_humans:
+                sample_human_routes(env, route_catalogs, action_masks, env_seed, routing_episode)
+                routing_episode += 1
             ppo.reset_episode()
             done = False
 
@@ -860,13 +906,14 @@ if __name__ == "__main__":
 
                 obs, reward, terminated, truncated, info = central_env.step(action)
                 done = terminated or truncated
+                terminal_reward = 0.0
 
                 if reward_mode in TRANSITION_REWARD_MODES:
-                    reward_by_agent = (
-                        central_env.get_episode_av_rewards(reward_mode)
-                        if done
-                        else {}
-                    )
+                    reward_by_agent = {}
+                    if done:
+                        assignment = central_env.get_episode_reward_assignment()
+                        reward_by_agent = assignment.decision_rewards
+                        terminal_reward = assignment.terminal_reward
                 else:
                     reward_by_agent = {}
 
@@ -876,6 +923,7 @@ if __name__ == "__main__":
                     episode_idx=episode_idx,
                     reward=reward,
                     reward_by_agent=reward_by_agent,
+                    terminal_reward=terminal_reward,
                     mask=mask,
                     policy_diag=policy_diag,
                 )
