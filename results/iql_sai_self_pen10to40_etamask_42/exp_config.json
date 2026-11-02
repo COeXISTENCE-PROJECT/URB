@@ -1,0 +1,69 @@
+{
+    "training_eps": 4000,
+    "eps_init": 1.0,
+    "eps_decay": 0.9992,
+    "eps_min": 0.0,
+    "buffer_size": 4096,
+    "batch_size": 64,
+    "lr": 0.0005,
+    "num_epochs": 1,
+    "num_hidden": 1,
+    "widths": [
+        96,
+        64
+    ],
+    "update_every": 1,
+    "smooth_by": 10,
+    "plot_choices": "basic",
+    "save_every": 10,
+    "plot_every": 50,
+    "use_clustered_routes": true,
+    "number_of_paths": 4,
+    "path_gen_beta": -5,
+    "num_samples": 10,
+    "path_gen_workers": 3,
+    "observations": "trip_info_eta_mask_norm",
+    "ratio_machines": 0.4,
+    "penetration_schedule": [
+        [
+            0,
+            0.1
+        ],
+        [
+            500,
+            0.2
+        ],
+        [
+            1000,
+            0.3
+        ],
+        [
+            1500,
+            0.4
+        ]
+    ],
+    "human_learning_episodes": 300,
+    "test_eps": 100,
+    "should_humans_adapt": false,
+    "av_behavior": "selfish",
+    "human_model": "gawron",
+    "human_alpha": 0.2,
+    "human_beta": 1.5,
+    "human_beta_randomness": 0.1,
+    "human_deterministic": false,
+    "parameter_sharing": true,
+    "network": "saint_arnoult",
+    "env_seed": 42,
+    "torch_seed": 42,
+    "route_set": "saint_arnoult-default-kmeans-4",
+    "env_config": "clusters-eta-mask",
+    "task_config": "selfish_pen_10_40",
+    "alg_config": "config2",
+    "script": "scripts/iql_clusters.py",
+    "algorithm": "iql",
+    "num_agents": 222,
+    "num_machines": 88,
+    "use_action_masks": true,
+    "shuffle": false,
+    "observation_type": "trip_info_eta_mask_norm"
+}
