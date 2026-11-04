@@ -10,7 +10,7 @@
   "loss": "huber",
 
   "use_agent_id": false,
-  "use_agent_embedding": false,
+  "use_agent_embedding": true,
   "agent_features": ["od", "start_time", "free_flow_time"],
   "agent_embed_dim": 8,
   "agent_embed_hidden": 32,
