@@ -11,8 +11,7 @@ Implementation faithful to Rashid et al. (2018) and PyMARL:
     the ELU inside the mixer has strictly positive derivative everywhere.
   - CTDE: decentralized argmax at execution time, centralized training.
   - No bootstrap / target network: valid because each AV takes exactly one
-    decision per episode (contextual bandit). run_episode enforces this with a
-    RuntimeError.
+    decision per episode.
 """
 
 import xml.etree.ElementTree as ET
