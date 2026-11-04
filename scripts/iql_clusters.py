@@ -261,10 +261,6 @@ if __name__ == "__main__":
             
     num_machines = int(num_agents * ratio_machines)
     total_episodes = human_learning_episodes + training_eps + test_eps
-
-    # Optional penetration schedule [[training_episode, ratio_machines], ...] within one continuous run
-    penetration_schedule = dict(params.get("penetration_schedule", [[0, ratio_machines]]))
-    new_machines_after_mutation = int(num_agents * penetration_schedule[0])
             
     exp_config_path = os.path.join(records_folder, "exp_config.json")
     dump_config = params.copy()
@@ -327,7 +323,7 @@ if __name__ == "__main__":
         action_masks = action_masks, # Clustered routes: use action masks if available
         save_detectors_info = False,
         agent_parameters = {
-            "new_machines_after_mutation": new_machines_after_mutation,
+            "new_machines_after_mutation": num_machines, 
             "human_parameters" : {
                 "model" : human_model
             },
@@ -385,36 +381,27 @@ if __name__ == "__main__":
         env = AVMaskWrapper(env, action_masks)
 
     # Assign policies to machine agents
+    shared_model = None
     agent_lookup = {}
-    def assign_policies():
-        for agent in env.machine_agents:
-            if agent.model is not None:
-                continue
-            model = DQN(obs_size, agent.action_space_size,
-                                                device=device, eps_init=eps_init, eps_decay=eps_decay,
-                                                eps_min=eps_min, buffer_size=buffer_size, batch_size=batch_size, lr=lr,
-                                                num_epochs=num_epochs, num_hidden=num_hidden, widths=widths)
-            if parameter_sharing and agent_lookup:
-                shared_model = next(iter(agent_lookup.values())).model
+    for idx in range(len(env.machine_agents)):
+        agent = env.machine_agents[idx]
+        model = DQN(obs_size, agent.action_space_size,
+                                            device=device, eps_init=eps_init, eps_decay=eps_decay,
+                                            eps_min=eps_min, buffer_size=buffer_size, batch_size=batch_size, lr=lr,
+                                            num_epochs=num_epochs, num_hidden=num_hidden, widths=widths)
+        if parameter_sharing:
+            if shared_model is None:
+                shared_model = model
+            else:
                 model.q_network = shared_model.q_network
                 model.optimizer = shared_model.optimizer
-            agent.model = model
-            agent_lookup[str(agent.id)] = agent
-
-    assign_policies()
+        agent.model = model
+        agent_lookup[str(agent.id)] = agent
 
     ### Learning phase ###
     pbar.set_description("AV learning")
     os.makedirs(plots_folder, exist_ok=True)
     for episode in range(training_eps):
-        if episode > 0 and episode in penetration_schedule:
-            env.agent_params["new_machines_after_mutation"] = int(num_agents * penetration_schedule[episode]) - len(env.machine_agents)
-            env.mutation(disable_human_learning = not should_humans_adapt, mutation_start_percentile = -1)
-            if action_masks is not None:
-                env = AVMaskWrapper(env.unwrapped, action_masks)
-            assign_policies()
-            print_agent_counts(env)
-
         env.reset()
         for agent_id in env.agent_iter():
             observation, reward, termination, truncation, info = env.last()

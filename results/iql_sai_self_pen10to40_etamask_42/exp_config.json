@@ -59,7 +59,7 @@
     "env_config": "clusters-eta-mask",
     "task_config": "selfish_pen_10_40",
     "alg_config": "config2",
-    "script": "scripts/iql_clusters.py",
+    "script": "scripts/iql_clusters_penetration.py",
     "algorithm": "iql",
     "num_agents": 222,
     "num_machines": 88,
