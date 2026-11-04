@@ -1,14 +1,26 @@
 """
-QMIX for auto-routed humans (ARH) on URB.
+QMIX for auto-routed humans (ARH) on URB — PyTorch port.
 
-Implementation faithful to Rashid et al. (2018) and PyMARL:
+Functionally equivalent to the NumPy version, with the backward pass
+handled by torch.autograd instead of manual gradients. Same architecture,
+same features (one-hot / embedding / no identity), same training loop.
+
+Differences from the NumPy version (numerical only, not semantic):
+  - Weight init: torch's default Glorot uniform (vs _xavier). Same
+    distribution, different RNG stream.
+  - Optimizer: torch.optim.Adam (same math, may differ in last bits).
+  - Numerics in float32 (vs float64 in NumPy), which is the torch default.
+  - The manual gradient tests in test_qmix.py become moot (autograd handles
+    it); no other test change needed.
+
+Design (unchanged):
   - Agent network: shared MLP. Input identity is either:
       * one-hot agent ID (use_agent_id=True),
       * learned embedding from static per-agent features (use_agent_embedding=True),
       * nothing (both False → agents with identical observations act identically).
   - Mixer: 4 two-layer hypernetworks conditioned on concat(obs_1..obs_N).
-  - Monotonicity: guaranteed because w1 and w2 are |.| of hypernet outputs and
-    the ELU inside the mixer has strictly positive derivative everywhere.
+  - Monotonicity: guaranteed because w1 and w2 are |.| of hypernet outputs
+    and the ELU inside the mixer has strictly positive derivative everywhere.
   - CTDE: decentralized argmax at execution time, centralized training.
   - No bootstrap / target network: valid because each AV takes exactly one
     decision per episode.
@@ -18,50 +30,25 @@ import xml.etree.ElementTree as ET
 from types import MethodType
 
 import numpy as np
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
 
 # ---------------------------------------------------------------------------
 # Building blocks
 # ---------------------------------------------------------------------------
 
-def _xavier(rng, fan_in, fan_out):
-    bound = np.sqrt(6.0 / (fan_in + fan_out))
-    return rng.uniform(-bound, bound, (fan_in, fan_out))
-
-
-def _elu(x):
-    return np.where(x > 0, x, np.expm1(np.minimum(x, 0.0)))
-
-
-def _elu_grad(x):
-    return np.where(x > 0, 1.0, np.exp(np.minimum(x, 0.0)))
-
-
-class Adam:
-    def __init__(self, params, lr, beta1=0.9, beta2=0.999, eps=1e-8):
-        self.lr, self.beta1, self.beta2, self.eps = lr, beta1, beta2, eps
-        self.m = {k: np.zeros_like(v) for k, v in params.items()}
-        self.v = {k: np.zeros_like(v) for k, v in params.items()}
-        self.t = 0
-
-    def step(self, params, grads):
-        self.t += 1
-        for k in params:
-            g = grads[k]
-            self.m[k] = self.beta1 * self.m[k] + (1 - self.beta1) * g
-            self.v[k] = self.beta2 * self.v[k] + (1 - self.beta2) * g * g
-            m_hat = self.m[k] / (1 - self.beta1 ** self.t)
-            v_hat = self.v[k] / (1 - self.beta2 ** self.t)
-            params[k] -= self.lr * m_hat / (np.sqrt(v_hat) + self.eps)
-
-
 class RunningNorm:
+    """Per-feature running z-score. Kept in NumPy (small overhead, no need for torch)."""
     def __init__(self, dim):
         self.n = 0
         self.mean = np.zeros(dim)
         self.m2 = np.zeros(dim)
 
     def update(self, x):
+        if isinstance(x, torch.Tensor):
+            x = x.detach().cpu().numpy()
         k = x.shape[0]
         delta = x.mean(axis=0) - self.mean
         total = self.n + k
@@ -74,249 +61,76 @@ class RunningNorm:
             return x
         std = np.sqrt(self.m2 / self.n)
         std = np.where(std < 1e-6, 1.0, std)
+        if isinstance(x, torch.Tensor):
+            mean_t = torch.from_numpy(self.mean).to(x.device, x.dtype)
+            std_t = torch.from_numpy(std).to(x.device, x.dtype)
+            return torch.clamp((x - mean_t) / std_t, -10.0, 10.0)
         return np.clip((x - self.mean) / std, -10.0, 10.0)
 
 
-# ---------------------------------------------------------------------------
-# Parameters
-# ---------------------------------------------------------------------------
+class AgentEmbedding(nn.Module):
+    """Static features → learned embedding (2-layer MLP with ReLU)."""
+    def __init__(self, feat_dim, hidden, out_dim):
+        super().__init__()
+        self.w1 = nn.Linear(feat_dim, hidden)
+        self.w2 = nn.Linear(hidden, out_dim)
 
-def init_params(rng, agent_in, n_actions, n_agents, state_dim, hidden, embed,
-                hyper_hidden=64, agent_feat_dim=0,
-                agent_embed_hidden=32, agent_embed_dim=8):
-    P = {}
-
-    # ─── Agent network ───
-    sizes = [agent_in, *hidden, n_actions]
-    for l in range(len(sizes) - 1):
-        P[f"aW{l}"] = _xavier(rng, sizes[l], sizes[l + 1])
-        P[f"ab{l}"] = np.zeros(sizes[l + 1])
-
-    # ─── Agent embedding MLP (optional) ───
-    # feature → hidden → embedding. Two linear layers with ReLU in between.
-    if agent_feat_dim > 0:
-        P["emb_w1"] = _xavier(rng, agent_feat_dim, agent_embed_hidden)
-        P["emb_b1"] = np.zeros(agent_embed_hidden)
-        P["emb_w2"] = _xavier(rng, agent_embed_hidden, agent_embed_dim)
-        P["emb_b2"] = np.zeros(agent_embed_dim)
-
-    # ─── Hypernets for the mixer (unchanged) ───
-    def _init_hyper(prefix, out_dim, nonneg):
-        P[f"H{prefix}a"] = _xavier(rng, state_dim, hyper_hidden)
-        P[f"h{prefix}a"] = np.zeros(hyper_hidden)
-        P[f"H{prefix}b"] = _xavier(rng, hyper_hidden, out_dim)
-        if nonneg:
-            bound = 1.0 / np.sqrt(state_dim)
-            P[f"h{prefix}b"] = rng.uniform(-bound, bound, out_dim)
-        else:
-            P[f"h{prefix}b"] = np.zeros(out_dim)
-
-    _init_hyper("w1", n_agents * embed, nonneg=True)
-    _init_hyper("b1", embed, nonneg=False)
-    _init_hyper("w2", embed, nonneg=True)
-    _init_hyper("b2", 1, nonneg=False)
-    return P
+    def forward(self, feats):
+        return self.w2(F.relu(self.w1(feats)))
 
 
-# ---------------------------------------------------------------------------
-# Agent embedding (static features → learned embedding)
-# ---------------------------------------------------------------------------
+class AgentNet(nn.Module):
+    """Shared MLP: agent input → Q-values over actions."""
+    def __init__(self, input_dim, hidden_sizes, n_actions):
+        super().__init__()
+        layers = []
+        prev = input_dim
+        for h in hidden_sizes:
+            layers.append(nn.Linear(prev, h))
+            layers.append(nn.ReLU())
+            prev = h
+        layers.append(nn.Linear(prev, n_actions))
+        self.net = nn.Sequential(*layers)
 
-def encode_agent_features(P, feats):
-    """feats: (N, D_feat) → (N, k). Returns (embedding, cache)."""
-    h_pre = feats @ P["emb_w1"] + P["emb_b1"]          # (N, hidden)
-    h = np.maximum(h_pre, 0.0)
-    e = h @ P["emb_w2"] + P["emb_b2"]                  # (N, k)
-    cache = dict(feats=feats, h_pre=h_pre, h=h)
-    return e, cache
-
-
-def encode_agent_features_backward(P, cache, d_e):
-    """d_e: (N, k). Returns grads for emb_w1, emb_b1, emb_w2, emb_b2."""
-    grads = {}
-    h_pre, h = cache["h_pre"], cache["h"]
-    grads["emb_w2"] = h.T @ d_e                        # (hidden, k)
-    grads["emb_b2"] = d_e.sum(axis=0)                  # (k,)
-    d_h = (d_e @ P["emb_w2"].T) * (h_pre > 0)          # (N, hidden)
-    grads["emb_w1"] = cache["feats"].T @ d_h           # (D_feat, hidden)
-    grads["emb_b1"] = d_h.sum(axis=0)                  # (hidden,)
-    return grads
+    def forward(self, x):
+        return self.net(x)
 
 
-# ---------------------------------------------------------------------------
-# Agent network
-# ---------------------------------------------------------------------------
+class MixerNet(nn.Module):
+    """4 two-layer hypernetworks producing monotone mixing weights."""
+    def __init__(self, state_dim, n_agents, embed, hyper_hidden=64):
+        super().__init__()
+        self.state_dim = state_dim
+        self.n_agents = n_agents
+        self.embed = embed
 
-def agent_forward(P, x, n_layers):
-    cache = []
-    h = x
-    for l in range(n_layers):
-        z = h @ P[f"aW{l}"] + P[f"ab{l}"]
-        cache.append((h, z))
-        h = np.maximum(z, 0.0) if l < n_layers - 1 else z
-    return h, cache
+        # 4 hypernetworks (Linear → ReLU → Linear).
+        self.h_w1a = nn.Linear(state_dim, hyper_hidden)
+        self.h_w1b = nn.Linear(hyper_hidden, n_agents * embed)
+        self.h_b1a = nn.Linear(state_dim, hyper_hidden)
+        self.h_b1b = nn.Linear(hyper_hidden, embed)
+        self.h_w2a = nn.Linear(state_dim, hyper_hidden)
+        self.h_w2b = nn.Linear(hyper_hidden, embed)
+        self.h_b2a = nn.Linear(state_dim, hyper_hidden)
+        self.h_b2b = nn.Linear(hyper_hidden, 1)
 
+        # Non-zero init on the *weight* hypernets' second-layer biases.
+        # |.| has zero gradient at 0, so zero biases would kill the mixer.
+        bound = 1.0 / np.sqrt(state_dim)
+        nn.init.uniform_(self.h_w1b.bias, -bound, bound)
+        nn.init.uniform_(self.h_w2b.bias, -bound, bound)
 
-def agent_backward(P, cache, dq, n_layers, return_input_grad=False):
-    grads = {}
-    d = dq
-    d_input = None
-    for l in reversed(range(n_layers)):
-        h_in, z = cache[l]
-        if l < n_layers - 1:
-            d = d * (z > 0)
-        grads[f"aW{l}"] = h_in.T @ d
-        grads[f"ab{l}"] = d.sum(axis=0)
-        d = d @ P[f"aW{l}"].T
-        if l == 0:
-            d_input = d  # gradient w.r.t. the input of the agent MLP
-    if return_input_grad:
-        return grads, d_input
-    return grads
-
-
-# ---------------------------------------------------------------------------
-# Mixer (unchanged)
-# ---------------------------------------------------------------------------
-
-def mixer_forward(P, q, s, n_agents, embed):
-    B = q.shape[0]
-
-    z1_w1 = s @ P["Hw1a"] + P["hw1a"];     h1_w1 = np.maximum(z1_w1, 0.0)
-    pre_w1 = h1_w1 @ P["Hw1b"] + P["hw1b"]
-    w1 = np.abs(pre_w1).reshape(B, n_agents, embed)
-
-    z1_b1 = s @ P["Hb1a"] + P["hb1a"];     h1_b1 = np.maximum(z1_b1, 0.0)
-    b1 = h1_b1 @ P["Hb1b"] + P["hb1b"]
-
-    z1_w2 = s @ P["Hw2a"] + P["hw2a"];     h1_w2 = np.maximum(z1_w2, 0.0)
-    pre_w2 = h1_w2 @ P["Hw2b"] + P["hw2b"]
-    w2 = np.abs(pre_w2)
-
-    z1_b2 = s @ P["Hb2a"] + P["hb2a"];     h1_b2 = np.maximum(z1_b2, 0.0)
-    b2 = (h1_b2 @ P["Hb2b"] + P["hb2b"])[:, 0]
-
-    pre_h = np.einsum("bn,bne->be", q, w1) + b1
-    h = _elu(pre_h)
-    q_tot = (h * w2).sum(axis=1) + b2
-
-    cache = dict(
-        q=q, s=s,
-        z1_w1=z1_w1, h1_w1=h1_w1, pre_w1=pre_w1, w1=w1,
-        z1_b1=z1_b1, h1_b1=h1_b1,
-        z1_w2=z1_w2, h1_w2=h1_w2, pre_w2=pre_w2, w2=w2,
-        z1_b2=z1_b2, h1_b2=h1_b2,
-        pre_h=pre_h, h=h,
-    )
-    return q_tot, cache
-
-
-def mixer_backward(P, c, g, n_agents, embed):
-    B = g.shape[0]
-    g2 = g[:, None]
-    grads = {}
-
-    grads["Hb2b"] = c["h1_b2"].T @ g2
-    grads["hb2b"] = g2.sum(axis=0)
-    dz1_b2 = (g2 @ P["Hb2b"].T) * (c["z1_b2"] > 0)
-    grads["Hb2a"] = c["s"].T @ dz1_b2
-    grads["hb2a"] = dz1_b2.sum(axis=0)
-
-    dpre_w2 = g2 * c["h"] * np.sign(c["pre_w2"])
-    grads["Hw2b"] = c["h1_w2"].T @ dpre_w2
-    grads["hw2b"] = dpre_w2.sum(axis=0)
-    dz1_w2 = (dpre_w2 @ P["Hw2b"].T) * (c["z1_w2"] > 0)
-    grads["Hw2a"] = c["s"].T @ dz1_w2
-    grads["hw2a"] = dz1_w2.sum(axis=0)
-
-    dh = g2 * c["w2"]
-    dpre_h = dh * _elu_grad(c["pre_h"])
-
-    grads["Hb1b"] = c["h1_b1"].T @ dpre_h
-    grads["hb1b"] = dpre_h.sum(axis=0)
-    dz1_b1 = (dpre_h @ P["Hb1b"].T) * (c["z1_b1"] > 0)
-    grads["Hb1a"] = c["s"].T @ dz1_b1
-    grads["hb1a"] = dz1_b1.sum(axis=0)
-
-    dq = np.einsum("bne,be->bn", c["w1"], dpre_h)
-
-    dpre_w1 = np.einsum("bn,be->bne", c["q"], dpre_h)
-    dpre_w1 = dpre_w1.reshape(B, -1) * np.sign(c["pre_w1"])
-    grads["Hw1b"] = c["h1_w1"].T @ dpre_w1
-    grads["hw1b"] = dpre_w1.sum(axis=0)
-    dz1_w1 = (dpre_w1 @ P["Hw1b"].T) * (c["z1_w1"] > 0)
-    grads["Hw1a"] = c["s"].T @ dz1_w1
-    grads["hw1a"] = dz1_w1.sum(axis=0)
-
-    return grads, dq
-
-
-# ---------------------------------------------------------------------------
-# Agent input construction
-# ---------------------------------------------------------------------------
-
-def build_agent_inputs(obs, use_agent_id):
-    """obs → (B*N, d) or (B*N, d+N) if use_agent_id. NOT used with embedding."""
-    B, N, d = obs.shape
-    x = obs.reshape(B * N, d)
-    if use_agent_id:
-        x = np.concatenate([x, np.tile(np.eye(N), (B, 1))], axis=1)
-    return x
-
-
-def loss_and_grads(P, obs, actions, y, state, agent_features,
-                   n_agents, embed, n_layers,
-                   use_agent_id, use_agent_embedding, huber,
-                   agent_embed_dim):
-    B, N, _ = obs.shape
-
-    # ─── Build agent inputs ───
-    if use_agent_embedding:
-        E, emb_cache = encode_agent_features(P, agent_features)   # (N, k)
-        E_batch = np.tile(E, (B, 1))                              # (B*N, k)
-        x = np.concatenate([obs.reshape(B * N, -1), E_batch], axis=1)  # (B*N, d+k)
-    else:
-        x = build_agent_inputs(obs, use_agent_id)
-        emb_cache = None
-
-    # ─── Agent forward ───
-    Q, a_cache = agent_forward(P, x, n_layers)
-    Q = Q.reshape(B, N, -1)
-    q_chosen = np.take_along_axis(Q, actions[..., None], axis=2)[..., 0]
-
-    # ─── Mixer forward ───
-    q_tot, m_cache = mixer_forward(P, q_chosen, state, n_agents, embed)
-
-    # ─── Loss ───
-    err = y - q_tot
-    if huber:
-        loss = float(np.mean(np.where(np.abs(err) <= 1.0,
-                                      0.5 * err ** 2, np.abs(err) - 0.5)))
-        g = -np.clip(err, -1.0, 1.0) / B
-    else:
-        loss = float(np.mean(err ** 2))
-        g = -2.0 * err / B
-
-    # ─── Mixer backward ───
-    m_grads, dq = mixer_backward(P, m_cache, g, n_agents, embed)
-
-    # ─── Agent backward ───
-    dQ = np.zeros_like(Q)
-    np.put_along_axis(dQ, actions[..., None], dq[..., None], axis=2)
-    dQ_flat = dQ.reshape(B * N, -1)
-
-    if use_agent_embedding:
-        a_grads, d_x = agent_backward(P, a_cache, dQ_flat, n_layers,
-                                      return_input_grad=True)
-        # gradient w.r.t. embedding: last k columns of d_x
-        d_emb_batch = d_x[:, -agent_embed_dim:]                    # (B*N, k)
-        d_emb = d_emb_batch.reshape(B, N, agent_embed_dim).sum(axis=0)  # (N, k)
-        emb_grads = encode_agent_features_backward(P, emb_cache, d_emb)
-        a_grads.update(emb_grads)
-    else:
-        a_grads = agent_backward(P, a_cache, dQ_flat, n_layers)
-
-    return loss, {**a_grads, **m_grads}
+    def forward(self, q, s):
+        # q: (B, N), s: (B, state_dim) -> (B,)
+        B = q.shape[0]
+        w1 = torch.abs(self.h_w1b(F.relu(self.h_w1a(s)))).view(B, self.n_agents, self.embed)
+        b1 = self.h_b1b(F.relu(self.h_b1a(s))).view(B, 1, self.embed)
+        pre_h = q.unsqueeze(1) @ w1 + b1
+        h = F.elu(pre_h)
+        w2 = torch.abs(self.h_w2b(F.relu(self.h_w2a(s)))).view(B, self.embed, 1)
+        b2 = self.h_b2b(F.relu(self.h_b2a(s))).view(B, 1, 1)
+        q_tot = h @ w2 + b2
+        return q_tot.view(B)
 
 
 # ---------------------------------------------------------------------------
@@ -331,7 +145,7 @@ class QMIX:
                  normalize_obs=True, lr=3e-4, batch_size=32,
                  buffer_size=2048, max_grad_norm=10.0, eps_init=1.0,
                  eps_decay=0.995, eps_min=0.05, updates_per_episode=1,
-                 hyper_hidden=64, seed=0):
+                 hyper_hidden=64, seed=0, device="cpu"):
         if state_mode not in ("concat", "mean"):
             raise ValueError("state_mode must be 'concat' or 'mean'")
         if team_reward not in ("mean", "sum"):
@@ -343,8 +157,11 @@ class QMIX:
                 "use_agent_id and use_agent_embedding are mutually exclusive"
             )
 
+        self.device = torch.device(device)
         self.obs_dim, self.n_actions, self.n_agents = obs_dim, n_actions, n_agents
-        self.hidden, self.embed = tuple(hidden), embed
+        self.hidden = tuple(hidden)
+        self.embed = embed
+        self.hyper_hidden = hyper_hidden
         self.state_mode = state_mode
         self.team_reward = team_reward
         self.huber = loss == "huber"
@@ -353,29 +170,34 @@ class QMIX:
         self.agent_embed_dim = int(agent_embed_dim)
         self.agent_embed_hidden = int(agent_embed_hidden)
 
+        self.batch_size = batch_size
+        self.buffer_size = buffer_size
+        self.max_grad_norm = max_grad_norm
+        self.updates_per_episode = updates_per_episode
+        self.eps = eps_init
+        self.eps_decay = eps_decay
+        self.eps_min = eps_min
+        self.rng = np.random.default_rng(seed)
+
+        # Static per-agent features (only used with use_agent_embedding).
         if self.use_agent_embedding:
             if agent_features is None:
                 raise ValueError("agent_features required when use_agent_embedding=True")
-            self.agent_features = np.asarray(agent_features, dtype=np.float64)
-            if self.agent_features.ndim != 2 or self.agent_features.shape[0] != n_agents:
+            af = np.asarray(agent_features, dtype=np.float32)
+            if af.ndim != 2 or af.shape[0] != n_agents:
                 raise ValueError(
-                    f"agent_features must be (N={n_agents}, D_feat), "
-                    f"got {self.agent_features.shape}"
+                    f"agent_features must be (N={n_agents}, D_feat), got {af.shape}"
                 )
-            self.agent_feat_dim = self.agent_features.shape[1]
+            self.agent_features = torch.from_numpy(af).to(self.device)
+            self.agent_feat_dim = af.shape[1]
         else:
             self.agent_features = None
             self.agent_feat_dim = 0
 
-        self.batch_size, self.buffer_size = batch_size, buffer_size
-        self.max_grad_norm, self.updates_per_episode = max_grad_norm, updates_per_episode
-        self.eps, self.eps_decay, self.eps_min = eps_init, eps_decay, eps_min
-        self.hyper_hidden = hyper_hidden
-        self.rng = np.random.default_rng(seed)
-
+        # State dim seen by the mixer.
         self.state_dim = n_agents * obs_dim if state_mode == "concat" else obs_dim
-        self.n_layers = len(self.hidden) + 1
 
+        # Agent input dim.
         if self.use_agent_embedding:
             agent_in = obs_dim + self.agent_embed_dim
         elif self.use_agent_id:
@@ -383,45 +205,84 @@ class QMIX:
         else:
             agent_in = obs_dim
 
-        self.P = init_params(self.rng, agent_in, n_actions, n_agents, self.state_dim,
-                             self.hidden, embed, hyper_hidden=hyper_hidden,
-                             agent_feat_dim=self.agent_feat_dim,
-                             agent_embed_hidden=self.agent_embed_hidden,
-                             agent_embed_dim=self.agent_embed_dim)
-        self.n_params = sum(v.size for v in self.P.values())
-        if self.n_params > 5_000_000:
-            print(f"[QMIX] {self.n_params:,} parameters. If this is too slow, "
-                  f"consider state_mode='mean' or smaller embed.")
-        self.opt = Adam(self.P, lr)
+        # Modules.
+        self.agent_net = AgentNet(agent_in, hidden, n_actions).to(self.device)
+        self.mixer_net = MixerNet(self.state_dim, n_agents, embed, hyper_hidden).to(self.device)
+        if self.use_agent_embedding:
+            self.agent_embedding = AgentEmbedding(
+                self.agent_feat_dim, self.agent_embed_hidden, self.agent_embed_dim
+            ).to(self.device)
+        else:
+            self.agent_embedding = None
+
+        self.optimizer = torch.optim.Adam(self._parameters(), lr=lr)
         self.norm = RunningNorm(obs_dim) if normalize_obs else None
 
-        # Cache inference-time embeddings from current P
+        # Cache inference-time embeddings (refreshed after every learn()).
         if self.use_agent_embedding:
-            self._agent_embeddings, _ = encode_agent_features(self.P, self.agent_features)
+            with torch.no_grad():
+                self._cached_embeddings = self.agent_embedding(self.agent_features)
         else:
-            self._agent_embeddings = None
+            self._cached_embeddings = None
+
+        n_params = sum(p.numel() for p in self._parameters())
+        if n_params > 5_000_000:
+            print(f"[QMIX-torch] {n_params:,} parameters. If this is too slow, "
+                  f"consider state_mode='mean' or smaller embed.")
 
         self.buf_obs, self.buf_act, self.buf_rew = [], [], []
         self.loss = []
+
+    # ─── helpers ───
+
+    def _parameters(self):
+        params = list(self.agent_net.parameters()) + list(self.mixer_net.parameters())
+        if self.agent_embedding is not None:
+            params += list(self.agent_embedding.parameters())
+        return params
 
     def _normalize(self, obs):
         return self.norm(obs) if self.norm is not None else obs
 
     def _state(self, obs):
+        # obs: torch tensor (B, N, d)
         if self.state_mode == "concat":
             return obs.reshape(obs.shape[0], -1)
-        return obs.mean(axis=1)
+        return obs.mean(dim=1)
+
+    def _agent_q_all(self, obs):
+        # obs: (B, N, d) -> (B, N, A)
+        B, N, d = obs.shape
+        x = obs
+        if self.use_agent_embedding:
+            E = self.agent_embedding(self.agent_features)             # (N, k)
+            E_batch = E.unsqueeze(0).expand(B, -1, -1)                # (B, N, k)
+            x = torch.cat([x, E_batch], dim=-1)                       # (B, N, d+k)
+        elif self.use_agent_id:
+            oh = torch.eye(N, device=obs.device).unsqueeze(0).expand(B, -1, -1)
+            x = torch.cat([x, oh], dim=-1)                            # (B, N, d+N)
+        return self.agent_net(x.reshape(B * N, -1)).reshape(B, N, -1)
+
+    def _refresh_cache(self):
+        if self.use_agent_embedding:
+            with torch.no_grad():
+                self._cached_embeddings = self.agent_embedding(self.agent_features)
+
+    # ─── public API ───
 
     def act(self, obs, agent_idx, mask=None, greedy=False):
-        o = self._normalize(np.asarray(obs, dtype=np.float64))[None]
+        o = torch.tensor(obs, dtype=torch.float32, device=self.device).unsqueeze(0)  # (1, d)
+        o = self._normalize(o)
         if self.use_agent_embedding:
-            e = self._agent_embeddings[agent_idx][None]            # (1, k)
-            o = np.concatenate([o, e], axis=1)
+            e = self._cached_embeddings[agent_idx:agent_idx + 1]      # (1, k)
+            o = torch.cat([o, e], dim=1)
         elif self.use_agent_id:
-            one_hot = np.zeros((1, self.n_agents))
-            one_hot[0, agent_idx] = 1.0
-            o = np.concatenate([o, one_hot], axis=1)
-        q = agent_forward(self.P, o, self.n_layers)[0][0]
+            oh = torch.zeros(1, self.n_agents, device=self.device)
+            oh[0, agent_idx] = 1.0
+            o = torch.cat([o, oh], dim=1)
+
+        with torch.no_grad():
+            q = self.agent_net(o)[0]                                  # (A,)
 
         valid = (np.arange(self.n_actions) if mask is None
                  else np.flatnonzero(np.asarray(mask, dtype=bool)))
@@ -429,11 +290,11 @@ class QMIX:
             raise ValueError("empty action mask")
         if not greedy and self.rng.random() < self.eps:
             return int(self.rng.choice(valid))
-        return int(valid[np.argmax(q[valid])])
+        return int(valid[q[valid].argmax().item()])
 
     def store_episode(self, obs, actions, rewards):
-        obs = np.asarray(obs, dtype=np.float64)
-        rewards = np.asarray(rewards, dtype=np.float64)
+        obs = np.asarray(obs, dtype=np.float32)
+        rewards = np.asarray(rewards, dtype=np.float32)
         self.buf_obs.append(obs)
         self.buf_act.append(np.asarray(actions, dtype=np.int64))
         self.buf_rew.append(float(rewards.mean() if self.team_reward == "mean"
@@ -447,39 +308,64 @@ class QMIX:
         n = len(self.buf_rew)
         if n < 2:
             return None
+        self.agent_net.train()
+        self.mixer_net.train()
+        if self.agent_embedding is not None:
+            self.agent_embedding.train()
+
         last = None
         for _ in range(self.updates_per_episode):
             idx = self.rng.integers(0, n, size=min(self.batch_size, n))
-            O = self._normalize(np.stack([self.buf_obs[i] for i in idx]))
-            A = np.stack([self.buf_act[i] for i in idx])
-            y = np.array([self.buf_rew[i] for i in idx])
-            loss, grads = loss_and_grads(
-                self.P, O, A, y, self._state(O),
-                self.agent_features,
-                self.n_agents, self.embed, self.n_layers,
-                self.use_agent_id, self.use_agent_embedding, self.huber,
-                self.agent_embed_dim)
-            norm = np.sqrt(sum(float((g ** 2).sum()) for g in grads.values()))
-            if norm > self.max_grad_norm:
-                grads = {k: g * (self.max_grad_norm / norm) for k, g in grads.items()}
-            self.opt.step(self.P, grads)
-            self.loss.append(loss)
-            last = loss
+            O = torch.tensor(np.stack([self.buf_obs[i] for i in idx]),
+                             dtype=torch.float32, device=self.device)   # (B, N, d)
+            A = torch.tensor(np.stack([self.buf_act[i] for i in idx]),
+                             dtype=torch.long, device=self.device)      # (B, N)
+            y = torch.tensor([self.buf_rew[i] for i in idx],
+                             dtype=torch.float32, device=self.device)   # (B,)
 
-        # Refresh cached embeddings since P just changed
-        if self.use_agent_embedding:
-            self._agent_embeddings, _ = encode_agent_features(self.P, self.agent_features)
+            O_norm = self._normalize(O)
+            state = self._state(O_norm)                                 # (B, state_dim)
 
+            q_all = self._agent_q_all(O_norm)                           # (B, N, A)
+            q_chosen = q_all.gather(2, A.unsqueeze(-1)).squeeze(-1)     # (B, N)
+            q_tot = self.mixer_net(q_chosen, state)                     # (B,)
+
+            if self.huber:
+                loss = F.smooth_l1_loss(q_tot, y)
+            else:
+                loss = F.mse_loss(q_tot, y)
+
+            self.optimizer.zero_grad()
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(self._parameters(), self.max_grad_norm)
+            self.optimizer.step()
+
+            self.loss.append(float(loss.item()))
+            last = float(loss.item())
+
+        # Refresh cached embeddings after all updates.
+        self._refresh_cache()
         return last
 
     def decay_epsilon(self):
         self.eps = max(self.eps_min, self.eps * self.eps_decay)
 
     def state_dict(self):
-        out = {"params": {k: v.copy() for k, v in self.P.items()}, "eps": self.eps}
+        def _cpu(sd):
+            return {k: v.detach().cpu() for k, v in sd.items()}
+        out = {
+            "agent_net": _cpu(self.agent_net.state_dict()),
+            "mixer_net": _cpu(self.mixer_net.state_dict()),
+            "eps": float(self.eps),
+        }
+        if self.agent_embedding is not None:
+            out["agent_embedding"] = _cpu(self.agent_embedding.state_dict())
         if self.norm is not None:
-            out["norm"] = {"n": self.norm.n, "mean": self.norm.mean.copy(),
-                           "m2": self.norm.m2.copy()}
+            out["norm"] = {
+                "n": self.norm.n,
+                "mean": self.norm.mean.copy(),
+                "m2": self.norm.m2.copy(),
+            }
         return out
 
 
@@ -539,23 +425,18 @@ def build_agent_features_matrix(machines, agents_df, catalogs, features,
                                 num_od_pairs, n_destinations, normalize=True):
     """Build (N_machines, D_feat) static features for AVs.
 
-    Supported features:
-      - "od"               : one-hot of (origin, destination) pair,
-      - "start_time"       : agent's start time (from agents.csv),
-      - "free_flow_time"   : free-flow travel time of the agent's demand route
-                             (from demand_routes.csv, single route per agent).
-
-    Continuous features are z-scored; one-hot features are left as-is.
+    Supported: "od" (one-hot of OD pair), "start_time", "free_flow_time".
+    Continuous features are z-scored; one-hot is left as-is.
     """
     N = len(machines)
     blocks = []
-    continuous_offsets = []  # (start_col, end_col) of continuous blocks
+    continuous_offsets = []
     offset = 0
 
     agents_lookup = agents_df.set_index("id")[["origin", "destination", "start_time"]]
 
     if "od" in features:
-        od = np.zeros((N, num_od_pairs), dtype=np.float64)
+        od = np.zeros((N, num_od_pairs), dtype=np.float32)
         for i, machine in enumerate(machines):
             row = agents_lookup.loc[int(machine.id)]
             o, d = int(row["origin"]), int(row["destination"])
@@ -564,7 +445,7 @@ def build_agent_features_matrix(machines, agents_df, catalogs, features,
         offset += num_od_pairs
 
     if "start_time" in features:
-        st = np.zeros((N, 1), dtype=np.float64)
+        st = np.zeros((N, 1), dtype=np.float32)
         for i, machine in enumerate(machines):
             st[i, 0] = float(agents_lookup.loc[int(machine.id)]["start_time"])
         blocks.append(st)
@@ -572,7 +453,7 @@ def build_agent_features_matrix(machines, agents_df, catalogs, features,
         offset += 1
 
     if "free_flow_time" in features:
-        fft = np.zeros((N, 1), dtype=np.float64)
+        fft = np.zeros((N, 1), dtype=np.float32)
         for i, machine in enumerate(machines):
             cat = catalogs.get(int(machine.id), [])
             if cat:
@@ -584,7 +465,7 @@ def build_agent_features_matrix(machines, agents_df, catalogs, features,
     if not blocks:
         raise ValueError(f"No valid features in {features}")
 
-    feats = np.concatenate(blocks, axis=1).astype(np.float64)
+    feats = np.concatenate(blocks, axis=1).astype(np.float32)
 
     if normalize and continuous_offsets:
         cols = np.concatenate([np.arange(a, b) for a, b in continuous_offsets])
@@ -597,7 +478,7 @@ def build_agent_features_matrix(machines, agents_df, catalogs, features,
 
 
 # ---------------------------------------------------------------------------
-# Auto-routed humans (same logic as iql_arh)
+# Auto-routed humans (same logic as iql_arh / numpy variant)
 # ---------------------------------------------------------------------------
 
 def load_human_route_catalogs(path, agent_ids):
@@ -749,7 +630,8 @@ def main():
     parser.add_argument("--alg-conf", type=str, required=True)
     parser.add_argument("--net", type=str, required=True)
     parser.add_argument("--env-seed", type=int, default=42)
-    parser.add_argument("--torch-seed", type=int, default=42)
+    parser.add_argument("--torch-seed", type=int, default=42,
+                        help="Algorithm seed (legacy name; seeds np.random and torch).")
     parser.add_argument("--route-set", type=str, default=None)
     parser.add_argument("--skip-metrics", action="store_true", default=False)
     add_model_snapshot_argument(parser)
@@ -761,7 +643,7 @@ def main():
     save_model_every = args.save_model_every
 
     print("### STARTING EXPERIMENT ###")
-    print(f"Algorithm: {algorithm.upper()} (auto-routed humans)")
+    print(f"Algorithm: {algorithm.upper()} (auto-routed humans, torch)")
     print(f"Experiment ID: {args.id}")
     print(f"Network: {network}")
     print(f"Environment seed: {args.env_seed}")
@@ -775,6 +657,14 @@ def main():
     logging.getLogger("matplotlib").setLevel(logging.ERROR)
     random.seed(args.env_seed)
     np.random.seed(args.env_seed)
+    torch.manual_seed(args.torch_seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(args.torch_seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
+    device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    print(f"Device: {device}")
 
     p = {}
     for path in (f"../config/algo_config/{algorithm}/{args.alg_conf}.json",
@@ -870,7 +760,7 @@ def main():
         background_traffic_file=f"networks/{network}/background_buses.rou.xml",
         background_bus_count=len(background_ids), route_set=route_set,
         number_of_paths=number_of_paths, use_clustered_routes=True,
-        use_action_masks=True)
+        use_action_masks=True, framework="torch")
     if save_model_every is not None:
         dump_config["save_model_every"] = save_model_every
     with open(os.path.join(records_folder, "exp_config.json"), "w", encoding="utf-8") as f:
@@ -959,7 +849,7 @@ def main():
     agent_features_matrix = None
     if use_agent_embedding:
         feature_names = p.get("agent_features", ["od", "start_time", "free_flow_time"])
-        print(f"[QMIX] Building agent features: {feature_names}")
+        print(f"[QMIX-torch] Building agent features: {feature_names}")
         agent_features_matrix, agent_feat_dim = build_agent_features_matrix(
             machines=machines,
             agents_df=agents_df,
@@ -969,7 +859,7 @@ def main():
             n_destinations=len(destinations),
             normalize=True,
         )
-        print(f"[QMIX] agent_feat_dim = {agent_feat_dim}, "
+        print(f"[QMIX-torch] agent_feat_dim = {agent_feat_dim}, "
               f"agent_embed_dim = {p.get('agent_embed_dim', 8)}")
 
     model = QMIX(
@@ -997,6 +887,7 @@ def main():
         updates_per_episode=p["updates_per_episode"],
         hyper_hidden=p.get("hyper_hidden", 64),
         seed=args.torch_seed,
+        device=device,
     )
 
     # ─── AV learning ───
