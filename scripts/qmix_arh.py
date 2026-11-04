@@ -637,7 +637,7 @@ def main():
     add_model_snapshot_argument(parser)
     args = parser.parse_args()
 
-    algorithm = "qmix"
+    algorithm = "qmix_arh"
     network = args.net
     route_set = resolve_route_set(network, args.route_set)
     save_model_every = args.save_model_every
