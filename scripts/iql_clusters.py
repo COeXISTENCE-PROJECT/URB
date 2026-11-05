@@ -226,8 +226,8 @@ if __name__ == "__main__":
     for key, value in params.items():
         globals()[key] = value
 
-    # Set observation_type in config, defaults to previous_agents_plus_start_time
-    observation_type = params.get("observation_type", "previous_agents_plus_start_time")
+    # set env config's observations
+    observation_type = params.get("observation_type", params.get("observations", "previous_agents_plus_start_time"))
 
     custom_network_folder = f"../networks/{network}"
     phases = [1, human_learning_episodes, int(training_eps) + human_learning_episodes]
