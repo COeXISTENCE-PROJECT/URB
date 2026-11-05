@@ -1,19 +1,8 @@
 """
-QMIX for auto-routed humans (ARH) on URB — PyTorch port.
+QMIX for auto-routed humans (ARH) on URB — PyTorch .
 
-Functionally equivalent to the NumPy version, with the backward pass
-handled by torch.autograd instead of manual gradients. Same architecture,
-same features (one-hot / embedding / no identity), same training loop.
 
-Differences from the NumPy version (numerical only, not semantic):
-  - Weight init: torch's default Glorot uniform (vs _xavier). Same
-    distribution, different RNG stream.
-  - Optimizer: torch.optim.Adam (same math, may differ in last bits).
-  - Numerics in float32 (vs float64 in NumPy), which is the torch default.
-  - The manual gradient tests in test_qmix.py become moot (autograd handles
-    it); no other test change needed.
-
-Design (unchanged):
+Design :
   - Agent network: shared MLP. Input identity is either:
       * one-hot agent ID (use_agent_id=True),
       * learned embedding from static per-agent features (use_agent_embedding=True),
