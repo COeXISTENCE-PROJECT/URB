@@ -1,4 +1,5 @@
 """
+l
 QMIX for auto-routed humans (ARH) .
 
 Design:
@@ -124,7 +125,7 @@ class AgentNet(nn.Module):
 
 class MixerNet(nn.Module):
     """4 two-layer hypernetworks producing monotone mixing weights."""
-    def __init__(self, state_dim, n_agents, embed, hyper_hidden=64):
+    def __init__(self, state_dim, n_agents, embed, hyper_hidden=64, scale_by_n=True):
         super().__init__()
         self.state_dim = state_dim
         self.n_agents = n_agents
@@ -145,6 +146,13 @@ class MixerNet(nn.Module):
         bound = 1.0 / np.sqrt(state_dim)
         nn.init.uniform_(self.h_w1b.bias, -bound, bound)
         nn.init.uniform_(self.h_w2b.bias, -bound, bound)
+
+        # Optionally rescale weight hypernets so Q_tot starts near 0.
+        if scale_by_n:
+            with torch.no_grad():
+                for lin in (self.h_w1b, self.h_w2b):
+                    lin.weight.div_(n_agents)
+                    lin.bias.div_(n_agents)
 
     def forward(self, q, s):
         B = q.shape[0]
@@ -168,6 +176,7 @@ class QMIX:
                  use_agent_id=True, use_agent_embedding=False,
                  num_od_pairs=0, od_ids=None, cont_feats=None,
                  od_embed_dim=8, agent_embed_dim=8, agent_embed_hidden=32,
+                 mixer_init_scale_by_n=True,
                  normalize_obs=True, lr=3e-4, batch_size=32,
                  buffer_size=2048, max_grad_norm=10.0, eps_init=1.0,
                  eps_decay=0.995, eps_min=0.05, updates_per_episode=1,
@@ -244,7 +253,12 @@ class QMIX:
 
         # ---- Modules ---------------------------------------------------------
         self.agent_net = AgentNet(agent_in, hidden, n_actions).to(self.device)
-        self.mixer_net = MixerNet(self.state_dim, n_agents, embed, hyper_hidden).to(self.device)
+        
+        # Pass the scaling flag here
+        self.mixer_net = MixerNet(
+            self.state_dim, n_agents, embed, hyper_hidden, 
+            scale_by_n=mixer_init_scale_by_n
+        ).to(self.device)
 
         if self.use_agent_embedding:
             self.agent_embedding = AgentEmbedding(
@@ -885,6 +899,7 @@ def main():
 
     use_agent_id = _parse_bool(p.get("use_agent_id", True))
     use_agent_embedding = _parse_bool(p.get("use_agent_embedding", False))
+    mixer_init_scale_by_n = _parse_bool(p.get("mixer_init_scale_by_n", True))
 
     od_ids = None
     cont_feats = None
@@ -921,6 +936,7 @@ def main():
         od_embed_dim=p.get("od_embed_dim", 8),
         agent_embed_dim=p.get("agent_embed_dim", 8),
         agent_embed_hidden=p.get("agent_embed_hidden", 32),
+        mixer_init_scale_by_n=mixer_init_scale_by_n,
         normalize_obs=p["normalize_obs"],
         lr=p["lr"],
         batch_size=p["batch_size"],
@@ -936,7 +952,8 @@ def main():
     )
 
     print(f"[DEBUG] Identity mode: use_agent_id={model.use_agent_id}, "
-          f"use_agent_embedding={model.use_agent_embedding}")
+          f"use_agent_embedding={model.use_agent_embedding}, "
+          f"mixer_init_scale_by_n={mixer_init_scale_by_n}")
     if model.use_agent_embedding:
         print(f"[DEBUG] cont_feat_dim={model.cont_feat_dim}, od_embed_dim={model.od_embed_dim}")
 
