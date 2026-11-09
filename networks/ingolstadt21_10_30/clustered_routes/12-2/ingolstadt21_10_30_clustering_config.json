@@ -1,0 +1,49 @@
+{
+  "run_name": "12-2",
+  "city_name": "ingolstadt21_10_30",
+  "algorithm": "kmeans",
+  "n_clusters": 12,
+  "features_used": [
+    "free_flow_time",
+    "mean_speed",
+    "speed_std",
+    "pct_high_capacity",
+    "pct_mid_capacity",
+    "pct_local",
+    "road_type_entropy",
+    "traffic_lights_per_km",
+    "turns_per_km",
+    "yield_priority_changes_per_km",
+    "left_yield_turns_per_km",
+    "mean_circuity",
+    "edges_per_km",
+    "edge_dist_from_shortest",
+    "mean_edge_dist_to_other_routes",
+    "max_edge_dist_to_other_routes"
+  ],
+  "feature_pruning": [
+    {
+      "feature": "total_length",
+      "reason": "correlation",
+      "kept": "mean_circuity",
+      "correlation": 0.978914739829902
+    }
+  ],
+  "silhouette": 0.08481694900640864,
+  "average_actions_per_od": 7.469879518072289,
+  "cluster_sizes": {
+    "0": 333,
+    "1": 216,
+    "2": 274,
+    "3": 232,
+    "4": 218,
+    "5": 191,
+    "6": 156,
+    "7": 253,
+    "8": 278,
+    "9": 298,
+    "10": 266,
+    "11": 195
+  },
+  "inertia": 2470.855735189462
+}

@@ -51,6 +51,7 @@ class DQN(BaseLearningModel):
 
         self.q_network = Network(state_size, action_space_size, num_hidden, widths).to(self.device)
         self.optimizer = optim.Adam(self.q_network.parameters(), lr=lr)
+        
         self.loss_fn = nn.MSELoss()
 
         self.loss = list()
@@ -203,10 +204,14 @@ if __name__ == "__main__":
     alg_params = json.load(open(f"../config/algo_config/{ALGORITHM}/{alg_config}.json"))
     env_params = json.load(open(f"../config/env_config/{env_config}.json"))
     task_params = json.load(open(f"../config/task_config/{task_config}.json"))
+
     params.update(alg_params)
     params.update(env_params)
     params.update(task_params)
     del params["desc"], env_params, task_params
+
+    # All AVs share one network and optimizer
+    parameter_sharing = params.get("parameter_sharing", False)
 
     # JanuX fallback for non-clustered configs
     use_clustered_routes = params.get("use_clustered_routes", False)
@@ -221,7 +226,9 @@ if __name__ == "__main__":
     for key, value in params.items():
         globals()[key] = value
 
-    
+    # Set observation_type in config, defaults to previous_agents_plus_start_time
+    observation_type = params.get("observation_type", "previous_agents_plus_start_time")
+
     custom_network_folder = f"../networks/{network}"
     phases = [1, human_learning_episodes, int(training_eps) + human_learning_episodes]
     phase_names = ["Human stabilization", "Mutation and AV learning", "Testing phase"]
@@ -300,6 +307,8 @@ if __name__ == "__main__":
     dump_config["use_clustered_routes"] = use_clustered_routes
     dump_config["use_action_masks"] = action_masks is not None
     dump_config["shuffle"] = shuffle
+    dump_config["parameter_sharing"] = parameter_sharing
+    dump_config["observation_type"] = observation_type
     if save_model_every is not None:
         dump_config["save_model_every"] = save_model_every
 
@@ -320,7 +329,7 @@ if __name__ == "__main__":
             },
             "machine_parameters" : {
                 "behavior" : av_behavior,
-                "observation_type" : "previous_agents_plus_start_time"
+                "observation_type" : observation_type
             }
         },
         environment_parameters = {
@@ -365,19 +374,30 @@ if __name__ == "__main__":
     env.mutation(disable_human_learning = not should_humans_adapt, mutation_start_percentile = -1)
     print_agent_counts(env)
     
+    obs_size = env.observation_space(env.possible_agents[0]).shape[0]
+
     # Wrap env to support clustered routes
     if action_masks is not None:
         env = AVMaskWrapper(env, action_masks)
 
-    # Set policies for machine agents
+    # Assign policies to machine agents
+    shared_model = None
+    agent_lookup = {}
     for idx in range(len(env.machine_agents)):
-        env.machine_agents[idx].model = DQN(env.machine_agents[idx].action_space_size+1, env.machine_agents[idx].action_space_size, 
+        agent = env.machine_agents[idx]
+        model = DQN(obs_size, agent.action_space_size,
                                             device=device, eps_init=eps_init, eps_decay=eps_decay,
-                                            eps_min=eps_min, buffer_size=buffer_size, batch_size=batch_size, lr=lr, 
+                                            eps_min=eps_min, buffer_size=buffer_size, batch_size=batch_size, lr=lr,
                                             num_epochs=num_epochs, num_hidden=num_hidden, widths=widths)
-    agent_lookup = {str(agent.id): agent for agent in env.machine_agents}
-    
-    
+        if parameter_sharing:
+            if shared_model is None:
+                shared_model = model
+            else:
+                model.q_network = shared_model.q_network
+                model.optimizer = shared_model.optimizer
+        agent.model = model
+        agent_lookup[str(agent.id)] = agent
+
     ### Learning phase ###
     pbar.set_description("AV learning")
     os.makedirs(plots_folder, exist_ok=True)

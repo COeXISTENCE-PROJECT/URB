@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/types_file.xsd">
+    <type id="highway.primary" priority="9" numLanes="3" />
+    <type id="highway.residential" priority="4" numLanes="1" spreadType="center" />
+    <type id="highway.secondary" priority="7" numLanes="2" />
+    <type id="highway.tertiary" priority="6" numLanes="2" />
+</types>
