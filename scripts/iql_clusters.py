@@ -226,9 +226,6 @@ if __name__ == "__main__":
     for key, value in params.items():
         globals()[key] = value
 
-    # Set observation_type in config, defaults to previous_agents_plus_start_time
-    observation_type = params.get("observation_type", "previous_agents_plus_start_time")
-
     custom_network_folder = f"../networks/{network}"
     phases = [1, human_learning_episodes, int(training_eps) + human_learning_episodes]
     phase_names = ["Human stabilization", "Mutation and AV learning", "Testing phase"]
@@ -308,7 +305,6 @@ if __name__ == "__main__":
     dump_config["use_action_masks"] = action_masks is not None
     dump_config["shuffle"] = shuffle
     dump_config["parameter_sharing"] = parameter_sharing
-    dump_config["observation_type"] = observation_type
     if save_model_every is not None:
         dump_config["save_model_every"] = save_model_every
 
@@ -329,7 +325,7 @@ if __name__ == "__main__":
             },
             "machine_parameters" : {
                 "behavior" : av_behavior,
-                "observation_type" : observation_type
+                "observation_type" : observations
             }
         },
         environment_parameters = {

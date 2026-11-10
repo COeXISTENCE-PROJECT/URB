@@ -7,5 +7,6 @@
     "use_clustered_routes": true,
     "number_of_paths" : 4,
     "path_gen_beta" : -5,
-    "num_samples" : 10
+    "num_samples" : 10,
+    "observations" : "previous_agents_plus_start_time"
 }
