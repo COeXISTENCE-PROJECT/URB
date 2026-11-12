@@ -1,0 +1,28 @@
+{
+  "desc": "QMIX torch quick test.",
+
+  "training_eps": 10,
+
+  "num_hidden": 1,
+  "widths": [32, 32],
+  "rnn_hidden_dim": 16,
+  "mixing_embed_dim": 16,
+  "hypernet_embed": 32,
+  "share_parameters": true,
+  "use_huber_loss": true,
+
+  "lr": 0.001,
+  "batch_size": 3,
+  "buffer_size": 256,
+  "num_epochs": 1,
+  "max_grad_norm": 10.0,
+
+  "gamma": 0.99,
+  "target_update_every": 5,
+  "double_q": true,
+  "tau": 1.0,
+
+  "temp_init": 0.5,
+  "temp_decay": 0.99,
+  "temp_min": 0.05
+}

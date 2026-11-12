@@ -1,0 +1,27 @@
+
+{
+  "desc": "QMIX (concat + hypernets 2 layers) + agent embedding.",
+  "training_eps": 4000,
+  "hidden": [64, 64],
+  "embed": 32,
+  "hyper_hidden": 64,
+  "state_mode": "concat",
+  "team_reward": "mean",
+  "loss": "huber",
+
+  "use_agent_id": true,
+  "use_agent_embedding": false,
+  "agent_features": ["od", "start_time", "free_flow_time"],
+  "agent_embed_dim": 8,
+  "agent_embed_hidden": 32,
+  "mixer_init_scale_by_n": true,
+  "normalize_obs": true,
+  "lr": 0.001,
+  "batch_size": 32,
+  "buffer_size": 2048,
+  "max_grad_norm": 10.0,
+  "eps_init": 1.0,
+  "eps_decay": 0.9985,
+  "eps_min": 0.1,
+  "updates_per_episode": 8
+}
