@@ -1,0 +1,14 @@
+{
+    "training_eps": 2,
+    "update_every": 2,
+    "batch_size": 2,
+    "num_epochs": 1,
+    "lr": 0.0003,
+    "clip_eps": 0.2,
+    "entropy_coef": 0.005,
+    "value_loss_coef": 1.0,
+    "max_grad_norm": 0.5,
+    "n_embd": 64,
+    "n_head": 1,
+    "n_block": 1
+}

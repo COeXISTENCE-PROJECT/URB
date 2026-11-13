@@ -28,7 +28,7 @@ excluded_scripts = [
     "centralized_wrapper.py",
 ]
 
-special_scripts = ["iql_arh.py"]
+special_scripts = {"iql_arh.py": "ingolstadt21", "mat_arh.py": "ingolstadt21_10_30"}
 
 print(f"[DEBUG] Looking for Python scripts in {SCRIPTS_DIR.resolve()}")
 print(f"[DEBUG] Found {len(python_scripts)} Python scripts (excluding {len(excluded_scripts)} scripts).")
@@ -75,14 +75,14 @@ def test_python_script_execution(script_path):
                 capture_output=True, text=True, check=True, cwd=script_path.parent
             )
             print(f"[DEBUG] Successfully executed {script_path}")
-        elif script_filename == "iql_arh.py":
+        else:
             result = subprocess.run(
                 ["python", script_filename,
                 "--id", f"test_{script_filename}", 
                 "--alg-conf", "test", 
                 "--env-conf", "test", 
                 "--task-conf", "test", 
-                "--net", "ingolstadt21"],
+                "--net", special_scripts[script_filename]],
                 capture_output=True, text=True, check=True, cwd=script_path.parent
             )
             print(f"[DEBUG] Successfully executed {script_path}")
