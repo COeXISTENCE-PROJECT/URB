@@ -550,9 +550,6 @@ def main():
     dump_config["shuffle"] = shuffle
     dump_config["observation_type"] = observation_type
     dump_config["path_gen_workers"] = path_gen_workers_value
-    with open(exp_config_path, 'w', encoding='utf-8') as f:
-        json.dump(dump_config, f, indent=4)
-
  
     
     # Initialize the environment
@@ -658,11 +655,18 @@ def main():
         "central_state_size": central_state_size,
         "action_space_size": shared_action_space_size,
         "num_agents": len(env.machine_agents),
-        "shared_policy": True,
+        "shared_policy": False,
         "share_critic": True,
         "device": device,
         "action_mask": internal_action_masks
     })
+
+    print("share params are: ", model_params["shared_policy"], "\n\n")
+    if model_params["shared_policy"] == False:
+        dump_config["shared_params"] = model_params["shared_policy"]
+
+    with open(exp_config_path, 'w', encoding='utf-8') as f:
+        json.dump(dump_config, f, indent=4)
 
     shared_mappo = MAPPO(**model_params)
 
