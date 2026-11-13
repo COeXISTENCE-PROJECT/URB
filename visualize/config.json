@@ -1,0 +1,51 @@
+{
+    "baseline_days": 50,
+    "dpi": 300,
+    "rc_params": {
+        "font.family": ["Charter", "DejaVu Serif"],
+        "font.size": 10,
+        "axes.titlesize": 12,
+        "axes.labelsize": 11,
+        "axes.spines.top": false,
+        "axes.spines.right": false,
+        "figure.titlesize": 14,
+        "figure.titleweight": "bold",
+        "xtick.labelsize": 10,
+        "ytick.labelsize": 10
+    },
+    "figsize": {
+        "travel_times": [8, 5],
+        "cohorts": [10, 5],
+        "comparison": [9, 9],
+        "training": [10, 5]
+    },
+    "colors": {
+        "before": "#7D8794",
+        "human": "#2A788E",
+        "av": "#C76B2B",
+        "comparison_palette": "tab10"
+    },
+    "boxplot": {
+        "widths": 0.52,
+        "whis": 1.5,
+        "showfliers": true,
+        "medianprops": {"color": "#17212B", "linewidth": 1.6},
+        "flierprops": {"marker": "o", "markersize": 2.5, "alpha": 0.5}
+    },
+    "box_alpha": 0.65,
+    "outlier_tail_fraction": 0.02,
+    "kde": {"bw_adjust": 0.9, "cut": 0, "fill": true, "alpha": 0.18, "linewidth": 1.5},
+    "kde_mean": {"linestyle": "--", "linewidth": 1.4},
+    "training_curve": {
+        "confidence_level": 0.95,
+        "window_saved_episodes": null,
+        "band_alpha": 0.20,
+        "linewidth": 1.5,
+        "phase_line": {"color": "0.45", "linestyle": "--", "linewidth": 1}
+    },
+    "grid_alpha": 0.25,
+    "zero_line": {"color": "0.45", "linestyle": "--", "linewidth": 1},
+    "comparison_width_per_experiment": 2.1,
+    "experiment_labels": {},
+    "label_wrap": 24
+}

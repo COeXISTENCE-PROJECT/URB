@@ -208,6 +208,10 @@ python scripts/greedy.py --id ing_greedy --alg-conf config1 --task-conf config2 
 ```
 <br>
 
+## Travel-time visualization
+
+The [visualization scripts](visualize/README.md) create travel-time boxplots, density plots, and training curves with confidence bands from saved episodes. Figures are written to `visualize/plots/`.
+
 ## 🛠️ URB tools
 
 The tools in [`tools/`](tools/) reuse and organize experiment results:
