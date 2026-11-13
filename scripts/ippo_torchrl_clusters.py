@@ -176,7 +176,6 @@ if __name__ == "__main__":
         globals()[key] = value
 
     human_auto_routing_key = getattr(kc, "HUMAN_AUTO_ROUTING", None)
-    observation_type = params.get(kc.OBSERVATION_TYPE, kc.PREVIOUS_AGENTS_PLUS_START_TIME)
     custom_network_folder = f"../networks/{network}"
 
     # Check whether to use the scratch directory
@@ -283,7 +282,7 @@ if __name__ == "__main__":
             },
             "machine_parameters" :{
                 "behavior" : av_behavior,
-                "observation_type" : observation_type,
+                "observation_type" : observations,
             }
         },
         simulator_parameters = simulator_parameters,
@@ -372,7 +371,7 @@ if __name__ == "__main__":
         RewardSum(in_keys=[env.reward_key], out_keys=[("agents", "episode_reward")]),
     )
 
-    use_route_congestion_encoder = observation_type in {
+    use_route_congestion_encoder = observations in {
         kc.TRIP_INFO_ETA_ROUTE_CONGESTION,
         kc.ROUTE_CONGESTION,
     }
@@ -384,10 +383,10 @@ if __name__ == "__main__":
     if use_route_congestion_encoder:
         if obs_route_feature_dim <= 0:
             raise ValueError(
-                f"{observation_type} requires a route_feature_dim on the observation object"
+                f"{observations} requires a route_feature_dim on the observation object"
             )
 
-        include_eta = observation_type == kc.TRIP_INFO_ETA_ROUTE_CONGESTION
+        include_eta = observations == kc.TRIP_INFO_ETA_ROUTE_CONGESTION
         encoder_kwargs = dict(
             num_paths=number_of_paths,
             route_feature_dim=obs_route_feature_dim,
@@ -416,7 +415,7 @@ if __name__ == "__main__":
         critic_in_keys = [encoded_obs_key]
         n_agent_inputs = policy_encoder_model.output_dim
         print(
-            f"Using {observation_type} encoder: raw_obs_dim="
+            f"Using {observations} encoder: raw_obs_dim="
             f"{env.observation_spec[obs_key].shape[-1]}, encoded_dim={n_agent_inputs}"
         )
 

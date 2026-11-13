@@ -1,0 +1,32 @@
+{
+    "desc": [
+        "AV penetration increases from 10% to 80% every 500 training episodes",
+        "4000 AV training episodes",
+        "300 days of human learning",
+        "100 test episodes",
+        "Humans do not adapt during AV learning",
+        "AVs are selfish",
+        "Human model is gawron"
+    ],
+    "ratio_machines": 0.8,
+    "penetration_schedule": [
+        [0, 0.1],
+        [500, 0.2],
+        [1000, 0.3],
+        [1500, 0.4],
+        [2000, 0.5],
+        [2500, 0.6],
+        [3000, 0.7],
+        [3500, 0.8]
+    ],
+    "human_learning_episodes": 300,
+    "test_eps": 100,
+    "should_humans_adapt": false,
+    "av_behavior": "selfish",
+    "human_model": "gawron",
+    "human_alpha": 0.2,
+    "human_beta": 1.5,
+    "human_beta_randomness": 0.1,
+    "human_deterministic": false,
+    "parameter_sharing": true
+}
