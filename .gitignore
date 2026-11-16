@@ -190,6 +190,7 @@ relative_progress_agent_mean.png
 relative_progress.png
 results/*/metrics/plots/
 results/*/models/
+/visualize/plots/
 
 !networks/*
 networks/.DS_Store

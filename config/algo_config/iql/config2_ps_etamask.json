@@ -12,5 +12,5 @@
     "widths" : [96, 64],
     "update_every" : 1,
     "parameter_sharing" : true,
-    "observation_type" : "trip_info_eta_mask_norm"
+    "observations" : "trip_info_eta_mask_norm"
 }
