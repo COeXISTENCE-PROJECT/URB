@@ -38,7 +38,7 @@
     "route_set": "default-pre-integration",
     "env_config": "clusters_ae",
     "task_config": "selfish_40",
-    "alg_config": "config_pawel",
+    "alg_config": "config10",
     "script": "scripts/ippo_clusters.py",
     "algorithm": "ippo",
     "num_agents": 1035,
