@@ -1,0 +1,30 @@
+{
+  "desc": "QMIX torch — config de base.",
+
+  "training_eps": 4000,
+
+  "num_hidden": 2,
+  "widths": [128, 128, 128],
+  "rnn_hidden_dim": 64,
+  "mixing_embed_dim": 32,
+  "hypernet_embed": 64,
+  "share_parameters": true,
+  "use_huber_loss": true,
+
+  "lr": 0.0003,
+  "batch_size": 32,
+  "buffer_size": 4096,
+  "num_epochs": 1,
+  "max_grad_norm": 10.0,
+
+  "gamma": 0.99,
+  "target_update_every": 200,
+  "double_q": true,
+  "tau": 1.0,
+  "mixing_weight_clip": null,
+  "q_tot_clip": null,
+
+  "temp_init": 1.0,
+  "temp_decay": 0.9985,
+  "temp_min": 0.05
+}

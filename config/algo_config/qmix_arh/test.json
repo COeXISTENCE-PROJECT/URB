@@ -1,0 +1,25 @@
+{
+  "desc": "QMIX ARH quick test.",
+
+  "training_eps": 10,
+
+  "hidden": [32, 32],
+  "embed": 16,
+  "hyper_hidden": 32,
+  "state_mode": "concat",
+  "team_reward": "mean",
+  "loss": "huber",
+  "use_agent_id": false,
+  "use_agent_embedding": false,
+  "normalize_obs": true,
+
+  "lr": 0.001,
+  "batch_size": 3,
+  "buffer_size": 256,
+  "max_grad_norm": 10.0,
+  "updates_per_episode": 1,
+
+  "eps_init": 0.2,
+  "eps_decay": 0.9999,
+  "eps_min": 0.0
+}

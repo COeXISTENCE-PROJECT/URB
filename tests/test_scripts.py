@@ -28,7 +28,7 @@ excluded_scripts = [
     "centralized_wrapper.py",
 ]
 
-special_scripts = ["iql_arh.py"]
+special_scripts = ["iql_arh.py","qmix_arh.py"]
 
 print(f"[DEBUG] Looking for Python scripts in {SCRIPTS_DIR.resolve()}")
 print(f"[DEBUG] Found {len(python_scripts)} Python scripts (excluding {len(excluded_scripts)} scripts).")
