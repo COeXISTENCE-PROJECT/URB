@@ -12,6 +12,7 @@
     "human_learning_episodes": 300,
     "test_eps": 100,
     "should_humans_adapt": false,
+    "marginal_cost_coefficient_beta": 0,
     "av_behavior": "selfish",
     "human_model": "gawron",
     "human_alpha": 0.2,
