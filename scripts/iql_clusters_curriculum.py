@@ -11,6 +11,7 @@ import ast
 import json
 import logging
 import random
+import re
 
 import numpy as np
 import pandas as pd
@@ -30,6 +31,13 @@ from utils           import should_save_model_snapshot
 from clustered_routes import AVMaskWrapper, ClusteredRoutesLoader, resolve_route_set
 from iql_clusters     import DQN
 
+
+def format_json(data, min_indent=12):
+    return re.sub(
+        r"(?m)^( +)-?\d+,?(?:\n\1-?\d+,?){1,9}$",
+        lambda m: m[0].replace("\n" + m[1], " ") if len(m[1]) >= min_indent else m[0],
+        json.dumps(data, indent=4)
+    )
 
 def mutate_exact_agent_ids(traffic_env, selected_ids, disable_human_learning=True):
     humans_by_id = {int(agent.id): agent for agent in traffic_env.human_agents}
@@ -197,11 +205,23 @@ if __name__ == "__main__":
     total_episodes = human_learning_episodes + training_eps + test_eps
 
     # Curriculum stages use exact agent IDs
-    new_machines_after_mutation = len(curriculum[0])
-    num_machines = len(selected_ids)
+    new_machines_after_mutation = len(set(curriculum[0]))
+    num_machines = len(set(selected_ids))
             
     exp_config_path = os.path.join(records_folder, "exp_config.json")
     dump_config = params.copy()
+    unused_params = (
+        "ratio_machines",
+        "human_alpha",
+        "human_beta",
+        "human_beta_randomness",
+        "human_deterministic",
+        "path_gen_workers",
+        "curriculum_schedule",
+    )
+
+    for key in unused_params:
+        dump_config.pop(key, None)
     if args.project is not None:
         dump_config["project"] = args.project
 
@@ -244,16 +264,16 @@ if __name__ == "__main__":
     if save_model_every is not None:
         dump_config["save_model_every"] = save_model_every
     dump_config["curriculum"] = {
-        
-        "groups": groups,
         "schedule": curriculum_schedule,
+        "groups": groups,
     }
 
     # Save exact agent IDs used in this experiment
     with open(os.path.join(records_folder, 'agent_groups.json'), 'w', encoding='utf-8') as f:
-        json.dump(groups, f, indent=4)
+        f.write(format_json(groups))
+
     with open(exp_config_path, 'w', encoding='utf-8') as f:
-        json.dump(dump_config, f, indent=4)
+        f.write(format_json(dump_config))
 
     # Initialize the environment
     env = TrafficEnvironment(
@@ -415,4 +435,3 @@ if __name__ == "__main__":
     if not args.skip_metrics:
         run_metrics_analysis(exp_id, results_folder="../results")
         
-    
