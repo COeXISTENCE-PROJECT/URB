@@ -1,0 +1,67 @@
+{
+  "name": "luxembourg_south_bonnevoie_no_segmented_humans",
+  "description": "LuST crop luxembourg_south_bonnevoie_no_segmented_humans",
+  "source": "LuST Scenario (Luxembourg SUMO Traffic)",
+  "generation": {
+    "tool": "build_lux_crop.py",
+    "entry_estimator": "vehroute",
+    "outside_insertion": "base_desired_best",
+    "tls_mode": "static",
+    "sim_preset": "lust_ref"
+  },
+  "bounding_box": {
+    "x_min": 7450.0,
+    "x_max": 8950.0,
+    "y_min": 4610.0,
+    "y_max": 5700.0,
+    "width_m": 1500.0,
+    "height_m": 1090.0
+  },
+  "time_window": {
+    "start_hour": 7.75,
+    "end_hour": 8.5,
+    "duration_minutes": 45,
+    "preload_hours": 0.5
+  },
+  "network_stats": {
+    "num_edges": 395,
+    "num_tls": 9,
+    "num_origins": 212,
+    "num_destinations": 184,
+    "num_edge_types": 4
+  },
+  "demand_stats": {
+    "num_agents": 3063,
+    "num_background_humans": 12,
+    "num_split_vehicles": 0,
+    "num_from_outside": 2677,
+    "num_bus_segments": 24,
+    "filter_mode": "clustered"
+  },
+  "od_filter": {
+    "od_pairs_total": 702,
+    "od_pairs_kept": 700,
+    "od_pairs_background": 2,
+    "od_pairs_unreachable": 0,
+    "agents_before": 3075,
+    "agents_after": 3063,
+    "agents_background": 12,
+    "agents_unreachable": 0,
+    "min_paths": 6,
+    "path_count_distribution": {
+      "1": 2,
+      "12": 700
+    }
+  },
+  "sumo_validation": {
+    "teleports": 0,
+    "jam": 0,
+    "yield": 0,
+    "wrongLane": 0,
+    "inserted": 3087,
+    "duration": 206.13,
+    "speed": 9.75,
+    "routeLength": 1961.01,
+    "warnings": 1
+  }
+}
