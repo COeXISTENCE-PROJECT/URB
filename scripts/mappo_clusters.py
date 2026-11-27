@@ -24,11 +24,14 @@ from collections     import deque, defaultdict
 
 from baseline_models import BaseLearningModel
 from iql             import Network
+from utils           import add_model_snapshot_argument
 from utils           import clear_SUMO_files
+from utils           import model_snapshot_path
 from utils           import print_agent_counts
 from utils           import run_metrics_analysis
 from utils           import save_loss_records
 from utils           import script_path_for_config
+from utils           import should_save_model_snapshot
 from clustered_routes import ClusteredRoutesLoader, resolve_route_set
 
 
@@ -373,6 +376,7 @@ def main():
             help="Named route-set subdirectory. Uses the network default when omitted.",
         )
     parser.add_argument("--shuffle", action="store_true", default=False)
+    add_model_snapshot_argument(parser)
     args = parser.parse_args()
     
     ALGORITHM = "mappo"
@@ -385,6 +389,7 @@ def main():
     torch_seed = args.torch_seed
     requested_route_set = args.route_set
     shuffle = args.shuffle
+    save_model_every = args.save_model_every
 
     print("### STARTING EXPERIMENT ###")
     print(f"Algorithm: {ALGORITHM.upper()}")
@@ -550,7 +555,8 @@ def main():
     dump_config["shuffle"] = shuffle
     dump_config["observation_type"] = observation_type
     dump_config["path_gen_workers"] = path_gen_workers_value
- 
+    if save_model_every is not None:
+        dump_config["save_model_every"] = save_model_every
     
     # Initialize the environment
     env = TrafficEnvironment(
@@ -778,8 +784,39 @@ def main():
         metrics["train/reward_sum"] = float(np.sum(episode_rewards)) if episode_rewards else 0.0
         metrics["train/reward_mean"] = float(np.mean(episode_rewards)) if episode_rewards else 0.0
         metrics["train/travel_time_mean"] = float(np.mean(episode_travel_times)) if episode_travel_times else 0.0
-            
-        
+
+        completed_episode = episode + 1
+        if should_save_model_snapshot(completed_episode, training_eps, save_model_every):
+            checkpoint = {
+                "training_episode": completed_episode,
+                "shared_policy": model_params["shared_policy"],
+                "share_critic": model_params["share_critic"],
+                "action_masks": {
+                    str(agent.id): internal_action_masks[agent_to_idx[str(agent.id)]].cpu()
+                    for agent in env.machine_agents
+                },
+            }
+
+            if model_params["shared_policy"]:
+                checkpoint["policy"] = shared_mappo.policies[0].state_dict()
+            else:
+                checkpoint["policies"] = {
+                    str(agent.id): shared_mappo.policies[agent_to_idx[str(agent.id)]].state_dict()
+                    for agent in env.machine_agents
+                }
+            if model_params["share_critic"]:
+                checkpoint["critic"] = shared_mappo.critics[0].state_dict()
+            else:
+                checkpoint["critics"] = {
+                    str(agent.id): shared_mappo.critics[agent_to_idx[str(agent.id)]].state_dict()
+                    for agent in env.machine_agents
+                }
+
+            torch.save(
+                checkpoint,
+                model_snapshot_path(records_folder, completed_episode, "pt"),
+            )
+
         if episode % plot_every == 0:
             env.plot_results()
         pbar.update()
